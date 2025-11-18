@@ -34,11 +34,17 @@
             </header>
 
             <div class="tower-container">
-                <div id="floors-list" class="floors-list">
+                <!-- Visual Tower Canvas -->
+                <div class="canvas-container">
+                    <canvas id="tower-canvas"></canvas>
+                </div>
+
+                <!-- Original list view (hidden by default, can toggle) -->
+                <div id="floors-list" class="floors-list" style="display: none;">
                     <!-- Floors will be dynamically inserted here -->
                 </div>
 
-                <button class="add-floor-btn" id="add-floor-btn">
+                <button class="add-floor-btn" id="add-floor-btn" style="display: none;">
                     <span class="btn-icon">➕</span>
                     Build New Floor
                 </button>
@@ -96,6 +102,7 @@
 
     <!-- Scripts -->
     <script src="js/gamestate.js"></script>
+    <script src="js/tower-renderer.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

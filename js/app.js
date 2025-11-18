@@ -6,6 +6,7 @@
 // Game state instance
 let game;
 let currentFloorId = null;
+let towerRenderer = null;
 
 /**
  * Initialize the application
@@ -13,12 +14,19 @@ let currentFloorId = null;
 function init() {
     game = new GameState();
 
+    // Initialize tower renderer
+    towerRenderer = new TowerRenderer('tower-canvas', game);
+
     // Set up event listeners
     setupEventListeners();
 
     // Render initial state
     renderTowerScreen();
     updateGlobalStats();
+
+    // Expose functions for tower renderer to call
+    window.openFloorDetail = openFloorDetail;
+    window.openBuildModal = openBuildModal;
 
     // Start game tick (every 1 second for responsive feel)
     setInterval(() => {
@@ -35,7 +43,7 @@ function init() {
         }
     }, 1000);
 
-    console.log('SimLibrary v2 (Tiny Tower style) initialized!');
+    console.log('SimLibrary v2.1 (Visual Tower!) initialized!');
 }
 
 /**
