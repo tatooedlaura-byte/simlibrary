@@ -41,6 +41,7 @@ function init() {
         game.tick();
         updateGlobalStats();
         updateTowerScreen();
+        renderMissionBanner();
 
         // If viewing floor details, refresh it
         if (currentFloorId) {
@@ -77,6 +78,23 @@ function setupEventListeners() {
     document.getElementById('build-modal').addEventListener('click', (e) => {
         if (e.target.id === 'build-modal') {
             closeBuildModal();
+        }
+    });
+
+    // Stats button - opens stats modal
+    document.getElementById('open-stats-btn').addEventListener('click', () => {
+        openStatsModal();
+    });
+
+    // Stats modal close button
+    document.getElementById('close-stats-modal').addEventListener('click', () => {
+        closeStatsModal();
+    });
+
+    // Close stats modal when clicking outside
+    document.getElementById('stats-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'stats-modal') {
+            closeStatsModal();
         }
     });
 }
@@ -481,11 +499,24 @@ function renderActiveReaders(floor) {
     container.innerHTML = '';
     readersOnFloor.forEach(reader => {
         const remaining = Math.max(0, Math.ceil((reader.checkoutTime - Date.now()) / 1000));
+        const isVIP = reader.type === 'vip';
         const readerEl = document.createElement('div');
-        readerEl.className = 'reader-item';
+        readerEl.className = `reader-item${isVIP ? ' vip-reader' : ''}`;
+
+        let abilityText = '';
+        if (isVIP && reader.vipAbility) {
+            const vipType = game.vipTypes.find(v => v.id === reader.vipType);
+            if (vipType) {
+                abilityText = ` <span class="vip-tag" title="${vipType.description}">${vipType.name}</span>`;
+            }
+        }
+
         readerEl.innerHTML = `
             <span class="reader-emoji">${reader.emoji}</span>
-            <span class="reader-info">Checking out... ${remaining}s</span>
+            <span class="reader-info">
+                <strong>${reader.name}</strong>${abilityText}<br>
+                Checking out... ${remaining}s
+            </span>
             <span class="reader-earning">+${reader.earningAmount} ⭐</span>
         `;
         container.appendChild(readerEl);
@@ -577,6 +608,77 @@ function handleBuildFloor(floorTypeId) {
  */
 function closeBuildModal() {
     document.getElementById('build-modal').classList.remove('active');
+}
+
+/**
+ * Open stats modal and render stats
+ */
+function openStatsModal() {
+    const stats = game.stats;
+
+    // Format time played
+    const hours = Math.floor(stats.timePlayed / 3600);
+    const minutes = Math.floor((stats.timePlayed % 3600) / 60);
+
+    // Update all stats
+    document.getElementById('stat-books').textContent = stats.totalBooksCheckedOut.toLocaleString();
+    document.getElementById('stat-stars').textContent = stats.totalStarsEarned.toLocaleString();
+    document.getElementById('stat-readers').textContent = stats.totalReadersServed.toLocaleString();
+    document.getElementById('stat-vips').textContent = stats.totalVIPsServed.toLocaleString();
+    document.getElementById('stat-missions').textContent = stats.totalMissionsCompleted.toLocaleString();
+    document.getElementById('stat-bucks-earned').textContent = stats.totalTowerBucksEarned.toLocaleString();
+    document.getElementById('stat-floors').textContent = stats.totalFloorsBuilt.toLocaleString();
+    document.getElementById('stat-staff').textContent = stats.totalStaffHired.toLocaleString();
+    document.getElementById('stat-time').textContent = `${hours}h ${minutes}m`;
+
+    // Show modal
+    document.getElementById('stats-modal').classList.add('active');
+}
+
+/**
+ * Close stats modal
+ */
+function closeStatsModal() {
+    document.getElementById('stats-modal').classList.remove('active');
+}
+
+/**
+ * Render mission banner
+ */
+function renderMissionBanner() {
+    const banner = document.getElementById('mission-banner');
+    const mission = game.currentMission;
+
+    if (!mission || mission.status !== 'active') {
+        banner.style.display = 'none';
+        return;
+    }
+
+    // Calculate progress and time remaining
+    const progressPercent = (mission.progress / mission.requestCount) * 100;
+    const timeRemaining = Math.max(0, Math.ceil((mission.expiryTime - Date.now()) / 1000));
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+
+    banner.innerHTML = `
+        <div class="mission-info">
+            <div class="mission-title">
+                📝 ${mission.requesterName} needs ${mission.requestCount} ${mission.categoryName} books!
+            </div>
+            <div class="mission-details">
+                Floor: ${mission.floorName} • Progress: ${mission.progress}/${mission.requestCount}
+            </div>
+            <div class="mission-progress">
+                <div class="mission-progress-fill" style="width: ${progressPercent}%"></div>
+            </div>
+        </div>
+        <div class="mission-reward">
+            <div>${mission.reward} ⭐${mission.rewardBucks > 0 ? ` + ${mission.rewardBucks} 💎` : ''}</div>
+            <div class="mission-timer">${minutes}:${seconds.toString().padStart(2, '0')}</div>
+        </div>
+    `;
+
+    banner.style.display = 'flex';
 }
 
 // Initialize app when DOM is ready

@@ -20,8 +20,86 @@ class GameState {
         // Characters
         this.readers = []; // Active readers visiting
 
-        // Missions/orders
+        // Reader name pools
+        this.readerNames = {
+            first: ['Alex', 'Jamie', 'Sam', 'Taylor', 'Morgan', 'Casey', 'Jordan', 'Riley', 'Avery', 'Quinn',
+                    'Emma', 'Liam', 'Olivia', 'Noah', 'Ava', 'Ethan', 'Sophia', 'Mason', 'Isabella', 'Lucas',
+                    'Mia', 'Oliver', 'Charlotte', 'Elijah', 'Amelia', 'James', 'Harper', 'Benjamin', 'Evelyn', 'William'],
+            last: ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez',
+                   'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin']
+        };
+
+        // Reader personality types
+        this.readerTypes = [
+            { id: 'kid', emoji: '👧', name: 'Kid', weight: 25 },
+            { id: 'teen', emoji: '🧑', name: 'Teen', weight: 20 },
+            { id: 'adult', emoji: '👔', name: 'Adult', weight: 30 },
+            { id: 'senior', emoji: '👴', name: 'Senior', weight: 15 },
+            { id: 'student', emoji: '🎓', name: 'Student', weight: 10 }
+        ];
+
+        // VIP reader types (rare, special abilities)
+        this.vipTypes = [
+            {
+                id: 'speed_reader',
+                name: 'Speed Reader',
+                emoji: '⚡',
+                ability: 'instant_checkout',
+                description: 'Checks out instantly!',
+                spawnChance: 0.05 // 5% of VIP spawns
+            },
+            {
+                id: 'big_spender',
+                name: 'Big Spender',
+                emoji: '💰',
+                ability: 'double_stars',
+                description: 'Pays 2x stars!',
+                spawnChance: 0.06
+            },
+            {
+                id: 'book_deliverer',
+                name: 'Book Deliverer',
+                emoji: '📦',
+                ability: 'instant_restock',
+                description: 'Restocks a random category!',
+                spawnChance: 0.04
+            },
+            {
+                id: 'celebrity',
+                name: 'Celebrity Reader',
+                emoji: '🌟',
+                ability: 'attract_readers',
+                description: 'Attracts 3 more readers!',
+                spawnChance: 0.03
+            },
+            {
+                id: 'tower_buck_tipper',
+                name: 'Generous Patron',
+                emoji: '💎',
+                ability: 'tower_bucks',
+                description: 'Tips 1 Tower Buck!',
+                spawnChance: 0.02
+            }
+        ];
+
+        // Missions/requests
         this.currentMission = null;
+        this.missionHistory = []; // Completed missions
+        this.nextMissionTime = Date.now() + 60000; // First mission in 60s
+
+        // Stats tracking (all-time)
+        this.stats = {
+            totalBooksCheckedOut: 0,
+            totalStarsEarned: 0,
+            totalReadersServed: 0,
+            totalVIPsServed: 0,
+            totalMissionsCompleted: 0,
+            totalTowerBucksEarned: 0,
+            totalFloorsBuilt: 0,
+            totalStaffHired: 0,
+            timePlayed: 0, // in seconds
+            gameStartTime: Date.now()
+        };
 
         // Staff types catalog
         this.staffTypes = [
@@ -403,6 +481,10 @@ class GameState {
         };
 
         this.floors.push(newFloor);
+
+        // Update stats
+        this.stats.totalFloorsBuilt += 1;
+
         this.save();
         return { success: true, floor: newFloor };
     }
@@ -462,6 +544,10 @@ class GameState {
         };
 
         floor.staff.push(newStaff);
+
+        // Update stats
+        this.stats.totalStaffHired += 1;
+
         this.save();
 
         return { success: true, staff: newStaff, categoryUnlocked: floor.staff.length - 1 };
@@ -556,18 +642,184 @@ class GameState {
 
         const { cat, idx } = stockedCategories[Math.floor(Math.random() * stockedCategories.length)];
 
+        // Generate random name
+        const firstName = this.readerNames.first[Math.floor(Math.random() * this.readerNames.first.length)];
+        const lastName = this.readerNames.last[Math.floor(Math.random() * this.readerNames.last.length)];
+        const fullName = `${firstName} ${lastName}`;
+
+        // Determine if VIP (10% chance)
+        const isVIP = Math.random() < 0.10;
+        let readerType, vipType = null;
+
+        if (isVIP) {
+            // Pick random VIP type (weighted)
+            const rand = Math.random();
+            let cumulative = 0;
+            for (const vip of this.vipTypes) {
+                cumulative += vip.spawnChance;
+                if (rand <= cumulative) {
+                    vipType = vip;
+                    break;
+                }
+            }
+            // Fallback to first VIP if none selected
+            if (!vipType) vipType = this.vipTypes[0];
+        } else {
+            // Pick regular reader type (weighted)
+            const totalWeight = this.readerTypes.reduce((sum, type) => sum + type.weight, 0);
+            const rand = Math.random() * totalWeight;
+            let cumulative = 0;
+            for (const type of this.readerTypes) {
+                cumulative += type.weight;
+                if (rand <= cumulative) {
+                    readerType = type;
+                    break;
+                }
+            }
+            // Fallback to first type if none selected
+            if (!readerType) readerType = this.readerTypes[0];
+        }
+
+        // Calculate checkout time and earnings based on VIP ability
+        let checkoutTime = Date.now() + 3000; // Default 3 seconds
+        let earningAmount = cat.earningRate;
+
+        if (vipType) {
+            switch (vipType.ability) {
+                case 'instant_checkout':
+                    checkoutTime = Date.now() + 100; // Almost instant
+                    break;
+                case 'double_stars':
+                    earningAmount *= 2;
+                    break;
+                // Other abilities handled when reader checks out
+            }
+        }
+
         // Create reader
         const reader = {
             id: this.generateId(),
             floorId: floor.id,
             categoryIndex: idx,
-            emoji: ['👤', '👧', '👦', '🧑', '👩', '👨'][Math.floor(Math.random() * 6)],
-            checkoutTime: Date.now() + 3000, // 3 seconds to checkout
-            earningAmount: cat.earningRate
+            name: fullName,
+            emoji: isVIP ? vipType.emoji : readerType.emoji,
+            type: isVIP ? 'vip' : readerType.id,
+            vipType: vipType ? vipType.id : null,
+            vipAbility: vipType ? vipType.ability : null,
+            checkoutTime: checkoutTime,
+            earningAmount: earningAmount
         };
 
         this.readers.push(reader);
         return reader;
+    }
+
+    /**
+     * Generate a new random mission
+     */
+    generateMission() {
+        const readyFloors = this.floors.filter(f => f.status === 'ready');
+        if (readyFloors.length === 0) {
+            // No ready floors, try again later
+            this.nextMissionTime = Date.now() + 60000;
+            return;
+        }
+
+        // Pick a random floor
+        const floor = readyFloors[Math.floor(Math.random() * readyFloors.length)];
+
+        // Pick a random unlocked category
+        const unlockedCategories = floor.bookStock
+            .map((cat, idx) => ({ cat, idx }))
+            .filter((_, idx) => floor.staff.length > idx);
+
+        if (unlockedCategories.length === 0) {
+            // No unlocked categories, try again later
+            this.nextMissionTime = Date.now() + 60000;
+            return;
+        }
+
+        const { cat, idx } = unlockedCategories[Math.floor(Math.random() * unlockedCategories.length)];
+
+        // Generate mission details
+        const requestCount = Math.ceil(Math.random() * 3) + 1; // 2-4 books
+        const timeLimit = 60 + Math.floor(Math.random() * 60); // 60-120 seconds
+        const reward = Math.ceil(requestCount * cat.earningRate * 2); // 2x normal earnings
+
+        this.currentMission = {
+            id: this.generateId(),
+            floorId: floor.id,
+            floorName: floor.name,
+            categoryIndex: idx,
+            categoryName: cat.name,
+            requesterName: this.readerNames.first[Math.floor(Math.random() * this.readerNames.first.length)],
+            requestCount: requestCount,
+            progress: 0,
+            timeLimit: timeLimit,
+            reward: reward,
+            rewardBucks: Math.random() < 0.3 ? 1 : 0, // 30% chance for Tower Buck bonus
+            status: 'active', // active, completed, expired
+            startTime: Date.now(),
+            expiryTime: Date.now() + (timeLimit * 1000)
+        };
+    }
+
+    /**
+     * Check if a reader checkout contributes to current mission
+     */
+    checkMissionProgress(reader) {
+        if (!this.currentMission || this.currentMission.status !== 'active') return;
+
+        // Check if this reader matches the mission criteria
+        if (reader.floorId === this.currentMission.floorId &&
+            reader.categoryIndex === this.currentMission.categoryIndex) {
+
+            this.currentMission.progress += 1;
+
+            // Check if mission is complete
+            if (this.currentMission.progress >= this.currentMission.requestCount) {
+                this.completeMission();
+            }
+        }
+    }
+
+    /**
+     * Complete current mission and award rewards
+     */
+    completeMission() {
+        if (!this.currentMission) return;
+
+        this.currentMission.status = 'completed';
+
+        // Award stars
+        this.stars += this.currentMission.reward;
+        this.stats.totalStarsEarned += this.currentMission.reward;
+
+        // Award Tower Bucks if applicable
+        if (this.currentMission.rewardBucks > 0) {
+            this.towerBucks += this.currentMission.rewardBucks;
+            this.stats.totalTowerBucksEarned += this.currentMission.rewardBucks;
+        }
+
+        // Update stats
+        this.stats.totalMissionsCompleted += 1;
+
+        // Store in history
+        this.missionHistory.push({
+            ...this.currentMission,
+            completedAt: Date.now()
+        });
+
+        // Keep only last 10 missions in history
+        if (this.missionHistory.length > 10) {
+            this.missionHistory = this.missionHistory.slice(-10);
+        }
+
+        // Clear current mission
+        this.currentMission = null;
+
+        // Next mission in 2-5 minutes
+        this.nextMissionTime = Date.now() + (120000 + Math.random() * 180000);
     }
 
     /**
@@ -606,6 +858,47 @@ class GameState {
 
                     // Earn XP
                     this.xp += reader.earningAmount;
+
+                    // Update stats
+                    this.stats.totalBooksCheckedOut += 1;
+                    this.stats.totalStarsEarned += reader.earningAmount;
+                    this.stats.totalReadersServed += 1;
+
+                    // Handle VIP abilities
+                    if (reader.type === 'vip') {
+                        this.stats.totalVIPsServed += 1;
+
+                        switch (reader.vipAbility) {
+                            case 'instant_restock':
+                                // Restock a random category on this floor
+                                const emptyCategories = floor.bookStock
+                                    .map((cat, idx) => ({ cat, idx }))
+                                    .filter(({ cat }) => cat.currentStock < cat.maxStock && !cat.restocking);
+                                if (emptyCategories.length > 0) {
+                                    const { idx } = emptyCategories[Math.floor(Math.random() * emptyCategories.length)];
+                                    floor.bookStock[idx].currentStock = floor.bookStock[idx].maxStock;
+                                }
+                                break;
+
+                            case 'attract_readers':
+                                // Spawn 3 more readers immediately
+                                for (let i = 0; i < 3; i++) {
+                                    this.spawnReader();
+                                }
+                                break;
+
+                            case 'tower_bucks':
+                                // Tip 1 Tower Buck
+                                this.towerBucks += 1;
+                                this.stats.totalTowerBucksEarned += 1;
+                                break;
+                        }
+                    }
+
+                    // Check if this completes current mission
+                    if (this.currentMission && this.currentMission.status === 'active') {
+                        this.checkMissionProgress(reader);
+                    }
                 }
 
                 // Remove reader (they checked out)
@@ -627,6 +920,22 @@ class GameState {
         if (Math.random() < 0.05) {
             this.spawnReader();
         }
+
+        // Generate new mission if it's time and no active mission
+        if (!this.currentMission && now >= this.nextMissionTime) {
+            this.generateMission();
+        }
+
+        // Check mission expiry
+        if (this.currentMission && this.currentMission.status === 'active' && now >= this.currentMission.expiryTime) {
+            this.currentMission.status = 'expired';
+            this.currentMission = null;
+            // Next mission in 2-5 minutes
+            this.nextMissionTime = now + (120000 + Math.random() * 180000);
+        }
+
+        // Update time played stat (every tick = 1 second)
+        this.stats.timePlayed += 1;
 
         this.save();
     }
@@ -651,6 +960,10 @@ class GameState {
             floors: this.floors,
             nextFloorSlot: this.nextFloorSlot,
             readers: this.readers,
+            currentMission: this.currentMission,
+            missionHistory: this.missionHistory,
+            nextMissionTime: this.nextMissionTime,
+            stats: this.stats,
             timestamp: Date.now()
         };
         localStorage.setItem('simlibrary_save_v2', JSON.stringify(saveData));
@@ -673,6 +986,25 @@ class GameState {
                 this.floors = data.floors || [];
                 this.nextFloorSlot = data.nextFloorSlot || 1;
                 this.readers = data.readers || [];
+                this.currentMission = data.currentMission || null;
+                this.missionHistory = data.missionHistory || [];
+                this.nextMissionTime = data.nextMissionTime || (Date.now() + 60000);
+
+                // Load stats with defaults for new stat types
+                if (data.stats) {
+                    this.stats = {
+                        totalBooksCheckedOut: data.stats.totalBooksCheckedOut || 0,
+                        totalStarsEarned: data.stats.totalStarsEarned || 0,
+                        totalReadersServed: data.stats.totalReadersServed || 0,
+                        totalVIPsServed: data.stats.totalVIPsServed || 0,
+                        totalMissionsCompleted: data.stats.totalMissionsCompleted || 0,
+                        totalTowerBucksEarned: data.stats.totalTowerBucksEarned || 0,
+                        totalFloorsBuilt: data.stats.totalFloorsBuilt || 0,
+                        totalStaffHired: data.stats.totalStaffHired || 0,
+                        timePlayed: data.stats.timePlayed || 0,
+                        gameStartTime: data.stats.gameStartTime || Date.now()
+                    };
+                }
 
                 // Migrate old floors to have staff array if missing
                 this.floors.forEach(floor => {
