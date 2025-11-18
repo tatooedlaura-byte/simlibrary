@@ -19,10 +19,37 @@ class GameState {
 
         // Characters
         this.readers = []; // Active readers visiting
-        this.librarians = []; // Hired librarians
 
         // Missions/orders
         this.currentMission = null;
+
+        // Staff types catalog
+        this.staffTypes = [
+            {
+                id: 'page',
+                name: 'Page',
+                emoji: '👤',
+                color: '#4CAF50',
+                hireCost: 50,
+                description: 'Entry-level staff, stocks basic books'
+            },
+            {
+                id: 'clerk',
+                name: 'Clerk',
+                emoji: '👔',
+                color: '#2196F3',
+                hireCost: 100,
+                description: 'Experienced staff, stocks intermediate books'
+            },
+            {
+                id: 'librarian',
+                name: 'Librarian',
+                emoji: '👓',
+                color: '#9C27B0',
+                hireCost: 150,
+                description: 'Expert staff, stocks advanced books'
+            }
+        ];
 
         // Floor type catalog
         this.floorTypes = [
@@ -99,10 +126,10 @@ class GameState {
     }
 
     /**
-     * Get available floor types for current level
+     * Get available floor types (all types available, just need stars)
      */
     getAvailableFloorTypes() {
-        return this.floorTypes.filter(type => type.unlockLevel <= this.level);
+        return this.floorTypes; // All floors unlocked, just need money
     }
 
     /**
@@ -111,11 +138,6 @@ class GameState {
     buildFloor(floorTypeId) {
         const floorType = this.floorTypes.find(t => t.id === floorTypeId);
         if (!floorType) return { success: false, error: 'Invalid floor type' };
-
-        // Check unlock level
-        if (floorType.unlockLevel > this.level) {
-            return { success: false, error: `Unlock at level ${floorType.unlockLevel}` };
-        }
 
         // Check cost
         if (this.stars < floorType.buildCost) {
@@ -141,6 +163,7 @@ class GameState {
             status: 'building', // building, ready
             buildStartTime: Date.now(),
             buildEndTime: Date.now() + (floorType.buildTime * 1000),
+            staff: [], // Hired staff (max 3, unlocks book categories)
             bookStock: floorType.bookCategories.map(cat => ({
                 name: cat.name,
                 currentStock: 0,
@@ -151,8 +174,7 @@ class GameState {
                 restocking: false,
                 restockStartTime: null,
                 restockEndTime: null
-            })),
-            librarianId: null // No librarian assigned yet
+            }))
         };
 
         this.floors.push(newFloor);
@@ -177,7 +199,55 @@ class GameState {
     }
 
     /**
+     * Hire staff for a floor
+     * 1st hire (Page) unlocks category 0
+     * 2nd hire (Clerk) unlocks category 1
+     * 3rd hire (Librarian) unlocks category 2
+     */
+    hireStaff(floorId) {
+        const floor = this.getFloor(floorId);
+        if (!floor || floor.status !== 'ready') {
+            return { success: false, error: 'Floor not ready' };
+        }
+
+        // Check if floor already has 3 staff
+        if (floor.staff.length >= 3) {
+            return { success: false, error: 'Floor is fully staffed' };
+        }
+
+        // Determine which staff type to hire (in order: Page, Clerk, Librarian)
+        const staffType = this.staffTypes[floor.staff.length];
+
+        // Check cost
+        if (this.stars < staffType.hireCost) {
+            return { success: false, error: 'Not enough stars' };
+        }
+
+        // Deduct cost
+        this.stars -= staffType.hireCost;
+
+        // Create staff member
+        const newStaff = {
+            id: this.generateId(),
+            typeId: staffType.id,
+            name: staffType.name,
+            emoji: staffType.emoji,
+            color: staffType.color,
+            hiredAt: Date.now()
+        };
+
+        floor.staff.push(newStaff);
+        this.save();
+
+        return { success: true, staff: newStaff, categoryUnlocked: floor.staff.length - 1 };
+    }
+
+    /**
      * Start restocking a book category
+     * Requires staff to unlock categories:
+     * - Category 0: Need 1+ staff (Page)
+     * - Category 1: Need 2+ staff (Clerk)
+     * - Category 2: Need 3+ staff (Librarian)
      */
     restockBooks(floorId, categoryIndex) {
         const floor = this.getFloor(floorId);
@@ -185,6 +255,13 @@ class GameState {
 
         const category = floor.bookStock[categoryIndex];
         if (!category) return { success: false, error: 'Invalid category' };
+
+        // Check if category is unlocked by staff
+        const requiredStaff = categoryIndex + 1;
+        if (floor.staff.length < requiredStaff) {
+            const staffTypeName = this.staffTypes[categoryIndex]?.name || 'staff member';
+            return { success: false, error: `Hire a ${staffTypeName} to unlock this category` };
+        }
 
         if (category.restocking) return { success: false, error: 'Already restocking' };
 

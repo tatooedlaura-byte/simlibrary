@@ -227,6 +227,9 @@ function openFloorDetail(floorId) {
         statusEl.className = 'floor-status ready';
     }
 
+    // Render staff slots
+    renderStaffSlots(floor);
+
     // Render book categories
     renderBookCategories(floor);
 
@@ -250,11 +253,92 @@ function updateFloorDetail(floor) {
         statusEl.textContent = '✅ Ready';
     }
 
+    // Update staff slots
+    renderStaffSlots(floor);
+
     // Update book categories
     renderBookCategories(floor);
 
     // Update active readers
     renderActiveReaders(floor);
+}
+
+/**
+ * Render staff slots for a floor
+ */
+function renderStaffSlots(floor) {
+    const container = document.getElementById('staff-slots');
+    container.innerHTML = '';
+
+    if (floor.status !== 'ready') {
+        container.innerHTML = '<p class="empty-state">Complete construction to hire staff</p>';
+        return;
+    }
+
+    // Create 3 staff slots
+    for (let i = 0; i < 3; i++) {
+        const staff = floor.staff[i];
+        const staffType = game.staffTypes[i];
+        const categoryName = floor.bookStock[i]?.name || '';
+
+        const slot = document.createElement('div');
+        slot.className = 'staff-slot';
+
+        if (staff) {
+            // Filled slot
+            slot.innerHTML = `
+                <div class="staff-icon" style="background-color: ${staff.color}">${staff.emoji}</div>
+                <div class="staff-info">
+                    <div class="staff-name">${staff.name}</div>
+                    <div class="staff-unlock">✅ "${categoryName}" unlocked</div>
+                </div>
+            `;
+        } else {
+            // Empty slot with hire button
+            const canAfford = game.stars >= staffType.hireCost;
+            slot.innerHTML = `
+                <div class="staff-icon empty">?</div>
+                <div class="staff-info">
+                    <div class="staff-name">Empty Slot ${i + 1}</div>
+                    <div class="staff-description">${staffType.description}</div>
+                </div>
+                <button class="hire-staff-btn ${!canAfford ? 'disabled' : ''}"
+                        data-floor-id="${floor.id}"
+                        ${!canAfford ? 'disabled' : ''}>
+                    Hire ${staffType.name} (${staffType.hireCost} ⭐)
+                </button>
+            `;
+        }
+
+        container.appendChild(slot);
+    }
+
+    // Add event listeners for hire buttons
+    container.querySelectorAll('.hire-staff-btn:not(.disabled)').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const floorId = btn.dataset.floorId;
+            handleHireStaff(floorId);
+        });
+    });
+}
+
+/**
+ * Handle hiring staff
+ */
+function handleHireStaff(floorId) {
+    const result = game.hireStaff(floorId);
+    if (result.success) {
+        const floor = game.getFloor(floorId);
+        renderStaffSlots(floor);
+        renderBookCategories(floor);
+        updateGlobalStats();
+
+        // Show notification
+        const categoryName = floor.bookStock[result.categoryUnlocked]?.name || '';
+        alert(`🎉 ${result.staff.name} hired! "${categoryName}" category unlocked!`);
+    } else {
+        alert(result.error || 'Cannot hire staff');
+    }
 }
 
 /**
@@ -271,40 +355,58 @@ function renderBookCategories(floor) {
 
     floor.bookStock.forEach((category, index) => {
         const card = document.createElement('div');
-        card.className = 'book-category-card';
+        const requiredStaff = index + 1;
+        const isLocked = floor.staff.length < requiredStaff;
 
-        const stockPercent = (category.currentStock / category.maxStock) * 100;
-        const isRestocking = category.restocking;
-        const isFull = category.currentStock >= category.maxStock;
+        card.className = `book-category-card ${isLocked ? 'locked' : ''}`;
 
-        let statusText = '';
-        let actionButton = '';
-
-        if (isRestocking) {
-            const remaining = Math.max(0, Math.ceil((category.restockEndTime - Date.now()) / 1000));
-            statusText = `📦 Restocking... ${remaining}s`;
-            actionButton = `<button class="rush-restock-btn" data-floor-id="${floor.id}" data-category="${index}">💎 Rush</button>`;
-        } else if (isFull) {
-            statusText = '✅ Fully Stocked';
-            actionButton = `<button class="restock-btn disabled" disabled>Restock (${category.stockCost} ⭐)</button>`;
+        if (isLocked) {
+            // Locked category
+            const staffType = game.staffTypes[index];
+            card.innerHTML = `
+                <div class="category-header">
+                    <h5>🔒 ${category.name}</h5>
+                    <span class="earning-rate">+${category.earningRate} ⭐/book</span>
+                </div>
+                <div class="locked-message">
+                    <p>Hire a ${staffType.name} to unlock this category</p>
+                </div>
+            `;
         } else {
-            statusText = `${category.currentStock}/${category.maxStock} books`;
-            actionButton = `<button class="restock-btn" data-floor-id="${floor.id}" data-category="${index}">Restock (${category.stockCost} ⭐)</button>`;
-        }
+            // Unlocked category
+            const stockPercent = (category.currentStock / category.maxStock) * 100;
+            const isRestocking = category.restocking;
+            const isFull = category.currentStock >= category.maxStock;
 
-        card.innerHTML = `
-            <div class="category-header">
-                <h5>${category.name}</h5>
-                <span class="earning-rate">+${category.earningRate} ⭐/book</span>
-            </div>
-            <div class="stock-bar">
-                <div class="stock-fill" style="width: ${stockPercent}%"></div>
-            </div>
-            <div class="category-status">${statusText}</div>
-            <div class="category-actions">
-                ${actionButton}
-            </div>
-        `;
+            let statusText = '';
+            let actionButton = '';
+
+            if (isRestocking) {
+                const remaining = Math.max(0, Math.ceil((category.restockEndTime - Date.now()) / 1000));
+                statusText = `📦 Restocking... ${remaining}s`;
+                actionButton = `<button class="rush-restock-btn" data-floor-id="${floor.id}" data-category="${index}">💎 Rush</button>`;
+            } else if (isFull) {
+                statusText = '✅ Fully Stocked';
+                actionButton = `<button class="restock-btn disabled" disabled>Restock (${category.stockCost} ⭐)</button>`;
+            } else {
+                statusText = `${category.currentStock}/${category.maxStock} books`;
+                actionButton = `<button class="restock-btn" data-floor-id="${floor.id}" data-category="${index}">Restock (${category.stockCost} ⭐)</button>`;
+            }
+
+            card.innerHTML = `
+                <div class="category-header">
+                    <h5>${category.name}</h5>
+                    <span class="earning-rate">+${category.earningRate} ⭐/book</span>
+                </div>
+                <div class="stock-bar">
+                    <div class="stock-fill" style="width: ${stockPercent}%"></div>
+                </div>
+                <div class="category-status">${statusText}</div>
+                <div class="category-actions">
+                    ${actionButton}
+                </div>
+            `;
+        }
 
         container.appendChild(card);
     });
