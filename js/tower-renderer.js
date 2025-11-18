@@ -20,6 +20,11 @@ class TowerRenderer {
         this.floorWidth = 500;
         this.floorX = 50;
 
+        // Elevator dimensions
+        this.elevatorWidth = 40;
+        this.elevatorX = 5;
+        this.elevatorCarHeight = 80;
+
         // Character sprites
         this.characters = []; // Active character animations
 
@@ -31,7 +36,9 @@ class TowerRenderer {
             peach: { bg: '#FFD4B2', border: '#FFAB91', accent: '#FF8A65' },
             mint: { bg: '#C8E6C9', border: '#A5D6A7', accent: '#81C784' },
             sky: { bg: '#B3E5FC', border: '#81D4FA', accent: '#4FC3F7' },
-            lavender: { bg: '#E1BEE7', border: '#CE93D8', accent: '#BA68C8' }
+            lavender: { bg: '#E1BEE7', border: '#CE93D8', accent: '#BA68C8' },
+            brown: { bg: '#D7CCC8', border: '#BCAAA4', accent: '#A1887F' },
+            rainbow: { bg: '#FFE5B4', border: '#FFD700', accent: '#FFA500' }
         };
 
         this.init();
@@ -63,12 +70,18 @@ class TowerRenderer {
         this.ctx.fillStyle = '#8BC34A';
         this.ctx.fillRect(0, this.height - 40, this.width, 40);
 
+        // Draw elevator shaft
+        this.drawElevatorShaft();
+
         // Draw floors (bottom to top)
         const floors = [...this.game.floors].reverse();
         floors.forEach((floor, index) => {
             const y = this.height - 40 - (index + 1) * this.floorHeight;
             this.drawFloor(floor, this.floorX, y, index);
         });
+
+        // Draw elevator car(s) with readers
+        this.drawElevators();
 
         // Draw "Build Floor" button at top
         if (this.game.floors.length < this.game.maxFloors) {
@@ -103,6 +116,80 @@ class TowerRenderer {
         } else {
             this.drawReadyFloor(floor, x, y, colors, floorIndex);
         }
+    }
+
+    /**
+     * Draw elevator shaft
+     */
+    drawElevatorShaft() {
+        const numFloors = this.game.floors.length;
+        if (numFloors === 0) return;
+
+        const shaftHeight = numFloors * this.floorHeight;
+        const shaftY = this.height - 40 - shaftHeight;
+
+        // Shaft background
+        this.ctx.fillStyle = '#757575';
+        this.ctx.fillRect(this.elevatorX, shaftY, this.elevatorWidth, shaftHeight);
+
+        // Shaft border
+        this.ctx.strokeStyle = '#424242';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(this.elevatorX, shaftY, this.elevatorWidth, shaftHeight);
+
+        // Floor markers (horizontal lines)
+        this.ctx.strokeStyle = '#616161';
+        this.ctx.lineWidth = 1;
+        for (let i = 0; i <= numFloors; i++) {
+            const markerY = this.height - 40 - (i * this.floorHeight);
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.elevatorX, markerY);
+            this.ctx.lineTo(this.elevatorX + this.elevatorWidth, markerY);
+            this.ctx.stroke();
+        }
+    }
+
+    /**
+     * Draw elevator car(s) with readers
+     */
+    drawElevators() {
+        const now = Date.now();
+
+        // Group readers by elevator (for now, one reader per elevator)
+        const readersInElevator = this.game.readers.filter(r =>
+            r.elevatorState === 'waiting' || r.elevatorState === 'riding'
+        );
+
+        readersInElevator.forEach(reader => {
+            // Calculate elevator position based on time
+            const totalTime = reader.elevatorArrivalTime - (reader.elevatorArrivalTime - 2000 - (reader.floorNumber * 500));
+            const elapsed = now - (reader.elevatorArrivalTime - totalTime);
+            const progress = Math.min(1, Math.max(0, elapsed / totalTime));
+
+            // Calculate Y position (ground to destination floor)
+            const groundY = this.height - 40;
+            const destFloorY = this.height - 40 - (reader.floorNumber * this.floorHeight);
+            const elevatorY = groundY - (progress * (groundY - destFloorY)) - this.elevatorCarHeight;
+
+            // Draw elevator car
+            this.ctx.fillStyle = '#9E9E9E';
+            this.ctx.fillRect(this.elevatorX + 2, elevatorY, this.elevatorWidth - 4, this.elevatorCarHeight);
+
+            // Elevator car border
+            this.ctx.strokeStyle = '#616161';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(this.elevatorX + 2, elevatorY, this.elevatorWidth - 4, this.elevatorCarHeight);
+
+            // Draw reader inside elevator
+            const readerX = this.elevatorX + this.elevatorWidth / 2;
+            const readerY = elevatorY + this.elevatorCarHeight / 2;
+
+            // Reader emoji
+            this.ctx.font = '24px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(reader.emoji, readerX, readerY);
+        });
     }
 
     /**
@@ -211,7 +298,9 @@ class TowerRenderer {
      * Draw characters on a specific floor
      */
     drawFloorCharacters(floor, floorX, floorY) {
-        const floorReaders = this.game.readers.filter(r => r.floorId === floor.id);
+        const floorReaders = this.game.readers.filter(r =>
+            r.floorId === floor.id && r.elevatorState === 'arrived'
+        );
 
         floorReaders.forEach(reader => {
             // Find or create character sprite for this reader

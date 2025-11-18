@@ -758,6 +758,7 @@ class GameState {
         const reader = {
             id: this.generateId(),
             floorId: floor.id,
+            floorNumber: floor.floorNumber, // For elevator to know which floor to go to
             categoryIndex: idx,
             name: fullName,
             emoji: isVIP ? vipType.emoji : readerType.emoji,
@@ -765,7 +766,9 @@ class GameState {
             vipType: vipType ? vipType.id : null,
             vipAbility: vipType ? vipType.ability : null,
             checkoutTime: checkoutTime,
-            earningAmount: earningAmount
+            earningAmount: earningAmount,
+            elevatorState: 'waiting', // waiting, riding, arrived
+            elevatorArrivalTime: Date.now() + 2000 + (floor.floorNumber * 500) // 2s + 0.5s per floor
         };
 
         this.readers.push(reader);
@@ -901,6 +904,13 @@ class GameState {
                     category.restocking = false;
                 }
             });
+        });
+
+        // Update elevator states
+        this.readers.forEach(reader => {
+            if (reader.elevatorState === 'waiting' && now >= reader.elevatorArrivalTime) {
+                reader.elevatorState = 'arrived';
+            }
         });
 
         // Process readers checking out
