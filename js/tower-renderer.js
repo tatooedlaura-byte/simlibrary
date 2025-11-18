@@ -169,18 +169,18 @@ class TowerRenderer {
             const visualIndex = floors.findIndex(f => f.id === floor.id);
             if (visualIndex === -1) return;
 
-            // Calculate elevator timing based on visual floor position (not build order)
-            // Each floor up takes 0.5 seconds, base time is 2 seconds
-            const floorsToTravel = visualIndex + 1; // +1 because index 0 is still 1 floor up
+            // Use EXACT same calculation as floor drawing to ensure alignment
+            const destFloorY = this.height - 40 - (visualIndex + 1) * this.floorHeight;
+
+            // Calculate elevator timing based on visual floor position
+            const floorsToTravel = visualIndex + 1;
             const totalTime = 2000 + (floorsToTravel * 500);
             const spawnTime = reader.elevatorArrivalTime - totalTime;
             const elapsed = now - spawnTime;
             const progress = Math.min(1, Math.max(0, elapsed / totalTime));
 
             // Calculate Y position (ground to destination floor)
-            // Visual index 0 is top floor, higher index is lower floor
             const groundY = this.height - 40;
-            const destFloorY = this.height - 40 - (floorsToTravel * this.floorHeight);
             const elevatorY = groundY - (progress * (groundY - destFloorY)) - this.elevatorCarHeight;
 
             // Draw elevator car
