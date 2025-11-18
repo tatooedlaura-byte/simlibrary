@@ -14,6 +14,10 @@ let towerRenderer = null;
 function init() {
     game = new GameState();
 
+    // Expose functions for tower renderer to call BEFORE creating renderer
+    window.openFloorDetail = openFloorDetail;
+    window.openBuildModal = openBuildModal;
+
     // Initialize tower renderer
     towerRenderer = new TowerRenderer('tower-canvas', game);
 
@@ -31,10 +35,6 @@ function init() {
         alert(`💰 While you were away for ${msg.time}${cappedText}, you earned ${msg.stars} stars!`);
         delete game._offlineEarningsMessage;
     }
-
-    // Expose functions for tower renderer to call
-    window.openFloorDetail = openFloorDetail;
-    window.openBuildModal = openBuildModal;
 
     // Start game tick (every 1 second for responsive feel)
     setInterval(() => {
