@@ -674,6 +674,13 @@ class GameState {
                 this.nextFloorSlot = data.nextFloorSlot || 1;
                 this.readers = data.readers || [];
 
+                // Migrate old floors to have staff array if missing
+                this.floors.forEach(floor => {
+                    if (!floor.staff) {
+                        floor.staff = [];
+                    }
+                });
+
                 // Process any time-based events that happened while offline
                 this.processOfflineProgress(data.timestamp);
             } catch (e) {
