@@ -24,6 +24,14 @@ function init() {
     renderTowerScreen();
     updateGlobalStats();
 
+    // Show offline earnings notification if any
+    if (game._offlineEarningsMessage) {
+        const msg = game._offlineEarningsMessage;
+        const cappedText = msg.capped ? ' (capped at 3 hours)' : '';
+        alert(`💰 While you were away for ${msg.time}${cappedText}, you earned ${msg.stars} stars!`);
+        delete game._offlineEarningsMessage;
+    }
+
     // Expose functions for tower renderer to call
     window.openFloorDetail = openFloorDetail;
     window.openBuildModal = openBuildModal;

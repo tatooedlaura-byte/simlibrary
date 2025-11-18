@@ -623,8 +623,8 @@ class GameState {
             this.towerBucks += 1;
         }
 
-        // Spawn new readers periodically (25% chance each tick)
-        if (Math.random() < 0.25) {
+        // Spawn new readers periodically (5% chance each tick = slower earning)
+        if (Math.random() < 0.05) {
             this.spawnReader();
         }
 
@@ -686,7 +686,8 @@ class GameState {
     }
 
     /**
-     * Process offline progress
+     * Process offline progress (with cap like Tiny Tower!)
+     * Max 3 hours of offline earnings to encourage active play
      */
     processOfflineProgress(lastSaveTime) {
         if (!lastSaveTime) return;
@@ -715,6 +716,53 @@ class GameState {
 
         // Clear any stale readers
         this.readers = [];
+
+        // CAP offline earnings at 3 hours (like Tiny Tower!)
+        const MAX_OFFLINE_TIME = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
+        const cappedOfflineTime = Math.min(offlineTime, MAX_OFFLINE_TIME);
+
+        // Calculate offline earnings (very conservative)
+        // Assume 1 reader every 30 seconds while offline (much slower than active play)
+        const offlineSeconds = Math.floor(cappedOfflineTime / 1000);
+        const offlineReaderCount = Math.floor(offlineSeconds / 30);
+
+        // Get average earning rate across all stocked categories
+        let totalEarningRate = 0;
+        let stockedCategoryCount = 0;
+
+        this.floors.forEach(floor => {
+            if (floor.status === 'ready') {
+                floor.bookStock.forEach(category => {
+                    if (category.currentStock > 0) {
+                        totalEarningRate += category.earningRate;
+                        stockedCategoryCount++;
+                    }
+                });
+            }
+        });
+
+        if (stockedCategoryCount > 0) {
+            const avgEarningRate = totalEarningRate / stockedCategoryCount;
+            const offlineEarnings = Math.floor(offlineReaderCount * avgEarningRate * 0.5); // 50% of active earning rate
+
+            this.stars += offlineEarnings;
+
+            // Show notification on next load if significant time passed
+            if (offlineTime > 60000 && offlineEarnings > 0) { // More than 1 minute
+                const hours = Math.floor(cappedOfflineTime / 3600000);
+                const minutes = Math.floor((cappedOfflineTime % 3600000) / 60000);
+                let timeString = '';
+                if (hours > 0) timeString += `${hours}h `;
+                if (minutes > 0) timeString += `${minutes}m`;
+
+                // Store offline earnings message to show on next UI render
+                this._offlineEarningsMessage = {
+                    time: timeString,
+                    stars: offlineEarnings,
+                    capped: offlineTime > MAX_OFFLINE_TIME
+                };
+            }
+        }
 
         this.save();
     }
