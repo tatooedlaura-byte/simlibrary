@@ -11,12 +11,31 @@
     --soft-pink: #F8BBD0;
     --pale-yellow: #FFF9C4;
     --cream: #FFF8E1;
+    --purple: #D1C4E9;
+    --red: #FFCDD2;
+    --orange: #FFE0B2;
+    --brown: #D7CCC8;
+    --tan: #F5DEB3;
+    --green: #C5E1A5;
+    --blue: #BBDEFB;
+    --yellow: #FFF59D;
+    --rainbow: linear-gradient(135deg, #FFD4B2, #C8E6C9, #E1BEE7, #B3E5FC);
 
     /* Gradients */
     --gradient-peach: linear-gradient(135deg, #FFD4B2 0%, #FFAB91 100%);
     --gradient-mint: linear-gradient(135deg, #C8E6C9 0%, #A5D6A7 100%);
     --gradient-lavender: linear-gradient(135deg, #E1BEE7 0%, #CE93D8 100%);
     --gradient-sky: linear-gradient(135deg, #B3E5FC 0%, #81D4FA 100%);
+    --gradient-pink: linear-gradient(135deg, #F8BBD0 0%, #F48FB1 100%);
+    --gradient-purple: linear-gradient(135deg, #D1C4E9 0%, #B39DDB 100%);
+    --gradient-red: linear-gradient(135deg, #FFCDD2 0%, #EF9A9A 100%);
+    --gradient-orange: linear-gradient(135deg, #FFE0B2 0%, #FFCC80 100%);
+    --gradient-brown: linear-gradient(135deg, #D7CCC8 0%, #BCAAA4 100%);
+    --gradient-tan: linear-gradient(135deg, #F5DEB3 0%, #DEB887 100%);
+    --gradient-green: linear-gradient(135deg, #C5E1A5 0%, #AED581 100%);
+    --gradient-blue: linear-gradient(135deg, #BBDEFB 0%, #90CAF9 100%);
+    --gradient-yellow: linear-gradient(135deg, #FFF59D 0%, #FFF176 100%);
+    --gradient-rainbow: linear-gradient(135deg, #FFD4B2 0%, #C8E6C9 33%, #E1BEE7 66%, #B3E5FC 100%);
 
     /* UI Colors */
     --bg-primary: #FFF8F0;
@@ -204,6 +223,16 @@ body {
 .floor-card.mint { background: var(--gradient-mint); }
 .floor-card.lavender { background: var(--gradient-lavender); }
 .floor-card.sky { background: var(--gradient-sky); }
+.floor-card.pink { background: var(--gradient-pink); }
+.floor-card.purple { background: var(--gradient-purple); }
+.floor-card.red { background: var(--gradient-red); }
+.floor-card.orange { background: var(--gradient-orange); }
+.floor-card.brown { background: var(--gradient-brown); }
+.floor-card.tan { background: var(--gradient-tan); }
+.floor-card.green { background: var(--gradient-green); }
+.floor-card.blue { background: var(--gradient-blue); }
+.floor-card.yellow { background: var(--gradient-yellow); }
+.floor-card.rainbow { background: var(--gradient-rainbow); }
 
 .floor-icon {
     font-size: 48px;

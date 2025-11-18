@@ -14,7 +14,7 @@ class GameState {
 
         // Floors and construction
         this.floors = [];
-        this.maxFloors = 20; // Can expand later
+        this.maxFloors = 25; // Enough for all floor types plus extras
         this.nextFloorSlot = 1; // Next available slot to build
 
         // Characters
@@ -51,66 +51,291 @@ class GameState {
             }
         ];
 
-        // Floor type catalog
+        // Floor type catalog - ALL 20 LIBRARY FLOOR TYPES!
         this.floorTypes = [
+            // Children's Section
+            {
+                id: 'board_books',
+                name: 'Board Books',
+                emoji: '👶',
+                color: 'peach',
+                description: 'Books for the tiniest readers',
+                buildCost: 100,
+                buildTime: 30,
+                bookCategories: [
+                    { name: 'Oversize', stockCost: 10, stockTime: 15, stockAmount: 100, earningRate: 2 },
+                    { name: 'Chubby', stockCost: 15, stockTime: 20, stockAmount: 100, earningRate: 3 },
+                    { name: 'Moveable Parts', stockCost: 25, stockTime: 30, stockAmount: 100, earningRate: 5 }
+                ]
+            },
             {
                 id: 'picture_books',
-                name: 'Picture Book Meadow',
+                name: 'Picture Books',
                 emoji: '📖',
                 color: 'peach',
-                description: 'Cozy stories for little readers',
-                buildCost: 100,
-                buildTime: 30, // seconds
-                unlockLevel: 1,
+                description: 'Colorful stories for young minds',
+                buildCost: 150,
+                buildTime: 35,
                 bookCategories: [
-                    { name: 'Board Books', stockCost: 10, stockTime: 15, stockAmount: 100, earningRate: 2 },
-                    { name: 'Picture Stories', stockCost: 20, stockTime: 30, stockAmount: 100, earningRate: 4 },
-                    { name: 'Early Readers', stockCost: 40, stockTime: 60, stockAmount: 100, earningRate: 8 }
+                    { name: 'Animals', stockCost: 12, stockTime: 18, stockAmount: 100, earningRate: 3 },
+                    { name: 'Cars', stockCost: 18, stockTime: 25, stockAmount: 100, earningRate: 4 },
+                    { name: 'Planets', stockCost: 30, stockTime: 40, stockAmount: 100, earningRate: 6 }
                 ]
             },
             {
-                id: 'animals_nature',
-                name: 'Animals & Nature Wing',
-                emoji: '🦋',
+                id: 'early_readers',
+                name: 'Early Readers',
+                emoji: '📚',
                 color: 'mint',
-                description: 'Discover the natural world',
+                description: 'Building reading skills step by step',
                 buildCost: 200,
-                buildTime: 60,
-                unlockLevel: 2,
+                buildTime: 40,
                 bookCategories: [
-                    { name: 'Animal Tales', stockCost: 15, stockTime: 20, stockAmount: 100, earningRate: 3 },
-                    { name: 'Nature Guides', stockCost: 25, stockTime: 40, stockAmount: 100, earningRate: 5 },
-                    { name: 'Wildlife Encyclopedia', stockCost: 50, stockTime: 80, stockAmount: 100, earningRate: 10 }
+                    { name: 'Level 1', stockCost: 15, stockTime: 20, stockAmount: 100, earningRate: 3 },
+                    { name: 'Level 2', stockCost: 22, stockTime: 30, stockAmount: 100, earningRate: 5 },
+                    { name: 'Level 3', stockCost: 35, stockTime: 45, stockAmount: 100, earningRate: 7 }
                 ]
             },
             {
-                id: 'space_science',
-                name: 'Space & Science Zone',
-                emoji: '🚀',
+                id: 'juvenile_series',
+                name: 'Juvenile Series',
+                emoji: '⚔️',
                 color: 'sky',
-                description: 'Explore the cosmos and beyond',
-                buildCost: 400,
-                buildTime: 120,
-                unlockLevel: 3,
+                description: 'Popular series for young readers',
+                buildCost: 250,
+                buildTime: 50,
                 bookCategories: [
-                    { name: 'Space Adventures', stockCost: 20, stockTime: 25, stockAmount: 100, earningRate: 4 },
-                    { name: 'Science Experiments', stockCost: 30, stockTime: 50, stockAmount: 100, earningRate: 6 },
-                    { name: 'Astronomy Books', stockCost: 60, stockTime: 100, stockAmount: 100, earningRate: 12 }
+                    { name: 'Warriors', stockCost: 20, stockTime: 25, stockAmount: 100, earningRate: 4 },
+                    { name: 'Superheroes', stockCost: 28, stockTime: 35, stockAmount: 100, earningRate: 6 },
+                    { name: 'Baby-Sitters', stockCost: 40, stockTime: 50, stockAmount: 100, earningRate: 8 }
+                ]
+            },
+            {
+                id: 'teen',
+                name: 'Teen',
+                emoji: '🎓',
+                color: 'lavender',
+                description: 'Stories for young adults',
+                buildCost: 300,
+                buildTime: 60,
+                bookCategories: [
+                    { name: 'Romance', stockCost: 25, stockTime: 30, stockAmount: 100, earningRate: 5 },
+                    { name: 'Sports', stockCost: 32, stockTime: 40, stockAmount: 100, earningRate: 6 },
+                    { name: 'Dystopian', stockCost: 45, stockTime: 55, stockAmount: 100, earningRate: 9 }
+                ]
+            },
+
+            // Fiction Section
+            {
+                id: 'fiction',
+                name: 'Fiction',
+                emoji: '📕',
+                color: 'peach',
+                description: 'Timeless stories and modern tales',
+                buildCost: 350,
+                buildTime: 70,
+                bookCategories: [
+                    { name: 'Classic', stockCost: 30, stockTime: 35, stockAmount: 100, earningRate: 6 },
+                    { name: 'Contemporary', stockCost: 40, stockTime: 45, stockAmount: 100, earningRate: 8 },
+                    { name: 'Literary', stockCost: 55, stockTime: 60, stockAmount: 100, earningRate: 11 }
                 ]
             },
             {
                 id: 'mystery',
-                name: 'Mystery Corner',
+                name: 'Mystery',
                 emoji: '🔍',
                 color: 'lavender',
-                description: 'Unravel thrilling mysteries',
-                buildCost: 800,
-                buildTime: 180,
-                unlockLevel: 4,
+                description: 'Suspenseful stories and whodunits',
+                buildCost: 400,
+                buildTime: 80,
                 bookCategories: [
-                    { name: 'Easy Mysteries', stockCost: 25, stockTime: 30, stockAmount: 100, earningRate: 5 },
-                    { name: 'Detective Stories', stockCost: 40, stockTime: 60, stockAmount: 100, earningRate: 8 },
-                    { name: 'Advanced Thrillers', stockCost: 80, stockTime: 120, stockAmount: 100, earningRate: 15 }
+                    { name: 'Suspense', stockCost: 32, stockTime: 40, stockAmount: 100, earningRate: 6 },
+                    { name: 'Thriller', stockCost: 45, stockTime: 50, stockAmount: 100, earningRate: 9 },
+                    { name: 'Detective', stockCost: 60, stockTime: 65, stockAmount: 100, earningRate: 12 }
+                ]
+            },
+            {
+                id: 'romance',
+                name: 'Romance',
+                emoji: '💕',
+                color: 'pink',
+                description: 'Love stories for every taste',
+                buildCost: 450,
+                buildTime: 90,
+                bookCategories: [
+                    { name: 'Historical', stockCost: 35, stockTime: 42, stockAmount: 100, earningRate: 7 },
+                    { name: 'Fantasy', stockCost: 48, stockTime: 55, stockAmount: 100, earningRate: 10 },
+                    { name: 'Bodice Ripper', stockCost: 65, stockTime: 70, stockAmount: 100, earningRate: 13 }
+                ]
+            },
+            {
+                id: 'scifi',
+                name: 'Science Fiction',
+                emoji: '🚀',
+                color: 'sky',
+                description: 'Explore the future and beyond',
+                buildCost: 500,
+                buildTime: 100,
+                bookCategories: [
+                    { name: 'Planetary', stockCost: 38, stockTime: 45, stockAmount: 100, earningRate: 8 },
+                    { name: 'Robotic', stockCost: 50, stockTime: 58, stockAmount: 100, earningRate: 10 },
+                    { name: 'Alternate Universe', stockCost: 70, stockTime: 75, stockAmount: 100, earningRate: 14 }
+                ]
+            },
+            {
+                id: 'fantasy',
+                name: 'Fantasy',
+                emoji: '🐉',
+                color: 'purple',
+                description: 'Magical worlds await',
+                buildCost: 550,
+                buildTime: 110,
+                bookCategories: [
+                    { name: 'Dragons', stockCost: 40, stockTime: 48, stockAmount: 100, earningRate: 8 },
+                    { name: 'Witches', stockCost: 52, stockTime: 60, stockAmount: 100, earningRate: 11 },
+                    { name: 'Monsters', stockCost: 72, stockTime: 78, stockAmount: 100, earningRate: 15 }
+                ]
+            },
+            {
+                id: 'true_crime',
+                name: 'True Crime',
+                emoji: '🚨',
+                color: 'red',
+                description: 'Real stories, dark deeds',
+                buildCost: 600,
+                buildTime: 120,
+                bookCategories: [
+                    { name: 'Families', stockCost: 42, stockTime: 50, stockAmount: 100, earningRate: 9 },
+                    { name: 'Business', stockCost: 55, stockTime: 62, stockAmount: 100, earningRate: 11 },
+                    { name: 'The Mob', stockCost: 75, stockTime: 80, stockAmount: 100, earningRate: 15 }
+                ]
+            },
+            {
+                id: 'graphic_novels',
+                name: 'Graphic Novels',
+                emoji: '💥',
+                color: 'orange',
+                description: 'Visual storytelling at its best',
+                buildCost: 650,
+                buildTime: 130,
+                bookCategories: [
+                    { name: 'Manga', stockCost: 45, stockTime: 52, stockAmount: 100, earningRate: 9 },
+                    { name: 'Anime', stockCost: 58, stockTime: 65, stockAmount: 100, earningRate: 12 },
+                    { name: 'Superheroes', stockCost: 78, stockTime: 85, stockAmount: 100, earningRate: 16 }
+                ]
+            },
+
+            // Non-Fiction Section
+            {
+                id: 'biography',
+                name: 'Biography',
+                emoji: '👤',
+                color: 'mint',
+                description: 'Lives worth reading about',
+                buildCost: 700,
+                buildTime: 140,
+                bookCategories: [
+                    { name: 'Historical Figures', stockCost: 48, stockTime: 55, stockAmount: 100, earningRate: 10 },
+                    { name: 'Sports Figures', stockCost: 60, stockTime: 68, stockAmount: 100, earningRate: 12 },
+                    { name: 'Pop Culture', stockCost: 80, stockTime: 88, stockAmount: 100, earningRate: 16 }
+                ]
+            },
+            {
+                id: 'history',
+                name: 'History',
+                emoji: '📜',
+                color: 'brown',
+                description: 'Stories from the past',
+                buildCost: 750,
+                buildTime: 150,
+                bookCategories: [
+                    { name: 'Battles', stockCost: 50, stockTime: 58, stockAmount: 100, earningRate: 10 },
+                    { name: 'Explorers', stockCost: 62, stockTime: 70, stockAmount: 100, earningRate: 13 },
+                    { name: 'Medieval', stockCost: 82, stockTime: 90, stockAmount: 100, earningRate: 17 }
+                ]
+            },
+            {
+                id: 'local_history',
+                name: 'Local History',
+                emoji: '🏛️',
+                color: 'tan',
+                description: 'Your community\'s stories',
+                buildCost: 800,
+                buildTime: 160,
+                bookCategories: [
+                    { name: 'Cemeteries', stockCost: 52, stockTime: 60, stockAmount: 100, earningRate: 11 },
+                    { name: 'Founders', stockCost: 65, stockTime: 72, stockAmount: 100, earningRate: 13 },
+                    { name: 'Sports', stockCost: 85, stockTime: 92, stockAmount: 100, earningRate: 17 }
+                ]
+            },
+            {
+                id: 'science',
+                name: 'Science',
+                emoji: '🔬',
+                color: 'green',
+                description: 'Discover how the world works',
+                buildCost: 850,
+                buildTime: 170,
+                bookCategories: [
+                    { name: 'Biology', stockCost: 55, stockTime: 62, stockAmount: 100, earningRate: 11 },
+                    { name: 'Chemistry', stockCost: 68, stockTime: 75, stockAmount: 100, earningRate: 14 },
+                    { name: 'Astronomy', stockCost: 88, stockTime: 95, stockAmount: 100, earningRate: 18 }
+                ]
+            },
+            {
+                id: 'technology',
+                name: 'Technology',
+                emoji: '💻',
+                color: 'blue',
+                description: 'Innovation and invention',
+                buildCost: 900,
+                buildTime: 180,
+                bookCategories: [
+                    { name: 'Programming', stockCost: 58, stockTime: 65, stockAmount: 100, earningRate: 12 },
+                    { name: 'Inventions', stockCost: 70, stockTime: 78, stockAmount: 100, earningRate: 14 },
+                    { name: 'Discoveries', stockCost: 90, stockTime: 98, stockAmount: 100, earningRate: 18 }
+                ]
+            },
+            {
+                id: 'sports',
+                name: 'Sports',
+                emoji: '⚽',
+                color: 'yellow',
+                description: 'Athletic achievements and stats',
+                buildCost: 950,
+                buildTime: 190,
+                bookCategories: [
+                    { name: 'Baseball', stockCost: 60, stockTime: 68, stockAmount: 100, earningRate: 12 },
+                    { name: 'Football', stockCost: 72, stockTime: 80, stockAmount: 100, earningRate: 15 },
+                    { name: 'Soccer', stockCost: 92, stockTime: 100, stockAmount: 100, earningRate: 19 }
+                ]
+            },
+            {
+                id: 'cookbooks',
+                name: 'Cookbooks',
+                emoji: '🍳',
+                color: 'orange',
+                description: 'Delicious recipes from around the world',
+                buildCost: 1000,
+                buildTime: 200,
+                bookCategories: [
+                    { name: 'International', stockCost: 62, stockTime: 70, stockAmount: 100, earningRate: 13 },
+                    { name: 'Home Cooking', stockCost: 75, stockTime: 82, stockAmount: 100, earningRate: 15 },
+                    { name: 'Haute Cuisine', stockCost: 95, stockTime: 102, stockAmount: 100, earningRate: 19 }
+                ]
+            },
+            {
+                id: 'library_of_things',
+                name: 'Library of Things',
+                emoji: '🎮',
+                color: 'rainbow',
+                description: 'More than just books!',
+                buildCost: 1200,
+                buildTime: 220,
+                bookCategories: [
+                    { name: 'Board Games', stockCost: 70, stockTime: 75, stockAmount: 100, earningRate: 14 },
+                    { name: 'Yard Games', stockCost: 85, stockTime: 88, stockAmount: 100, earningRate: 17 },
+                    { name: 'DVDs', stockCost: 100, stockTime: 110, stockAmount: 100, earningRate: 20 }
                 ]
             }
         ];
@@ -507,8 +732,8 @@ class GameState {
         this.nextFloorSlot = 1;
         this.readers = [];
 
-        // Build starter floor
-        this.buildFloor('picture_books');
+        // Build starter floor (Board Books - cheapest!)
+        this.buildFloor('board_books');
         // Instantly complete it for tutorial
         this.floors[0].status = 'ready';
         this.floors[0].buildEndTime = Date.now();
