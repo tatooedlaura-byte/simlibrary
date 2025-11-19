@@ -50,6 +50,51 @@ function init() {
         updateTowerScreen();
         renderMissionBanner();
 
+        // Trigger particle effects for recent checkouts
+        if (game._recentCheckouts && game._recentCheckouts.length > 0) {
+            game._recentCheckouts.forEach(checkout => {
+                // Find character position to spawn particles
+                const floor = game.getFloor(checkout.floorId);
+                if (floor && floor._renderBounds) {
+                    const bounds = floor._renderBounds;
+                    const x = bounds.x + bounds.width / 2;
+                    const y = bounds.y + bounds.height / 2;
+
+                    // Spawn star particles
+                    renderer.spawnStarParticles(x, y, checkout.stars);
+
+                    // Spawn floating text
+                    renderer.spawnTextParticle(x, y - 20, `+${checkout.stars} ⭐`, '#FFD700');
+
+                    // Extra sparkles for VIPs
+                    if (checkout.isVIP) {
+                        renderer.spawnSparkle(x, y);
+                    }
+                }
+            });
+            game._recentCheckouts = [];
+        }
+
+        // Trigger sparkles for elevator arrivals
+        if (game._recentArrivals && game._recentArrivals.length > 0) {
+            game._recentArrivals.forEach(arrival => {
+                const floor = game.getFloor(arrival.floorId);
+                if (floor && floor._renderBounds) {
+                    const bounds = floor._renderBounds;
+                    const x = bounds.x - 40; // Elevator position
+                    const y = bounds.y + bounds.height / 2;
+                    renderer.spawnSparkle(x, y);
+                }
+            });
+            game._recentArrivals = [];
+        }
+
+        // Show rush hour notification
+        if (game._rushHourNotification) {
+            alert(`🎉 ${game._rushHourNotification.message}\n\nReaders will arrive 4x faster for the next 3 minutes!`);
+            game._rushHourNotification = null;
+        }
+
         // Check for new achievements
         if (game._newAchievements && game._newAchievements.length > 0) {
             game._newAchievements.forEach(achievement => {

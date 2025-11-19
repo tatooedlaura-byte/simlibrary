@@ -28,6 +28,16 @@ class TowerRenderer {
         // Character sprites
         this.characters = []; // Active character animations
 
+        // Particle effects
+        this.particles = []; // Star particles, sparkles, etc.
+
+        // Scrolling
+        this.scrollY = 0; // Current scroll offset
+        this.maxScrollY = 0; // Maximum scroll (calculated based on tower height)
+        this.isDragging = false;
+        this.dragStartY = 0;
+        this.dragStartScrollY = 0;
+
         // Animation frame
         this.animationFrame = null;
 
@@ -48,6 +58,23 @@ class TowerRenderer {
         // Set up canvas click handling
         this.canvas.addEventListener('click', (e) => this.handleClick(e));
 
+        // Set up scrolling with mouse wheel
+        this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
+
+        // Set up drag-to-scroll
+        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        this.canvas.addEventListener('mouseleave', (e) => this.handleMouseUp(e));
+
+        // Touch support for mobile
+        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+
+        // Set cursor style
+        this.canvas.style.cursor = 'grab';
+
         // Start render loop
         this.render();
     }
@@ -56,6 +83,21 @@ class TowerRenderer {
      * Main render loop
      */
     render() {
+        // Calculate max scroll based on tower height
+        const floors = [...this.game.floors];
+        const towerHeight = (floors.length + 1) * this.floorHeight + 40; // +1 for build slot, +40 for ground
+        const maxScrollY = Math.max(0, towerHeight - this.height);
+
+        // Auto-scroll to show top floors by default if tower is taller than canvas
+        if (maxScrollY > 0 && this.scrollY === 0 && !this._hasScrolled) {
+            this.scrollY = maxScrollY; // Start scrolled to show top
+        }
+
+        this.maxScrollY = maxScrollY;
+
+        // Clamp scroll position
+        this.scrollY = Math.max(0, Math.min(this.scrollY, this.maxScrollY));
+
         // Clear canvas
         this.ctx.clearRect(0, 0, this.width, this.height);
 
@@ -66,6 +108,11 @@ class TowerRenderer {
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
+        // Save context and apply scroll offset
+        // When scrollY is positive, we translate UP (positive Y) to bring negative Y values into view
+        this.ctx.save();
+        this.ctx.translate(0, this.scrollY);
+
         // Draw ground
         this.ctx.fillStyle = '#8BC34A';
         this.ctx.fillRect(0, this.height - 40, this.width, 40);
@@ -73,9 +120,9 @@ class TowerRenderer {
         // Draw elevator shaft
         this.drawElevatorShaft();
 
-        // Draw floors (bottom to top)
-        const floors = [...this.game.floors].reverse();
-        floors.forEach((floor, index) => {
+        // Draw floors (bottom to top) - reuse floors variable from above
+        const floorsReversed = floors.reverse();
+        floorsReversed.forEach((floor, index) => {
             const y = this.height - 40 - (index + 1) * this.floorHeight;
             this.drawFloor(floor, this.floorX, y, index);
         });
@@ -85,12 +132,23 @@ class TowerRenderer {
 
         // Draw "Build Floor" button at top
         if (this.game.floors.length < this.game.maxFloors) {
-            const buildY = this.height - 40 - (floors.length + 1) * this.floorHeight;
+            const buildY = this.height - 40 - (floorsReversed.length + 1) * this.floorHeight;
             this.drawBuildSlot(this.floorX, buildY);
         }
 
         // Update and draw characters
         this.updateCharacters();
+
+        // Update and draw particles
+        this.updateParticles();
+
+        // Restore context (end scrollable area)
+        this.ctx.restore();
+
+        // Draw scroll indicator if scrollable
+        if (this.maxScrollY > 0) {
+            this.drawScrollIndicator();
+        }
 
         // Continue loop
         this.animationFrame = requestAnimationFrame(() => this.render());
@@ -102,9 +160,29 @@ class TowerRenderer {
     drawFloor(floor, x, y, floorIndex) {
         const colors = this.floorColors[floor.color] || this.floorColors.peach;
 
-        // Floor background
-        this.ctx.fillStyle = colors.bg;
+        // Drop shadow below floor for depth
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.fillRect(x, y + this.floorHeight, this.floorWidth, 8);
+
+        // Gradient for floor depth
+        const gradient = this.ctx.createLinearGradient(x, y, x, y + this.floorHeight);
+        gradient.addColorStop(0, this.lightenColor(colors.bg, 10));
+        gradient.addColorStop(1, colors.bg);
+
+        // Floor background with gradient
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(x, y, this.floorWidth, this.floorHeight);
+
+        // Top highlight for lighting effect
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        this.ctx.fillRect(x, y, this.floorWidth, 3);
+
+        // Side shadow for depth
+        const sideGradient = this.ctx.createLinearGradient(x, y, x + 20, y);
+        sideGradient.addColorStop(0, 'rgba(0, 0, 0, 0.2)');
+        sideGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        this.ctx.fillStyle = sideGradient;
+        this.ctx.fillRect(x, y, 20, this.floorHeight);
 
         // Floor border
         this.ctx.strokeStyle = colors.border;
@@ -133,9 +211,26 @@ class TowerRenderer {
         const shaftHeight = (this.height - 40) - topFloorBottom;
         const shaftY = topFloorBottom;
 
-        // Shaft background
-        this.ctx.fillStyle = '#757575';
+        // Shaft background with gradient for depth
+        const shaftGradient = this.ctx.createLinearGradient(
+            this.elevatorX, shaftY,
+            this.elevatorX + this.elevatorWidth, shaftY
+        );
+        shaftGradient.addColorStop(0, '#5a5a5a');
+        shaftGradient.addColorStop(0.5, '#757575');
+        shaftGradient.addColorStop(1, '#5a5a5a');
+        this.ctx.fillStyle = shaftGradient;
         this.ctx.fillRect(this.elevatorX, shaftY, this.elevatorWidth, shaftHeight);
+
+        // Inner shadow on left side
+        const leftShadow = this.ctx.createLinearGradient(
+            this.elevatorX, shaftY,
+            this.elevatorX + 8, shaftY
+        );
+        leftShadow.addColorStop(0, 'rgba(0, 0, 0, 0.4)');
+        leftShadow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        this.ctx.fillStyle = leftShadow;
+        this.ctx.fillRect(this.elevatorX, shaftY, 8, shaftHeight);
 
         // Shaft border
         this.ctx.strokeStyle = '#424242';
@@ -252,18 +347,25 @@ class TowerRenderer {
         this.ctx.textAlign = 'left';
         this.ctx.fillText(`${floor.emoji} ${floor.name}`, x + 10, y + 20);
 
-        // Draw floor decorations based on floor type
-        this.drawFloorDecorations(floor, x, y, colors);
+        // Check if this is a special room
+        const floorType = this.game.floorTypes.find(ft => ft.id === floor.typeId);
+        if (floorType && floorType.isSpecialRoom) {
+            // Draw special room content
+            this.drawSpecialRoom(floor, x, y, colors, floorType);
+        } else {
+            // Draw floor decorations based on floor type
+            this.drawFloorDecorations(floor, x, y, colors);
 
-        // Draw book shelves (3 categories)
-        const shelfY = y + 40;
-        const shelfWidth = 120;
-        const shelfSpacing = (this.floorWidth - 60 - shelfWidth * 3) / 2;
+            // Draw book shelves (3 categories)
+            const shelfY = y + 40;
+            const shelfWidth = 120;
+            const shelfSpacing = (this.floorWidth - 60 - shelfWidth * 3) / 2;
 
-        floor.bookStock.forEach((category, index) => {
-            const shelfX = x + 30 + index * (shelfWidth + shelfSpacing);
-            this.drawBookshelf(category, shelfX, shelfY, shelfWidth, 60, colors, floor.typeId);
-        });
+            floor.bookStock.forEach((category, index) => {
+                const shelfX = x + 30 + index * (shelfWidth + shelfSpacing);
+                this.drawBookshelf(category, shelfX, shelfY, shelfWidth, 60, colors, floor.typeId);
+            });
+        }
 
         // Store floor bounds for click detection
         floor._renderBounds = { x, y, width: this.floorWidth, height: this.floorHeight, floorIndex };
@@ -360,7 +462,11 @@ class TowerRenderer {
         this.ctx.fill();
         this.ctx.stroke();
 
-        // Books (as colored rectangles)
+        // Inner shadow for depth
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        this.ctx.fillRect(x + 2, y + 2, width - 4, 8);
+
+        // Books (as colored rectangles with shadows)
         const stockPercent = category.currentStock / category.maxStock;
         const bookCount = Math.ceil(stockPercent * 10);
 
@@ -368,8 +474,17 @@ class TowerRenderer {
             const bookX = x + 5 + (i % 5) * 22;
             const bookY = y + 5 + Math.floor(i / 5) * 25;
 
+            // Book shadow
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.fillRect(bookX + 1, bookY + 1, 18, 20);
+
+            // Book
             this.ctx.fillStyle = shelfStyles.bookColors[i % shelfStyles.bookColors.length];
             this.ctx.fillRect(bookX, bookY, 18, 20);
+
+            // Book highlight
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            this.ctx.fillRect(bookX, bookY, 2, 20);
         }
 
         // Stock text
@@ -428,7 +543,7 @@ class TowerRenderer {
      * Draw a single character sprite
      */
     drawCharacter(char, floorY, reader) {
-        const baseY = floorY + 70; // Bottom of floor
+        const baseY = floorY + this.floorHeight - 10; // Bottom of floor (with small padding)
         const charHeight = 40;
 
         // Get character style based on reader type
@@ -545,6 +660,14 @@ class TowerRenderer {
             this.ctx.font = '12px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.fillText('✨', char.x - 12, headY - 8);
+        }
+
+        // Regular customer indicator (heart)
+        if (reader.isRegular) {
+            this.ctx.fillStyle = '#FF69B4';
+            this.ctx.font = '10px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('💖', char.x + 12, headY - 8);
         }
     }
 
@@ -681,9 +804,12 @@ class TowerRenderer {
      * Handle canvas clicks
      */
     handleClick(e) {
+        // Don't process clicks if we were dragging
+        if (this.isDragging) return;
+
         const rect = this.canvas.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
+        const clickY = (e.clientY - rect.top) - this.scrollY; // Account for scroll offset
 
         console.log('Canvas clicked at:', clickX, clickY);
 
@@ -916,6 +1042,296 @@ class TowerRenderer {
                 this.ctx.fillRect(x + 448, y + 95, 4, 10);
                 break;
         }
+    }
+
+    /**
+     * Spawn star particles when earning stars
+     */
+    spawnStarParticles(x, y, amount) {
+        const particleCount = Math.min(amount, 10); // Max 10 particles
+        for (let i = 0; i < particleCount; i++) {
+            this.particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 4,
+                vy: -2 - Math.random() * 3,
+                life: 1.0,
+                decay: 0.015,
+                size: 8 + Math.random() * 8,
+                type: 'star',
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.2
+            });
+        }
+    }
+
+    /**
+     * Spawn text popup for notifications
+     */
+    spawnTextParticle(x, y, text, color = '#FFD700') {
+        this.particles.push({
+            x: x,
+            y: y,
+            vx: 0,
+            vy: -1.5,
+            life: 1.0,
+            decay: 0.01,
+            text: text,
+            color: color,
+            type: 'text',
+            size: 16
+        });
+    }
+
+    /**
+     * Spawn sparkle effect
+     */
+    spawnSparkle(x, y) {
+        for (let i = 0; i < 3; i++) {
+            this.particles.push({
+                x: x + (Math.random() - 0.5) * 20,
+                y: y + (Math.random() - 0.5) * 20,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                life: 1.0,
+                decay: 0.02,
+                size: 4 + Math.random() * 4,
+                type: 'sparkle',
+                rotation: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    /**
+     * Update and draw all particles
+     */
+    updateParticles() {
+        // Update particles
+        this.particles = this.particles.filter(p => {
+            // Update position
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // Apply gravity for stars
+            if (p.type === 'star') {
+                p.vy += 0.15;
+                p.rotation += p.rotationSpeed;
+            }
+
+            // Fade out
+            p.life -= p.decay;
+
+            return p.life > 0;
+        });
+
+        // Draw particles
+        this.particles.forEach(p => {
+            this.ctx.save();
+            this.ctx.globalAlpha = p.life;
+
+            if (p.type === 'star') {
+                // Draw star
+                this.ctx.translate(p.x, p.y);
+                this.ctx.rotate(p.rotation);
+                this.ctx.fillStyle = '#FFD700';
+                this.ctx.font = `${p.size}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('⭐', 0, 0);
+            } else if (p.type === 'text') {
+                // Draw floating text
+                this.ctx.fillStyle = p.color;
+                this.ctx.strokeStyle = '#000';
+                this.ctx.lineWidth = 3;
+                this.ctx.font = `bold ${p.size}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.strokeText(p.text, p.x, p.y);
+                this.ctx.fillText(p.text, p.x, p.y);
+            } else if (p.type === 'sparkle') {
+                // Draw sparkle
+                this.ctx.fillStyle = '#FFD700';
+                this.ctx.beginPath();
+                this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+
+            this.ctx.restore();
+        });
+    }
+
+    /**
+     * Handle mouse wheel scrolling
+     */
+    handleWheel(e) {
+        e.preventDefault();
+        this._hasScrolled = true;
+        const scrollSpeed = 30;
+        this.scrollY += e.deltaY > 0 ? scrollSpeed : -scrollSpeed;
+    }
+
+    /**
+     * Handle mouse down for drag scrolling
+     */
+    handleMouseDown(e) {
+        this.isDragging = true;
+        this.dragStartY = e.clientY;
+        this.dragStartScrollY = this.scrollY;
+        this.canvas.style.cursor = 'grabbing';
+    }
+
+    /**
+     * Handle mouse move for drag scrolling
+     */
+    handleMouseMove(e) {
+        if (!this.isDragging) return;
+        this._hasScrolled = true;
+        const deltaY = e.clientY - this.dragStartY;
+        this.scrollY = this.dragStartScrollY - deltaY;
+    }
+
+    /**
+     * Handle mouse up for drag scrolling
+     */
+    handleMouseUp(e) {
+        this.isDragging = false;
+        this.canvas.style.cursor = 'grab';
+    }
+
+    /**
+     * Handle touch start for mobile
+     */
+    handleTouchStart(e) {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+            this.isDragging = true;
+            this.dragStartY = e.touches[0].clientY;
+            this.dragStartScrollY = this.scrollY;
+        }
+    }
+
+    /**
+     * Handle touch move for mobile
+     */
+    handleTouchMove(e) {
+        e.preventDefault();
+        if (!this.isDragging || e.touches.length !== 1) return;
+        this._hasScrolled = true;
+        const deltaY = e.touches[0].clientY - this.dragStartY;
+        this.scrollY = this.dragStartScrollY - deltaY;
+    }
+
+    /**
+     * Handle touch end for mobile
+     */
+    handleTouchEnd(e) {
+        this.isDragging = false;
+    }
+
+    /**
+     * Draw scroll indicator
+     */
+    drawScrollIndicator() {
+        const indicatorHeight = 100;
+        const indicatorWidth = 8;
+        const x = this.width - 15;
+        const y = 10;
+
+        // Background track
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        this.ctx.fillRect(x, y, indicatorWidth, indicatorHeight);
+
+        // Scrollbar thumb
+        const thumbHeight = Math.max(20, (this.height / (this.height + this.maxScrollY)) * indicatorHeight);
+        const thumbY = y + (this.scrollY / this.maxScrollY) * (indicatorHeight - thumbHeight);
+
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.fillRect(x, thumbY, indicatorWidth, thumbHeight);
+    }
+
+    /**
+     * Draw special room (no bookshelves, just visual theme)
+     */
+    drawSpecialRoom(floor, x, y, colors, floorType) {
+        const centerX = x + this.floorWidth / 2;
+        const centerY = y + this.floorHeight / 2;
+
+        // Draw bonus description
+        this.ctx.fillStyle = '#666';
+        this.ctx.font = '12px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(floorType.bonus.description, centerX, y + 35);
+
+        // Draw themed elements based on room type
+        switch(floorType.id) {
+            case 'study_room':
+                // Draw desks with lamps
+                for (let i = 0; i < 3; i++) {
+                    const deskX = x + 80 + i * 150;
+                    const deskY = y + 50;
+
+                    // Desk
+                    this.ctx.fillStyle = '#8D6E63';
+                    this.ctx.fillRect(deskX, deskY, 80, 40);
+
+                    // Lamp
+                    this.ctx.fillStyle = '#FFD54F';
+                    this.ctx.beginPath();
+                    this.ctx.arc(deskX + 40, deskY + 10, 8, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+                break;
+
+            case 'maker_space':
+                // Draw tools and equipment
+                this.ctx.fillStyle = '#78909C';
+                this.ctx.fillRect(x + 100, y + 50, 100, 60);
+                this.ctx.fillRect(x + 300, y + 50, 100, 60);
+
+                // 3D printer emoji
+                this.ctx.fillStyle = '#000';
+                this.ctx.font = '40px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('🖨️', x + 150, y + 90);
+                this.ctx.fillText('🔧', x + 350, y + 90);
+                break;
+
+            case 'event_hall':
+                // Draw stage
+                this.ctx.fillStyle = '#D32F2F';
+                this.ctx.fillRect(x + 150, y + 40, 200, 60);
+
+                // Curtains
+                this.ctx.fillStyle = 'rgba(139, 0, 0, 0.7)';
+                this.ctx.fillRect(x + 140, y + 35, 15, 70);
+                this.ctx.fillRect(x + 345, y + 35, 15, 70);
+
+                // Podium
+                this.ctx.fillStyle = '#6D4C41';
+                this.ctx.fillRect(x + 235, y + 60, 30, 40);
+                break;
+        }
+
+        // Bonus indicator
+        this.ctx.fillStyle = 'rgba(76, 175, 80, 0.3)';
+        this.ctx.fillRect(x + 10, y + this.floorHeight - 25, this.floorWidth - 20, 15);
+
+        this.ctx.fillStyle = '#4CAF50';
+        this.ctx.font = 'bold 11px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(`✨ ACTIVE BONUS: ${floorType.bonus.type.toUpperCase().replace('_', ' ')}`, centerX, y + this.floorHeight - 13);
+    }
+
+    /**
+     * Lighten a hex color by a percentage
+     */
+    lightenColor(color, percent) {
+        const num = parseInt(color.replace("#",""), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = Math.min(255, (num >> 16) + amt);
+        const G = Math.min(255, (num >> 8 & 0x00FF) + amt);
+        const B = Math.min(255, (num & 0x0000FF) + amt);
+        return "#" + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
     }
 
     /**

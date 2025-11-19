@@ -19,6 +19,17 @@ class GameState {
 
         // Characters
         this.readers = []; // Active readers visiting
+        this.regularCustomers = []; // Returning customers who visit regularly
+        this.customerIdCounter = 1;
+
+        // Transit system
+        this.transitSchedule = {
+            lastRushHour: 0,
+            nextRushHour: this.calculateNextRushHour(),
+            isRushHour: false,
+            rushHourDuration: 3 * 60 * 1000, // 3 minutes
+            transitTypes: ['🚇 Subway', '🚌 Bus', '🚊 Tram']
+        };
 
         // Reader name pools
         this.readerNames = {
@@ -508,6 +519,56 @@ class GameState {
                     { name: 'Cookies & Bars', stockCost: 25, stockTime: 30, stockAmount: 100, earningRate: 5 },
                     { name: 'Fruit & Yogurt', stockCost: 38, stockTime: 45, stockAmount: 100, earningRate: 8 }
                 ]
+            },
+            // Special Rooms (provide bonuses instead of books)
+            {
+                id: 'study_room',
+                name: 'Study Room',
+                emoji: '📖',
+                color: 'lavender',
+                description: 'Quiet study spaces - readers stay 2x longer',
+                buildCost: 350,
+                buildTime: 60,
+                isSpecialRoom: true,
+                bonus: {
+                    type: 'extended_visits',
+                    multiplier: 2,
+                    description: 'Readers browse 2x longer, earning more XP'
+                },
+                bookCategories: [] // No stock needed
+            },
+            {
+                id: 'maker_space',
+                name: 'Maker Space',
+                emoji: '🔧',
+                color: 'rainbow',
+                description: '3D printers & tools - attracts 50% more readers',
+                buildCost: 500,
+                buildTime: 90,
+                isSpecialRoom: true,
+                bonus: {
+                    type: 'reader_magnet',
+                    multiplier: 1.5,
+                    description: 'Increases reader spawn rate by 50%'
+                },
+                bookCategories: []
+            },
+            {
+                id: 'event_hall',
+                name: 'Event Hall',
+                emoji: '🎭',
+                color: 'peach',
+                description: 'Host events - doubles stars from nearby floors',
+                buildCost: 600,
+                buildTime: 120,
+                isSpecialRoom: true,
+                bonus: {
+                    type: 'nearby_boost',
+                    multiplier: 2,
+                    range: 1, // Affects floors within 1 position
+                    description: 'Floors next to this earn 2x stars'
+                },
+                bookCategories: []
             }
         ];
 
@@ -832,8 +893,130 @@ class GameState {
             elevatorArrivalTime: Date.now() + 2000 + (floor.floorNumber * 500) // 2s + 0.5s per floor
         };
 
+        // Check if this should be a returning regular customer (30% chance if any exist)
+        if (this.regularCustomers.length > 0 && Math.random() < 0.30) {
+            const regularCustomer = this.getReturningCustomer();
+            if (regularCustomer) {
+                reader.name = regularCustomer.name;
+                reader.customerId = regularCustomer.id;
+                reader.isRegular = true;
+                reader.visitCount = regularCustomer.visitCount + 1;
+                reader.favoriteCategory = regularCustomer.favoriteCategory;
+                reader.earningAmount = Math.floor(reader.earningAmount * (1 + regularCustomer.loyaltyBonus));
+            }
+        }
+
         this.readers.push(reader);
         return reader;
+    }
+
+    /**
+     * Get a returning regular customer
+     */
+    getReturningCustomer() {
+        // Prefer customers who haven't visited recently
+        const availableCustomers = this.regularCustomers.filter(c => {
+            const timeSinceLastVisit = Date.now() - (c.lastVisit || 0);
+            return timeSinceLastVisit > 60000; // At least 1 minute since last visit
+        });
+
+        if (availableCustomers.length === 0) return null;
+
+        return availableCustomers[Math.floor(Math.random() * availableCustomers.length)];
+    }
+
+    /**
+     * Register a new regular customer or update existing one
+     */
+    registerRegularCustomer(reader) {
+        const existing = this.regularCustomers.find(c => c.id === reader.customerId);
+
+        if (existing) {
+            // Update existing customer
+            existing.visitCount++;
+            existing.lastVisit = Date.now();
+            existing.totalSpent += reader.earningAmount;
+            existing.loyaltyBonus = Math.min(0.5, existing.visitCount * 0.05); // Max 50% bonus at 10 visits
+        } else {
+            // Create new regular customer (10% chance for first-timers to become regulars)
+            if (Math.random() < 0.10) {
+                this.regularCustomers.push({
+                    id: this.customerIdCounter++,
+                    name: reader.name,
+                    type: reader.type,
+                    visitCount: 1,
+                    lastVisit: Date.now(),
+                    favoriteCategory: reader.categoryIndex,
+                    totalSpent: reader.earningAmount,
+                    loyaltyBonus: 0.05 // 5% bonus on next visit
+                });
+
+                // Limit to 20 regular customers max
+                if (this.regularCustomers.length > 20) {
+                    // Remove least valuable customer (lowest total spent)
+                    this.regularCustomers.sort((a, b) => a.totalSpent - b.totalSpent);
+                    this.regularCustomers.shift();
+                }
+            }
+        }
+    }
+
+    /**
+     * Calculate next rush hour time (every 15-30 minutes)
+     */
+    calculateNextRushHour() {
+        const minDelay = 15 * 60 * 1000; // 15 minutes
+        const maxDelay = 30 * 60 * 1000; // 30 minutes
+        const delay = minDelay + Math.random() * (maxDelay - minDelay);
+        return Date.now() + delay;
+    }
+
+    /**
+     * Check and trigger rush hour
+     */
+    checkRushHour() {
+        const now = Date.now();
+
+        // Check if rush hour should start
+        if (!this.transitSchedule.isRushHour && now >= this.transitSchedule.nextRushHour) {
+            this.startRushHour();
+        }
+
+        // Check if rush hour should end
+        if (this.transitSchedule.isRushHour &&
+            now >= this.transitSchedule.lastRushHour + this.transitSchedule.rushHourDuration) {
+            this.endRushHour();
+        }
+    }
+
+    /**
+     * Start rush hour - increase reader spawn rate
+     */
+    startRushHour() {
+        this.transitSchedule.isRushHour = true;
+        this.transitSchedule.lastRushHour = Date.now();
+        this.transitSchedule.currentTransit = this.transitSchedule.transitTypes[
+            Math.floor(Math.random() * this.transitSchedule.transitTypes.length)
+        ];
+
+        // Notification
+        this._rushHourNotification = {
+            message: `${this.transitSchedule.currentTransit} arrived! Rush hour started!`,
+            timestamp: Date.now()
+        };
+
+        console.log('Rush hour started!', this.transitSchedule.currentTransit);
+    }
+
+    /**
+     * End rush hour
+     */
+    endRushHour() {
+        this.transitSchedule.isRushHour = false;
+        this.transitSchedule.nextRushHour = this.calculateNextRushHour();
+        this.transitSchedule.currentTransit = null;
+
+        console.log('Rush hour ended. Next in', Math.round((this.transitSchedule.nextRushHour - Date.now()) / 60000), 'minutes');
     }
 
     /**
@@ -1116,13 +1299,22 @@ class GameState {
         });
 
         // Update elevator states
+        if (!this._recentArrivals) this._recentArrivals = [];
+
         this.readers.forEach(reader => {
             if (reader.elevatorState === 'waiting' && now >= reader.elevatorArrivalTime) {
                 reader.elevatorState = 'arrived';
+
+                // Track arrival for sparkle effect
+                this._recentArrivals.push({
+                    floorId: reader.floorId
+                });
             }
         });
 
         // Process readers checking out
+        if (!this._recentCheckouts) this._recentCheckouts = [];
+
         this.readers = this.readers.filter(reader => {
             if (now >= reader.checkoutTime) {
                 const floor = this.getFloor(reader.floorId);
@@ -1136,6 +1328,13 @@ class GameState {
                     // Earn XP
                     this.xp += reader.earningAmount;
 
+                    // Track checkout for particle effects
+                    this._recentCheckouts.push({
+                        floorId: reader.floorId,
+                        stars: reader.earningAmount,
+                        isVIP: reader.type === 'vip'
+                    });
+
                     // Update stats
                     this.stats.totalBooksCheckedOut += 1;
                     this.stats.totalStarsEarned += reader.earningAmount;
@@ -1143,6 +1342,9 @@ class GameState {
 
                     // Track reader in collection
                     this.trackReaderInCollection(reader);
+
+                    // Register or update regular customer
+                    this.registerRegularCustomer(reader);
 
                     // Handle VIP abilities
                     if (reader.type === 'vip') {
@@ -1196,8 +1398,16 @@ class GameState {
             this.towerBucks += 1;
         }
 
-        // Spawn new readers periodically (10% chance each tick = balanced gameplay)
-        if (Math.random() < 0.10) {
+        // Check rush hour status
+        this.checkRushHour();
+
+        // Spawn new readers with increased rate during rush hour
+        let spawnChance = 0.10; // Base 10% chance
+        if (this.transitSchedule.isRushHour) {
+            spawnChance = 0.40; // 40% during rush hour = 4x more readers!
+        }
+
+        if (Math.random() < spawnChance) {
             this.spawnReader();
         }
 
