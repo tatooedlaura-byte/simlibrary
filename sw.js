@@ -5,21 +5,21 @@
 
 const CACHE_NAME = 'simlibrary-v1';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/gamestate.js',
-  '/js/tower-renderer.js',
-  '/js/app.js',
-  '/manifest.json',
-  '/icons/icon-72.png',
-  '/icons/icon-96.png',
-  '/icons/icon-128.png',
-  '/icons/icon-144.png',
-  '/icons/icon-152.png',
-  '/icons/icon-192.png',
-  '/icons/icon-384.png',
-  '/icons/icon-512.png'
+  './',
+  './index.html',
+  './css/style.css',
+  './js/gamestate.js',
+  './js/tower-renderer.js',
+  './js/app.js',
+  './manifest.json',
+  './icons/icon-72.png',
+  './icons/icon-96.png',
+  './icons/icon-128.png',
+  './icons/icon-144.png',
+  './icons/icon-152.png',
+  './icons/icon-192.png',
+  './icons/icon-384.png',
+  './icons/icon-512.png'
 ];
 
 // Install event - cache assets
@@ -100,7 +100,7 @@ self.addEventListener('fetch', (event) => {
           .catch(() => {
             // Network failed - return offline fallback for HTML
             if (event.request.headers.get('accept').includes('text/html')) {
-              return caches.match('/index.html');
+              return caches.match('./index.html');
             }
           });
       })

@@ -2,7 +2,7 @@
   "name": "SimLibrary",
   "short_name": "SimLibrary",
   "description": "Build your dream library tower! A cozy idle game.",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#FFF8F0",
   "theme_color": "#FFD4B2",
@@ -62,7 +62,7 @@
   "shortcuts": [
     {
       "name": "Open Library",
-      "url": "/index.html",
+      "url": "./index.html",
       "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
     }
   ]
