@@ -48,7 +48,15 @@ class TowerRenderer {
             sky: { bg: '#B3E5FC', border: '#81D4FA', accent: '#4FC3F7' },
             lavender: { bg: '#E1BEE7', border: '#CE93D8', accent: '#BA68C8' },
             brown: { bg: '#D7CCC8', border: '#BCAAA4', accent: '#A1887F' },
-            rainbow: { bg: '#FFE5B4', border: '#FFD700', accent: '#FFA500' }
+            rainbow: { bg: '#FFE5B4', border: '#FFD700', accent: '#FFA500' },
+            pink: { bg: '#F8BBD0', border: '#F48FB1', accent: '#F06292' },
+            purple: { bg: '#D1C4E9', border: '#B39DDB', accent: '#9575CD' },
+            red: { bg: '#FFCDD2', border: '#EF9A9A', accent: '#E57373' },
+            orange: { bg: '#FFE0B2', border: '#FFCC80', accent: '#FFB74D' },
+            tan: { bg: '#F5DEB3', border: '#DEB887', accent: '#D2B48C' },
+            green: { bg: '#C5E1A5', border: '#AED581', accent: '#9CCC65' },
+            blue: { bg: '#BBDEFB', border: '#90CAF9', accent: '#64B5F6' },
+            yellow: { bg: '#FFF59D', border: '#FFF176', accent: '#FFEE58' }
         };
 
         this.init();
