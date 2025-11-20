@@ -7,6 +7,31 @@
 let game;
 let currentFloorId = null;
 let towerRenderer = null;
+let confirmCallback = null;
+
+/**
+ * Show confirmation modal
+ */
+function showConfirm(title, message) {
+    return new Promise((resolve) => {
+        document.getElementById('confirm-title').textContent = title;
+        document.getElementById('confirm-message').textContent = message;
+        document.getElementById('confirm-modal').classList.add('active');
+
+        confirmCallback = resolve;
+    });
+}
+
+/**
+ * Close confirmation modal
+ */
+function closeConfirmModal(result) {
+    document.getElementById('confirm-modal').classList.remove('active');
+    if (confirmCallback) {
+        confirmCallback(result);
+        confirmCallback = null;
+    }
+}
 
 /**
  * Initialize the application
@@ -224,6 +249,26 @@ function setupEventListeners() {
     document.getElementById('collection-modal').addEventListener('click', (e) => {
         if (e.target.id === 'collection-modal') {
             closeCollectionModal();
+        }
+    });
+
+    // Confirmation modal buttons
+    document.getElementById('close-confirm-modal').addEventListener('click', () => {
+        closeConfirmModal(false);
+    });
+
+    document.getElementById('confirm-cancel').addEventListener('click', () => {
+        closeConfirmModal(false);
+    });
+
+    document.getElementById('confirm-ok').addEventListener('click', () => {
+        closeConfirmModal(true);
+    });
+
+    // Close confirm modal when clicking outside
+    document.getElementById('confirm-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'confirm-modal') {
+            closeConfirmModal(false);
         }
     });
 }
@@ -479,10 +524,22 @@ function renderUpgradeSection(floor) {
 /**
  * Handle floor upgrade
  */
-function handleUpgradeFloor(floorId) {
+async function handleUpgradeFloor(floorId) {
+    const floor = game.getFloor(floorId);
+    if (!floor) return;
+
+    const upgradeCosts = [0, 200, 500];
+    const cost = upgradeCosts[floor.upgradeLevel];
+
+    const confirmed = await showConfirm(
+        'Upgrade Floor',
+        `Upgrade to Level ${floor.upgradeLevel + 1} for ${cost} ⭐?`
+    );
+
+    if (!confirmed) return;
+
     const result = game.upgradeFloor(floorId);
     if (result.success) {
-        const floor = game.getFloor(floorId);
         renderUpgradeSection(floor);
         renderBookCategories(floor);
         updateGlobalStats();
@@ -554,10 +611,22 @@ function renderStaffSlots(floor) {
 /**
  * Handle hiring staff
  */
-function handleHireStaff(floorId) {
+async function handleHireStaff(floorId) {
+    const floor = game.getFloor(floorId);
+    if (!floor) return;
+
+    const staffType = game.staffTypes[floor.staff.length];
+    if (!staffType) return;
+
+    const confirmed = await showConfirm(
+        'Hire Staff',
+        `Hire ${staffType.name} for ${staffType.hireCost} ⭐?`
+    );
+
+    if (!confirmed) return;
+
     const result = game.hireStaff(floorId);
     if (result.success) {
-        const floor = game.getFloor(floorId);
         renderStaffSlots(floor);
         renderBookCategories(floor);
         updateGlobalStats();
@@ -800,7 +869,17 @@ function openBuildModal() {
 /**
  * Handle building a floor
  */
-function handleBuildFloor(floorTypeId) {
+async function handleBuildFloor(floorTypeId) {
+    const floorType = game.floorTypes.find(t => t.id === floorTypeId);
+    if (!floorType) return;
+
+    const confirmed = await showConfirm(
+        'Build Floor',
+        `Build ${floorType.name} for ${floorType.buildCost} ⭐?`
+    );
+
+    if (!confirmed) return;
+
     const result = game.buildFloor(floorTypeId);
     if (result.success) {
         closeBuildModal();

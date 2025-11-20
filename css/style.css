@@ -1525,6 +1525,56 @@ body {
 }
 
 /* ===================================
+   Confirmation Modal
+   =================================== */
+
+.modal-content.small {
+    max-width: 320px;
+}
+
+#confirm-message {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.btn-cancel,
+.btn-confirm {
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    min-width: 100px;
+}
+
+.btn-cancel {
+    background: #e0e0e0;
+    color: var(--text-primary);
+}
+
+.btn-cancel:hover {
+    background: #d0d0d0;
+}
+
+.btn-confirm {
+    background: var(--gradient-mint);
+    color: var(--text-primary);
+}
+
+.btn-confirm:hover {
+    transform: scale(1.02);
+}
+
+/* ===================================
    PWA & Mobile Enhancements
    =================================== */
 
