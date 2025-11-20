@@ -543,7 +543,6 @@ async function handleUpgradeFloor(floorId) {
         renderUpgradeSection(floor);
         renderBookCategories(floor);
         updateGlobalStats();
-        alert(`🎉 Floor upgraded to Level ${result.level}!`);
     } else {
         alert(result.error || 'Cannot upgrade floor');
     }
@@ -630,10 +629,6 @@ async function handleHireStaff(floorId) {
         renderStaffSlots(floor);
         renderBookCategories(floor);
         updateGlobalStats();
-
-        // Show notification
-        const categoryName = floor.bookStock[result.categoryUnlocked]?.name || '';
-        alert(`🎉 ${result.staff.name} hired! "${categoryName}" category unlocked!`);
     } else {
         alert(result.error || 'Cannot hire staff');
     }
