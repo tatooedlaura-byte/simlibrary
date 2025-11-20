@@ -119,13 +119,18 @@ function init() {
             .then((registration) => {
                 console.log('[PWA] Service worker registered:', registration.scope);
 
+                // Force update check
+                registration.update();
+
                 // Check for updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // New version available
-                            console.log('[PWA] New version available!');
+                            // New version available - reload to activate
+                            console.log('[PWA] New version available! Reloading...');
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            window.location.reload();
                         }
                     });
                 });
