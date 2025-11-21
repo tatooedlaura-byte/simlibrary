@@ -1242,7 +1242,9 @@ class TowerRenderer {
         if (e.touches.length === 1) {
             this.isDragging = true;
             this.dragStartY = e.touches[0].clientY;
+            this.dragStartX = e.touches[0].clientX;
             this.dragStartScrollY = this.scrollY;
+            this._touchMoved = false;
         }
     }
 
@@ -1252,15 +1254,64 @@ class TowerRenderer {
     handleTouchMove(e) {
         e.preventDefault();
         if (!this.isDragging || e.touches.length !== 1) return;
-        this._hasScrolled = true;
-        const deltaY = e.touches[0].clientY - this.dragStartY;
-        this.scrollY = this.dragStartScrollY - deltaY;
+
+        const deltaX = Math.abs(e.touches[0].clientX - this.dragStartX);
+        const deltaY = Math.abs(e.touches[0].clientY - this.dragStartY);
+
+        // Only consider it a scroll if moved more than 10px
+        if (deltaX > 10 || deltaY > 10) {
+            this._touchMoved = true;
+        }
+
+        const scrollDeltaY = e.touches[0].clientY - this.dragStartY;
+        this.scrollY = this.dragStartScrollY - scrollDeltaY;
     }
 
     /**
      * Handle touch end for mobile
      */
     handleTouchEnd(e) {
+        // If we didn't move much, treat it as a tap/click
+        if (!this._touchMoved && this.isDragging) {
+            // Create a synthetic click event at the touch position
+            const rect = this.canvas.getBoundingClientRect();
+            const clickX = this.dragStartX - rect.left;
+            const clickY = (this.dragStartY - rect.top) - this.scrollY;
+
+            console.log('Touch tap at:', clickX, clickY);
+
+            // Check build slot click first
+            if (this._buildSlotBounds) {
+                const b = this._buildSlotBounds;
+                if (clickX >= b.x && clickX <= b.x + b.width &&
+                    clickY >= b.y && clickY <= b.y + b.height) {
+                    console.log('Build slot tapped!');
+                    if (window.openBuildModal) {
+                        window.openBuildModal();
+                    }
+                    this.isDragging = false;
+                    return;
+                }
+            }
+
+            // Check floor clicks
+            const floors = [...this.game.floors].reverse();
+            for (const floor of floors) {
+                if (floor._renderBounds) {
+                    const b = floor._renderBounds;
+                    if (clickX >= b.x && clickX <= b.x + b.width &&
+                        clickY >= b.y && clickY <= b.y + b.height) {
+                        console.log('Floor tapped:', floor.name);
+                        if (window.openFloorDetail) {
+                            window.openFloorDetail(floor.id);
+                        }
+                        this.isDragging = false;
+                        return;
+                    }
+                }
+            }
+        }
+
         this.isDragging = false;
     }
 

@@ -204,7 +204,9 @@ body {
     width: 100%;
     max-width: 600px;
     aspect-ratio: 600 / 800;
-    touch-action: pan-y pinch-zoom;
+    touch-action: none; /* We handle all touch interactions ourselves */
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .floors-list {
@@ -415,6 +417,11 @@ body {
 .btn-large:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-hover);
+}
+
+.btn-large:active {
+    transform: translateY(1px);
+    box-shadow: none;
 }
 
 .btn-primary {
@@ -1572,6 +1579,11 @@ body {
 
 .btn-confirm:hover {
     transform: scale(1.02);
+}
+
+.btn-cancel:active,
+.btn-confirm:active {
+    transform: scale(0.96);
 }
 
 /* Reset Button */
