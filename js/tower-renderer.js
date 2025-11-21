@@ -31,6 +31,10 @@ class TowerRenderer {
         // Particle effects
         this.particles = []; // Star particles, sparkles, etc.
 
+        // Clouds for weather effect
+        this.clouds = [];
+        this.initClouds();
+
         // Scrolling
         this.scrollY = 0; // Current scroll offset
         this.maxScrollY = 0; // Maximum scroll (calculated based on tower height)
@@ -123,6 +127,112 @@ class TowerRenderer {
     }
 
     /**
+     * Get sky colors based on time of day
+     */
+    getSkyColors() {
+        const hour = new Date().getHours();
+
+        // Define time periods and their colors
+        if (hour >= 6 && hour < 8) {
+            // Sunrise
+            return { top: '#FF9966', bottom: '#FFE4B5', timeOfDay: 'sunrise' };
+        } else if (hour >= 8 && hour < 17) {
+            // Day
+            return { top: '#87CEEB', bottom: '#E0F6FF', timeOfDay: 'day' };
+        } else if (hour >= 17 && hour < 19) {
+            // Sunset
+            return { top: '#FF6B6B', bottom: '#FFD93D', timeOfDay: 'sunset' };
+        } else if (hour >= 19 && hour < 21) {
+            // Dusk
+            return { top: '#4A4E69', bottom: '#9A8C98', timeOfDay: 'dusk' };
+        } else {
+            // Night
+            return { top: '#1a1a2e', bottom: '#16213e', timeOfDay: 'night' };
+        }
+    }
+
+    /**
+     * Draw sun or moon based on time of day
+     */
+    drawCelestialBody(timeOfDay) {
+        const x = this.width - 60;
+        const y = 50;
+
+        if (timeOfDay === 'night' || timeOfDay === 'dusk') {
+            // Draw moon
+            this.ctx.fillStyle = '#F5F5DC';
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 20, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Moon craters
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            this.ctx.beginPath();
+            this.ctx.arc(x - 5, y - 5, 4, 0, Math.PI * 2);
+            this.ctx.arc(x + 8, y + 3, 3, 0, Math.PI * 2);
+            this.ctx.arc(x - 2, y + 8, 2, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Stars
+            this.ctx.fillStyle = '#FFF';
+            for (let i = 0; i < 15; i++) {
+                const starX = (i * 37 + 20) % this.width;
+                const starY = (i * 23 + 10) % 80;
+                const size = 1 + (i % 2);
+                this.ctx.fillRect(starX, starY, size, size);
+            }
+        } else {
+            // Draw sun
+            this.ctx.fillStyle = timeOfDay === 'sunrise' || timeOfDay === 'sunset' ? '#FF6B35' : '#FFD700';
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 25, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Sun glow
+            this.ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 35, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+    }
+
+    /**
+     * Initialize clouds
+     */
+    initClouds() {
+        for (let i = 0; i < 5; i++) {
+            this.clouds.push({
+                x: Math.random() * 600,
+                y: 20 + Math.random() * 60,
+                width: 40 + Math.random() * 40,
+                speed: 0.1 + Math.random() * 0.2,
+                opacity: 0.3 + Math.random() * 0.4
+            });
+        }
+    }
+
+    /**
+     * Draw and update clouds
+     */
+    drawClouds() {
+        this.clouds.forEach(cloud => {
+            // Update position
+            cloud.x += cloud.speed;
+            if (cloud.x > this.width + cloud.width) {
+                cloud.x = -cloud.width;
+            }
+
+            // Draw cloud (simple puffy shape)
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${cloud.opacity})`;
+            this.ctx.beginPath();
+            this.ctx.arc(cloud.x, cloud.y, cloud.width * 0.3, 0, Math.PI * 2);
+            this.ctx.arc(cloud.x + cloud.width * 0.3, cloud.y - 5, cloud.width * 0.25, 0, Math.PI * 2);
+            this.ctx.arc(cloud.x + cloud.width * 0.5, cloud.y, cloud.width * 0.3, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+    }
+
+    /**
      * Main render loop
      */
     render() {
@@ -144,12 +254,19 @@ class TowerRenderer {
         // Clear canvas
         this.ctx.clearRect(0, 0, this.width, this.height);
 
-        // Draw background (sky)
+        // Draw background (sky with day/night cycle)
+        const skyColors = this.getSkyColors();
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
-        gradient.addColorStop(0, '#87CEEB');
-        gradient.addColorStop(1, '#E0F6FF');
+        gradient.addColorStop(0, skyColors.top);
+        gradient.addColorStop(1, skyColors.bottom);
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.width, this.height);
+
+        // Draw sun or moon
+        this.drawCelestialBody(skyColors.timeOfDay);
+
+        // Draw clouds
+        this.drawClouds();
 
         // Save context and apply scroll offset
         // When scrollY is positive, we translate UP (positive Y) to bring negative Y values into view
