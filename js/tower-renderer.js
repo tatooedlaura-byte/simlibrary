@@ -105,14 +105,21 @@ class TowerRenderer {
             this.height = displayHeight;
 
             // Scale floor dimensions proportionally
-            const scale = displayWidth / 600;
-            this.floorWidth = 500 * scale;
-            this.floorX = 50 * scale;
-            this.floorHeight = 120 * scale;
-            this.elevatorWidth = 40 * scale;
-            this.elevatorX = 5 * scale;
-            this.elevatorCarHeight = 80 * scale;
+            this.scale = displayWidth / 600;
+            this.floorWidth = 500 * this.scale;
+            this.floorX = 50 * this.scale;
+            this.floorHeight = 120 * this.scale;
+            this.elevatorWidth = 40 * this.scale;
+            this.elevatorX = 5 * this.scale;
+            this.elevatorCarHeight = 80 * this.scale;
         }
+    }
+
+    /**
+     * Get scale factor (default 1 if not set)
+     */
+    getScale() {
+        return this.scale || 1;
     }
 
     /**
@@ -392,14 +399,16 @@ class TowerRenderer {
             // Draw floor decorations based on floor type
             this.drawFloorDecorations(floor, x, y, colors);
 
-            // Draw book shelves (3 categories)
-            const shelfY = y + 40;
-            const shelfWidth = 120;
-            const shelfSpacing = (this.floorWidth - 60 - shelfWidth * 3) / 2;
+            // Draw book shelves (3 categories) - scale with floor size
+            const scale = this.getScale();
+            const shelfY = y + 40 * scale;
+            const shelfWidth = 120 * scale;
+            const shelfHeight = 60 * scale;
+            const shelfSpacing = (this.floorWidth - 60 * scale - shelfWidth * 3) / 2;
 
             floor.bookStock.forEach((category, index) => {
-                const shelfX = x + 30 + index * (shelfWidth + shelfSpacing);
-                this.drawBookshelf(category, shelfX, shelfY, shelfWidth, 60, colors, floor.typeId);
+                const shelfX = x + 30 * scale + index * (shelfWidth + shelfSpacing);
+                this.drawBookshelf(category, shelfX, shelfY, shelfWidth, shelfHeight, colors, floor.typeId, scale);
             });
         }
 
@@ -413,25 +422,29 @@ class TowerRenderer {
     /**
      * Draw a bookshelf with stock indicator
      */
-    drawBookshelf(category, x, y, width, height, colors, floorType) {
+    drawBookshelf(category, x, y, width, height, colors, floorType, scale = 1) {
         // Determine shelf style and book colors based on floor type
         const shelfStyles = this.getShelfStyle(floorType);
 
         // Draw shelf with custom shape based on style
         this.ctx.fillStyle = shelfStyles.shelfColor;
         this.ctx.strokeStyle = shelfStyles.borderColor;
-        this.ctx.lineWidth = 2;
+        this.ctx.lineWidth = 2 * scale;
 
         // Draw different shelf shapes based on floor type
         this.ctx.beginPath();
 
+        const r = 10 * scale; // Corner radius scaled
+        const r5 = 5 * scale;
+        const r15 = 15 * scale;
+
         switch(shelfStyles.shape) {
             case 'rounded':
                 // Rounded top corners
-                this.ctx.moveTo(x, y + 10);
-                this.ctx.arcTo(x, y, x + 10, y, 10);
-                this.ctx.lineTo(x + width - 10, y);
-                this.ctx.arcTo(x + width, y, x + width, y + 10, 10);
+                this.ctx.moveTo(x, y + r);
+                this.ctx.arcTo(x, y, x + r, y, r);
+                this.ctx.lineTo(x + width - r, y);
+                this.ctx.arcTo(x + width, y, x + width, y + r, r);
                 this.ctx.lineTo(x + width, y + height);
                 this.ctx.lineTo(x, y + height);
                 this.ctx.closePath();
@@ -439,17 +452,17 @@ class TowerRenderer {
 
             case 'scalloped':
                 // Scalloped top edge
-                this.ctx.moveTo(x, y + 10);
+                this.ctx.moveTo(x, y + r);
                 for (let i = 0; i < 4; i++) {
                     const scallop_x = x + (width / 4) * i + (width / 8);
                     const scallop_y = y;
                     this.ctx.quadraticCurveTo(
-                        x + (width / 4) * i, y + 10,
+                        x + (width / 4) * i, y + r,
                         scallop_x, scallop_y
                     );
                     this.ctx.quadraticCurveTo(
-                        x + (width / 4) * (i + 1), y + 10,
-                        x + (width / 4) * (i + 1), y + 10
+                        x + (width / 4) * (i + 1), y + r,
+                        x + (width / 4) * (i + 1), y + r
                     );
                 }
                 this.ctx.lineTo(x + width, y + height);
@@ -460,17 +473,17 @@ class TowerRenderer {
             case 'arched':
                 // Arched top
                 this.ctx.moveTo(x, y + height);
-                this.ctx.lineTo(x, y + 15);
-                this.ctx.quadraticCurveTo(x + width / 2, y - 5, x + width, y + 15);
+                this.ctx.lineTo(x, y + r15);
+                this.ctx.quadraticCurveTo(x + width / 2, y - r5, x + width, y + r15);
                 this.ctx.lineTo(x + width, y + height);
                 this.ctx.closePath();
                 break;
 
             case 'peaked':
                 // Peaked/triangle top
-                this.ctx.moveTo(x, y + 15);
+                this.ctx.moveTo(x, y + r15);
                 this.ctx.lineTo(x + width / 2, y);
-                this.ctx.lineTo(x + width, y + 15);
+                this.ctx.lineTo(x + width, y + r15);
                 this.ctx.lineTo(x + width, y + height);
                 this.ctx.lineTo(x, y + height);
                 this.ctx.closePath();
@@ -478,14 +491,14 @@ class TowerRenderer {
 
             case 'ornate':
                 // Ornate with decorative corners
-                this.ctx.moveTo(x + 5, y + 5);
-                this.ctx.lineTo(x, y + 10);
+                this.ctx.moveTo(x + r5, y + r5);
+                this.ctx.lineTo(x, y + r);
                 this.ctx.lineTo(x, y + height);
                 this.ctx.lineTo(x + width, y + height);
-                this.ctx.lineTo(x + width, y + 10);
-                this.ctx.lineTo(x + width - 5, y + 5);
-                this.ctx.lineTo(x + width - 5, y);
-                this.ctx.lineTo(x + 5, y);
+                this.ctx.lineTo(x + width, y + r);
+                this.ctx.lineTo(x + width - r5, y + r5);
+                this.ctx.lineTo(x + width - r5, y);
+                this.ctx.lineTo(x + r5, y);
                 this.ctx.closePath();
                 break;
 
@@ -500,34 +513,39 @@ class TowerRenderer {
 
         // Inner shadow for depth
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-        this.ctx.fillRect(x + 2, y + 2, width - 4, 8);
+        this.ctx.fillRect(x + 2 * scale, y + 2 * scale, width - 4 * scale, 8 * scale);
 
         // Books (as colored rectangles with shadows)
         const stockPercent = category.currentStock / category.maxStock;
         const bookCount = Math.ceil(stockPercent * 10);
 
+        const bookWidth = 18 * scale;
+        const bookHeight = 20 * scale;
+        const bookSpacingX = 22 * scale;
+        const bookSpacingY = 25 * scale;
+
         for (let i = 0; i < bookCount; i++) {
-            const bookX = x + 5 + (i % 5) * 22;
-            const bookY = y + 5 + Math.floor(i / 5) * 25;
+            const bookX = x + 5 * scale + (i % 5) * bookSpacingX;
+            const bookY = y + 5 * scale + Math.floor(i / 5) * bookSpacingY;
 
             // Book shadow
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.fillRect(bookX + 1, bookY + 1, 18, 20);
+            this.ctx.fillRect(bookX + 1 * scale, bookY + 1 * scale, bookWidth, bookHeight);
 
             // Book
             this.ctx.fillStyle = shelfStyles.bookColors[i % shelfStyles.bookColors.length];
-            this.ctx.fillRect(bookX, bookY, 18, 20);
+            this.ctx.fillRect(bookX, bookY, bookWidth, bookHeight);
 
             // Book highlight
             this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            this.ctx.fillRect(bookX, bookY, 2, 20);
+            this.ctx.fillRect(bookX, bookY, 2 * scale, bookHeight);
         }
 
         // Stock text
         this.ctx.fillStyle = '#FFF';
-        this.ctx.font = 'bold 11px Arial';
+        this.ctx.font = `bold ${Math.round(11 * scale)}px Arial`;
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(`${category.currentStock}/${category.maxStock}`, x + width / 2, y + height - 5);
+        this.ctx.fillText(`${category.currentStock}/${category.maxStock}`, x + width / 2, y + height - 5 * scale);
 
         // Restocking indicator
         if (category.restocking) {
@@ -535,7 +553,7 @@ class TowerRenderer {
             this.ctx.fillRect(x, y, width, height);
 
             this.ctx.fillStyle = '#FFF';
-            this.ctx.font = 'bold 12px Arial';
+            this.ctx.font = `bold ${Math.round(12 * scale)}px Arial`;
             this.ctx.fillText('📦 Restocking', x + width / 2, y + height / 2);
         }
     }
