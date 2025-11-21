@@ -396,9 +396,6 @@ class TowerRenderer {
             // Draw special room content
             this.drawSpecialRoom(floor, x, y, colors, floorType);
         } else {
-            // Draw floor decorations based on floor type
-            this.drawFloorDecorations(floor, x, y, colors);
-
             // Draw book shelves (3 categories) - scale with floor size
             const scale = this.getScale();
             const shelfY = y + 40 * scale;
@@ -1059,43 +1056,6 @@ class TowerRenderer {
         };
 
         return styles[floorType] || styles.fiction; // Default to fiction style
-    }
-
-    /**
-     * Draw floor-specific decorations
-     */
-    drawFloorDecorations(floor, x, y, colors) {
-        const floorType = floor.typeId;
-
-        // Draw decorations based on floor type
-        switch(floorType) {
-            case 'board_books':
-            case 'picture_books':
-                // Colorful rugs
-                this.ctx.fillStyle = 'rgba(255, 182, 193, 0.6)';
-                this.ctx.fillRect(x + 180, y + 85, 50, 30);
-                this.ctx.fillRect(x + 350, y + 85, 50, 30);
-                break;
-
-            case 'science':
-            case 'technology':
-                // Computer desks
-                this.ctx.fillStyle = '#696969';
-                this.ctx.fillRect(x + 430, y + 85, 35, 25);
-                this.ctx.fillStyle = '#4682B4';
-                this.ctx.fillRect(x + 435, y + 80, 15, 12);
-                break;
-
-            default:
-                // Plants for most floors
-                this.ctx.fillStyle = '#228B22';
-                this.ctx.beginPath();
-                this.ctx.arc(x + 450, y + 90, 8, 0, Math.PI * 2);
-                this.ctx.fill();
-                this.ctx.fillStyle = '#8B4513';
-                this.ctx.fillRect(x + 448, y + 95, 4, 10);
-                break;
-        }
     }
 
     /**
