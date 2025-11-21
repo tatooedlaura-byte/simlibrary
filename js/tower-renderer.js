@@ -299,6 +299,12 @@ class TowerRenderer {
         // Update and draw characters
         this.updateCharacters();
 
+        // Process checkout rewards (spawn coins)
+        this.processCheckoutRewards();
+
+        // Process arrival effects (spawn sparkles)
+        this.processArrivalEffects();
+
         // Update and draw particles
         this.updateParticles();
 
@@ -883,6 +889,74 @@ class TowerRenderer {
             this.ctx.textAlign = 'center';
             this.ctx.fillText('💖', char.x + 12, headY - 8);
         }
+
+        // Thought bubble (appears occasionally when reading)
+        if (char.state === 'reading' && char.animationFrame % 180 < 120) {
+            this.drawThoughtBubble(char.x, headY - 25, reader);
+        }
+    }
+
+    /**
+     * Draw thought bubble above character
+     */
+    drawThoughtBubble(x, y, reader) {
+        // Get thought based on reader type and state
+        const thoughts = this.getThoughtForReader(reader);
+        if (!thoughts) return;
+
+        const thought = thoughts[Math.floor(Date.now() / 5000) % thoughts.length];
+
+        // Bubble background
+        const bubbleWidth = 50;
+        const bubbleHeight = 20;
+
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        this.ctx.strokeStyle = '#ccc';
+        this.ctx.lineWidth = 1;
+
+        // Main bubble
+        this.ctx.beginPath();
+        this.ctx.roundRect(x - bubbleWidth/2, y - bubbleHeight, bubbleWidth, bubbleHeight, 5);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // Small bubbles leading to thought
+        this.ctx.beginPath();
+        this.ctx.arc(x - 5, y + 2, 3, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        this.ctx.beginPath();
+        this.ctx.arc(x - 8, y + 6, 2, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // Thought text
+        this.ctx.fillStyle = '#333';
+        this.ctx.font = '10px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(thought, x, y - bubbleHeight/2);
+    }
+
+    /**
+     * Get thought messages based on reader type
+     */
+    getThoughtForReader(reader) {
+        const thoughtsByType = {
+            kid: ['📚 Fun!', '🌟 Wow!', '🐱 Cute!', '🎨 Pretty!', '🦕 Cool!'],
+            teen: ['📱 Nice', '🎮 Sweet', '🎵 Vibes', '✨ Yes!', '💭 Hmm'],
+            adult: ['📖 Good', '☕ Need', '💼 Work', '🤔 Think', '📚 More'],
+            senior: ['😊 Lovely', '🕐 Peace', '📰 News', '🌸 Nice', '👓 Ah!'],
+            student: ['📝 Notes', '🧠 Learn', '📊 Data', '🔬 Facts', '💡 Idea']
+        };
+
+        // VIP thoughts
+        if (reader.type === 'vip') {
+            return ['⭐ VIP!', '💎 Elite', '🌟 Great', '✨ Love!', '👑 Nice'];
+        }
+
+        return thoughtsByType[reader.type] || thoughtsByType.adult;
     }
 
     /**
@@ -1308,6 +1382,77 @@ class TowerRenderer {
     }
 
     /**
+     * Spawn coin particles for checkout rewards
+     */
+    spawnCoinBurst(x, y, amount, isVIP = false) {
+        // Number of coins based on amount
+        const coinCount = Math.min(5, Math.max(2, Math.floor(amount / 3)));
+
+        for (let i = 0; i < coinCount; i++) {
+            this.particles.push({
+                x: x + (Math.random() - 0.5) * 30,
+                y: y,
+                vx: (Math.random() - 0.5) * 3,
+                vy: -3 - Math.random() * 2,
+                life: 1.0,
+                decay: 0.015,
+                size: isVIP ? 16 : 12,
+                type: 'coin',
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.3
+            });
+        }
+
+        // Show star amount
+        this.spawnTextParticle(x, y - 20, `+${amount} ⭐`, isVIP ? '#FFD700' : '#FFA500');
+    }
+
+    /**
+     * Process checkout events and spawn rewards
+     */
+    processCheckoutRewards() {
+        if (!this.game._recentCheckouts || this.game._recentCheckouts.length === 0) return;
+
+        this.game._recentCheckouts.forEach(checkout => {
+            // Find floor position
+            const floor = this.game.getFloor(checkout.floorId);
+            if (floor && floor._renderBounds) {
+                const b = floor._renderBounds;
+                const x = b.x + b.width / 2;
+                const y = b.y + b.height / 2;
+
+                this.spawnCoinBurst(x, y, checkout.stars, checkout.isVIP);
+            }
+        });
+
+        // Clear processed checkouts
+        this.game._recentCheckouts = [];
+    }
+
+    /**
+     * Process arrival events and spawn sparkles
+     */
+    processArrivalEffects() {
+        if (!this.game._recentArrivals || this.game._recentArrivals.length === 0) return;
+
+        this.game._recentArrivals.forEach(arrival => {
+            // Find floor position
+            const floor = this.game.getFloor(arrival.floorId);
+            if (floor && floor._renderBounds) {
+                const b = floor._renderBounds;
+                const x = b.x + b.width / 2;
+                const y = b.y + b.height / 2;
+
+                // Small sparkle for arrival
+                this.spawnSparkle(x, y);
+            }
+        });
+
+        // Clear processed arrivals
+        this.game._recentArrivals = [];
+    }
+
+    /**
      * Update and draw all particles
      */
     updateParticles() {
@@ -1317,8 +1462,8 @@ class TowerRenderer {
             p.x += p.vx;
             p.y += p.vy;
 
-            // Apply gravity for stars
-            if (p.type === 'star') {
+            // Apply gravity for stars and coins
+            if (p.type === 'star' || p.type === 'coin') {
                 p.vy += 0.15;
                 p.rotation += p.rotationSpeed;
             }
@@ -1359,6 +1504,14 @@ class TowerRenderer {
                 this.ctx.beginPath();
                 this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 this.ctx.fill();
+            } else if (p.type === 'coin') {
+                // Draw coin emoji
+                this.ctx.translate(p.x, p.y);
+                this.ctx.rotate(p.rotation);
+                this.ctx.font = `${p.size}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('🪙', 0, 0);
             }
 
             this.ctx.restore();
