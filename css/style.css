@@ -204,7 +204,7 @@ body {
     width: 100%;
     max-width: 600px;
     aspect-ratio: 600 / 800;
-    touch-action: none; /* We handle all touch interactions ourselves */
+    touch-action: pan-y; /* Allow vertical page scroll, we handle taps and horizontal */
     -webkit-user-select: none;
     user-select: none;
 }

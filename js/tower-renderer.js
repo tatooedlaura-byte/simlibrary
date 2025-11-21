@@ -1221,7 +1221,6 @@ class TowerRenderer {
      * Handle touch start for mobile
      */
     handleTouchStart(e) {
-        e.preventDefault();
         if (e.touches.length === 1) {
             this.isDragging = true;
             this.dragStartY = e.touches[0].clientY;
@@ -1235,7 +1234,6 @@ class TowerRenderer {
      * Handle touch move for mobile
      */
     handleTouchMove(e) {
-        e.preventDefault();
         if (!this.isDragging || e.touches.length !== 1) return;
 
         const deltaX = Math.abs(e.touches[0].clientX - this.dragStartX);
@@ -1246,8 +1244,9 @@ class TowerRenderer {
             this._touchMoved = true;
         }
 
-        const scrollDeltaY = e.touches[0].clientY - this.dragStartY;
-        this.scrollY = this.dragStartScrollY - scrollDeltaY;
+        // Don't scroll tower internally on mobile - let page scroll handle it
+        // const scrollDeltaY = e.touches[0].clientY - this.dragStartY;
+        // this.scrollY = this.dragStartScrollY - scrollDeltaY;
     }
 
     /**
