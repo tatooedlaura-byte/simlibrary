@@ -626,7 +626,7 @@ class TowerRenderer {
             const scale = this.getScale();
             const shelfY = y + 35; // Fixed position below floor name with more space
             const shelfWidth = 120 * scale;
-            const shelfHeight = 60 * scale;
+            const shelfHeight = 85 * scale; // Taller shelves to fill more space
             const shelfSpacing = (this.floorWidth - 60 * scale - shelfWidth * 3) / 2;
 
             floor.bookStock.forEach((category, index) => {

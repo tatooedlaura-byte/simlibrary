@@ -1785,6 +1785,14 @@ class GameState {
     }
 
     /**
+     * Get current game day (1 day = 1 hour of real play time)
+     */
+    getGameDay() {
+        const hoursPlayed = this.stats.timePlayed / 3600;
+        return Math.floor(hoursPlayed) + 1;
+    }
+
+    /**
      * Check which floor synergies are active
      */
     checkFloorSynergies() {

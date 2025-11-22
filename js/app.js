@@ -330,6 +330,9 @@ function updateGlobalStats() {
         document.getElementById('mood-value').textContent = Math.floor(game.mood);
     }
 
+    // Update day counter
+    document.getElementById('day-counter').textContent = `Day ${game.getGameDay()}`;
+
     // Check for special visitor notifications
     if (game._newSpecialVisitor) {
         showToast(`${game._newSpecialVisitor.emoji} ${game._newSpecialVisitor.name} arrived! ${game._newSpecialVisitor.description}`);
