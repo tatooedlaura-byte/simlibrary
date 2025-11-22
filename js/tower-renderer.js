@@ -2186,18 +2186,25 @@ class TowerRenderer {
         const numFloors = floors.length;
 
         // Calculate floor positions directly (don't rely on _renderBounds during reorder)
-        // Floors are drawn bottom to top, index 0 is bottom floor
-        for (let i = numFloors - 1; i >= 0; i--) {
-            // Visual index (0 = top floor visually, numFloors-1 = bottom floor visually)
-            const visualIndex = numFloors - 1 - i;
-            // Y position of this floor slot
-            const slotY = this.height - 40 - (visualIndex + 2) * this.floorHeight;
-            const slotCenterY = slotY + this.floorHeight / 2;
+        // We iterate from bottom floor (index 0) to top floor
+        // and find which slot the drag Y position falls into
 
-            // If drag position is above this slot's center (smaller Y = higher on screen)
-            if (y < slotCenterY) {
+        for (let i = 0; i < numFloors; i++) {
+            // Visual index for this array index
+            const visualIndex = numFloors - 1 - i;
+            // Y position of this floor slot (top edge)
+            const slotY = this.height - 40 - (visualIndex + 2) * this.floorHeight;
+            const slotBottom = slotY + this.floorHeight;
+
+            // If drag position is within this slot's vertical range
+            if (y >= slotY && y < slotBottom) {
                 return i;
             }
+        }
+
+        // If above all floors, return top floor index
+        if (y < this.height - 40 - (numFloors + 1) * this.floorHeight) {
+            return numFloors - 1;
         }
 
         // Default to bottom (index 0)
