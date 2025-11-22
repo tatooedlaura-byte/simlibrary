@@ -117,7 +117,9 @@ class TowerRenderer {
             this.scale = displayWidth / 600;
             this.floorWidth = 500 * this.scale;
             this.floorX = 50 * this.scale;
-            this.floorHeight = 110 * this.scale;
+            // Shorter floors on desktop (width > 500), taller on mobile
+            const baseFloorHeight = displayWidth > 500 ? 110 : 140;
+            this.floorHeight = baseFloorHeight * this.scale;
             this.elevatorWidth = 40 * this.scale;
             this.elevatorX = 5 * this.scale;
             this.elevatorCarHeight = 80 * this.scale;
