@@ -300,57 +300,71 @@ class TowerRenderer {
 
         // Draw floors (bottom to top) - reuse floors variable from above
         const floorsReversed = floors.reverse();
-        floorsReversed.forEach((floor, index) => {
-            const y = this.height - 40 - (index + 2) * this.floorHeight; // +2 to account for lobby
 
-            // In reorder mode, show drop indicator
-            if (this.isReorderMode && this.reorderFloor) {
-                const actualIndex = this.game.floors.length - 1 - index; // Convert visual index to array index
+        // In reorder mode, calculate shifted positions
+        if (this.isReorderMode && this.reorderFloor) {
+            const draggedIndex = this.game.floors.findIndex(f => f.id === this.reorderFloor.id);
+            const targetIndex = this.reorderTargetIndex;
 
-                // Draw drop indicator at target position
-                if (actualIndex === this.reorderTargetIndex && floor.id !== this.reorderFloor.id) {
-                    this.ctx.save();
+            floorsReversed.forEach((floor, visualIndex) => {
+                const actualIndex = this.game.floors.length - 1 - visualIndex;
+                let shiftedIndex = actualIndex;
 
-                    // Bright colored background overlay
-                    this.ctx.fillStyle = 'rgba(76, 175, 80, 0.3)';
-                    this.ctx.fillRect(this.floorX, y, this.floorWidth, this.floorHeight);
-
-                    // Thick bright border
-                    this.ctx.strokeStyle = '#4CAF50';
-                    this.ctx.lineWidth = 6;
-                    this.ctx.strokeRect(this.floorX, y, this.floorWidth, this.floorHeight);
-
-                    // Floor number label
-                    const targetFloorNum = this.reorderTargetIndex + 1;
-                    this.ctx.fillStyle = '#4CAF50';
-                    this.ctx.font = `bold ${24 * this.getScale()}px Arial`;
-                    this.ctx.textAlign = 'center';
-                    this.ctx.fillText(`→ Floor ${targetFloorNum}`, this.floorX + this.floorWidth / 2, y + this.floorHeight / 2 + 8);
-
-                    this.ctx.restore();
-                }
-
-                // Draw the dragged floor with highlight/opacity
+                // Calculate where this floor should appear visually
                 if (floor.id === this.reorderFloor.id) {
-                    this.ctx.save();
-                    this.ctx.globalAlpha = 0.3;
-                    this.drawFloor(floor, this.floorX, y, index);
-                    this.ctx.restore();
+                    // Skip drawing the dragged floor in its original position
+                    // We'll draw it floating at the cursor
+                } else {
+                    // Shift other floors to make room
+                    if (draggedIndex < targetIndex) {
+                        // Dragging up: floors between old and new pos shift down
+                        if (actualIndex > draggedIndex && actualIndex <= targetIndex) {
+                            shiftedIndex = actualIndex - 1;
+                        }
+                    } else if (draggedIndex > targetIndex) {
+                        // Dragging down: floors between new and old pos shift up
+                        if (actualIndex >= targetIndex && actualIndex < draggedIndex) {
+                            shiftedIndex = actualIndex + 1;
+                        }
+                    }
 
-                    // Draw floating version at cursor position
-                    this.ctx.save();
-                    const dragY = this._reorderCurrentY - this.floorHeight / 2;
-                    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                    this.ctx.shadowBlur = 25;
-                    this.ctx.shadowOffsetY = 15;
-                    this.drawFloor(floor, this.floorX, dragY, index);
-                    this.ctx.restore();
-                    return;
+                    const shiftedVisualIndex = this.game.floors.length - 1 - shiftedIndex;
+                    const y = this.height - 40 - (shiftedVisualIndex + 2) * this.floorHeight;
+                    this.drawFloor(floor, this.floorX, y, shiftedVisualIndex);
                 }
-            }
+            });
 
-            this.drawFloor(floor, this.floorX, y, index);
-        });
+            // Draw the gap indicator where floor will drop
+            const targetVisualIndex = this.game.floors.length - 1 - targetIndex;
+            const gapY = this.height - 40 - (targetVisualIndex + 2) * this.floorHeight;
+
+            this.ctx.save();
+            // Subtle gap indicator
+            this.ctx.fillStyle = 'rgba(76, 175, 80, 0.2)';
+            this.ctx.fillRect(this.floorX, gapY, this.floorWidth, this.floorHeight);
+            this.ctx.strokeStyle = '#4CAF50';
+            this.ctx.lineWidth = 3;
+            this.ctx.setLineDash([8, 4]);
+            this.ctx.strokeRect(this.floorX, gapY, this.floorWidth, this.floorHeight);
+            this.ctx.restore();
+
+            // Draw floating dragged floor at cursor position
+            this.ctx.save();
+            const dragY = this._reorderCurrentY - this.floorHeight / 2;
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            this.ctx.shadowBlur = 25;
+            this.ctx.shadowOffsetY = 15;
+            const draggedVisualIndex = this.game.floors.length - 1 - draggedIndex;
+            this.drawFloor(this.reorderFloor, this.floorX, dragY, draggedVisualIndex);
+            this.ctx.restore();
+
+        } else {
+            // Normal mode - draw floors in their actual positions
+            floorsReversed.forEach((floor, index) => {
+                const y = this.height - 40 - (index + 2) * this.floorHeight;
+                this.drawFloor(floor, this.floorX, y, index);
+            });
+        }
 
         // Draw elevator car(s) with readers
         this.drawElevators();
