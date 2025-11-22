@@ -2183,23 +2183,24 @@ class TowerRenderer {
      */
     calculateReorderTargetIndex(y) {
         const floors = this.game.floors;
-        const currentIndex = floors.findIndex(f => f.id === this.reorderFloor.id);
+        const numFloors = floors.length;
 
-        // Find which floor slot the Y position is closest to
-        for (let i = floors.length - 1; i >= 0; i--) {
-            const floor = floors[i];
-            if (floor._renderBounds) {
-                const b = floor._renderBounds;
-                const floorCenterY = b.y + b.height / 2;
+        // Calculate floor positions directly (don't rely on _renderBounds during reorder)
+        // Floors are drawn bottom to top, index 0 is bottom floor
+        for (let i = numFloors - 1; i >= 0; i--) {
+            // Visual index (0 = top floor visually, numFloors-1 = bottom floor visually)
+            const visualIndex = numFloors - 1 - i;
+            // Y position of this floor slot
+            const slotY = this.height - 40 - (visualIndex + 2) * this.floorHeight;
+            const slotCenterY = slotY + this.floorHeight / 2;
 
-                // If drag position is above this floor's center, target this index
-                if (y < floorCenterY) {
-                    return i;
-                }
+            // If drag position is above this slot's center (smaller Y = higher on screen)
+            if (y < slotCenterY) {
+                return i;
             }
         }
 
-        // Default to bottom
+        // Default to bottom (index 0)
         return 0;
     }
 
