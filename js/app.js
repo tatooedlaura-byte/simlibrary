@@ -363,6 +363,33 @@ function updateGlobalStats() {
         delete game._cozyEvent;
     }
 
+    // Check for Event Hall events
+    if (game._newHallEvent) {
+        showToast(`🎭 Event Hall: ${game._newHallEvent.emoji} ${game._newHallEvent.name}! ${game._newHallEvent.description}`);
+        delete game._newHallEvent;
+    }
+
+    // Check for ended Event Hall events
+    if (game._hallEventEnded) {
+        showToast(`🎭 ${game._hallEventEnded.emoji} ${game._hallEventEnded.name} ended! +${game._hallEventEnded.reward} ⭐`);
+        delete game._hallEventEnded;
+    }
+
+    // Check for night cleaning
+    if (game._nightCleaningOccurred) {
+        if (game._cleanedAmount > 0) {
+            showToast(`🧹 Night cleaning complete! Cleaned ${game._cleanedAmount} trash.`);
+        }
+        delete game._nightCleaningOccurred;
+        delete game._cleanedAmount;
+    }
+
+    // Check for inspector bonus
+    if (game._inspectorBonus !== undefined) {
+        showToast(`🔍 Library Inspector awarded ${game._inspectorBonus} ⭐ for tidiness!`);
+        delete game._inspectorBonus;
+    }
+
     // Check for new mini-quest
     if (game._newMiniQuest) {
         showToast(`${game._newMiniQuest.emoji} ${game._newMiniQuest.description} Tap to help!`);
@@ -550,7 +577,19 @@ function openFloorDetail(floorId) {
         statusEl.textContent = `🏗️ Building... ${remaining}s`;
         statusEl.className = 'floor-status building';
     } else {
-        statusEl.textContent = '✅ Ready';
+        // Show trash level in status
+        let trashText = '';
+        if (floor.trash !== undefined && floor.trash > 0) {
+            const trashPercent = Math.floor(floor.trash);
+            if (floor.trash >= 80) {
+                trashText = ` | 🗑️ ${trashPercent}% (Critical!)`;
+            } else if (floor.trash >= 50) {
+                trashText = ` | 🗑️ ${trashPercent}% (Dirty)`;
+            } else if (floor.trash >= 20) {
+                trashText = ` | 🗑️ ${trashPercent}%`;
+            }
+        }
+        statusEl.textContent = `✅ Ready${trashText}`;
         statusEl.className = 'floor-status ready';
     }
 
@@ -580,7 +619,19 @@ function updateFloorDetail(floor) {
         const remaining = Math.max(0, Math.ceil((floor.buildEndTime - Date.now()) / 1000));
         statusEl.textContent = `🏗️ Building... ${remaining}s`;
     } else {
-        statusEl.textContent = '✅ Ready';
+        // Show trash level in status
+        let trashText = '';
+        if (floor.trash !== undefined && floor.trash > 0) {
+            const trashPercent = Math.floor(floor.trash);
+            if (floor.trash >= 80) {
+                trashText = ` | 🗑️ ${trashPercent}% (Critical!)`;
+            } else if (floor.trash >= 50) {
+                trashText = ` | 🗑️ ${trashPercent}% (Dirty)`;
+            } else if (floor.trash >= 20) {
+                trashText = ` | 🗑️ ${trashPercent}%`;
+            }
+        }
+        statusEl.textContent = `✅ Ready${trashText}`;
     }
 
     // Update upgrade section

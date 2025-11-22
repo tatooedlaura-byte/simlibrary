@@ -31,6 +31,69 @@ class GameState {
             transitTypes: ['🚇 Subway', '🚌 Bus', '🚊 Tram']
         };
 
+        // Cleaning system
+        this.lastCleanedDay = 0; // Track last day cleaning occurred
+
+        // Event Hall system
+        this.lastEventHallDay = 0; // Track last day an event hall event occurred
+        this.currentHallEvent = null; // Current event hall event
+        this.hallEventTypes = [
+            {
+                id: 'book_sale',
+                name: 'Book Sale',
+                emoji: '📚',
+                description: 'Community book sale! +50% stars from all floors.',
+                duration: 120000, // 2 minutes
+                effect: { type: 'star_bonus', value: 1.5 },
+                reward: 100
+            },
+            {
+                id: 'neighborhood_meeting',
+                name: 'Neighborhood Meeting',
+                emoji: '🏘️',
+                description: 'Community gathering! +30 mood boost.',
+                duration: 90000, // 1.5 minutes
+                effect: { type: 'mood_boost', value: 30 },
+                reward: 50
+            },
+            {
+                id: 'story_time',
+                name: 'Story Time Program',
+                emoji: '📖',
+                description: 'Kids program! 2x reader spawn rate.',
+                duration: 120000,
+                effect: { type: 'spawn_bonus', value: 2 },
+                reward: 75
+            },
+            {
+                id: 'author_signing',
+                name: 'Author Signing',
+                emoji: '✍️',
+                description: 'Famous author visit! 2x stars from all floors.',
+                duration: 90000,
+                effect: { type: 'star_bonus', value: 2 },
+                reward: 150
+            },
+            {
+                id: 'movie_night',
+                name: 'Movie Night',
+                emoji: '🎬',
+                description: 'Film screening! Attracts extra readers.',
+                duration: 120000,
+                effect: { type: 'spawn_bonus', value: 1.5 },
+                reward: 60
+            },
+            {
+                id: 'craft_workshop',
+                name: 'Craft Workshop',
+                emoji: '🎨',
+                description: 'Creative fun! +25 mood and bonus stars.',
+                duration: 90000,
+                effect: { type: 'mood_boost', value: 25 },
+                reward: 80
+            }
+        ];
+
         // Reader name pools
         this.readerNames = {
             first: ['Alex', 'Jamie', 'Sam', 'Taylor', 'Morgan', 'Casey', 'Jordan', 'Riley', 'Avery', 'Quinn',
@@ -1029,6 +1092,45 @@ class GameState {
                     description: 'Floors next to this earn 2x stars'
                 },
                 bookCategories: []
+            },
+
+            // Utility Rooms
+            {
+                id: 'bathroom',
+                name: 'Restroom',
+                emoji: '🚻',
+                color: 'sky',
+                description: 'Essential amenity - reduces trash and boosts mood',
+                buildCost: 200,
+                buildTime: 30,
+                isUtilityRoom: true,
+                bonus: {
+                    type: 'trash_reduction',
+                    multiplier: 0.7, // 30% less trash generated
+                    moodBoost: 5,
+                    description: 'Reduces trash generation by 30%'
+                },
+                bookCategories: []
+            },
+            {
+                id: 'basement',
+                name: 'Basement',
+                emoji: '🏚️',
+                color: 'tan',
+                description: 'Maintenance hub - hire cleaning crew here',
+                buildCost: 300,
+                buildTime: 45,
+                isUtilityRoom: true,
+                bonus: {
+                    type: 'maintenance_hub',
+                    description: 'Hire cleaning crew to keep library tidy'
+                },
+                bookCategories: [],
+                staffSlots: [
+                    { name: 'Janitor', cost: 100, effect: 'Cleans 20 trash per night cycle' },
+                    { name: 'Custodian', cost: 200, effect: 'Cleans 40 trash per night cycle' },
+                    { name: 'Cleaning Crew', cost: 350, effect: 'Cleans all trash per night cycle' }
+                ]
             }
         ];
 
@@ -1092,7 +1194,8 @@ class GameState {
                 restocking: false,
                 restockStartTime: null,
                 restockEndTime: null
-            }))
+            })),
+            trash: 0 // Trash level 0-100
         };
 
         this.floors.push(newFloor);
@@ -1316,8 +1419,26 @@ class GameState {
      * Spawn a reader to visit a random ready floor
      */
     spawnReader() {
-        const readyFloors = this.floors.filter(f => f.status === 'ready');
+        // Filter out floors with max trash (100) - readers won't visit dirty floors
+        const readyFloors = this.floors.filter(f =>
+            f.status === 'ready' &&
+            (f.trash === undefined || f.trash < 100)
+        );
         if (readyFloors.length === 0) return null;
+
+        // Check bathroom requirement: need 1 bathroom per 5 regular floors
+        const regularFloors = this.floors.filter(f =>
+            f.status === 'ready' && !f.typeId?.includes('bathroom') && !f.typeId?.includes('basement')
+        ).length;
+        const bathroomCount = this.floors.filter(f =>
+            f.typeId === 'bathroom' && f.status === 'ready'
+        ).length;
+        const neededBathrooms = Math.floor(regularFloors / 5);
+
+        // If missing bathrooms, 30% chance readers refuse to come
+        if (bathroomCount < neededBathrooms && Math.random() < 0.3) {
+            return null;
+        }
 
         let floor, cat, idx;
 
@@ -1919,6 +2040,34 @@ class GameState {
     }
 
     /**
+     * Get library tidiness score (0-100)
+     */
+    getTidiness() {
+        const readyFloors = this.floors.filter(f => f.status === 'ready');
+        if (readyFloors.length === 0) return 100;
+
+        let totalTrash = 0;
+        readyFloors.forEach(floor => {
+            if (floor.trash !== undefined) {
+                totalTrash += floor.trash;
+            }
+        });
+
+        const avgTrash = totalTrash / readyFloors.length;
+        return Math.max(0, 100 - avgTrash);
+    }
+
+    /**
+     * Calculate inspector bonus based on actual tidiness
+     */
+    getInspectorBonus() {
+        const tidiness = this.getTidiness();
+        // Base bonus * tidiness multiplier (0-100%)
+        // At 100% tidy: 100 stars, at 50% tidy: 50 stars, at 0% tidy: 0 stars
+        return Math.floor(tidiness);
+    }
+
+    /**
      * Update mood meter based on library state
      */
     updateMood() {
@@ -1942,8 +2091,33 @@ class GameState {
         });
         targetMood -= emptyCategories * 2;
 
+        // Penalty for trash
+        let totalTrash = 0;
+        let floorCount = 0;
+        this.floors.forEach(floor => {
+            if (floor.status === 'ready' && floor.trash !== undefined) {
+                totalTrash += floor.trash;
+                floorCount++;
+            }
+        });
+        if (floorCount > 0) {
+            const avgTrash = totalTrash / floorCount;
+            targetMood -= Math.floor(avgTrash / 5); // -1 mood per 5 avg trash
+        }
+
+        // Boost from bathrooms
+        const bathroomCount = this.floors.filter(f =>
+            f.typeId === 'bathroom' && f.status === 'ready'
+        ).length;
+        targetMood += bathroomCount * 5;
+
         // Boost during events
         if (this.currentEvent) targetMood += 15;
+
+        // Boost from Event Hall events
+        if (this.currentHallEvent && this.currentHallEvent.effect.type === 'mood_boost') {
+            targetMood += this.currentHallEvent.effect.value;
+        }
 
         // Boost during rush hour
         if (this.transitSchedule.isRushHour) targetMood += 10;
@@ -1976,6 +2150,148 @@ class GameState {
     getGameDay() {
         const hoursPlayed = this.stats.timePlayed / 3600;
         return Math.floor(hoursPlayed) + 1;
+    }
+
+    /**
+     * Run night cleaning cycle - cleans trash based on basement staff
+     */
+    runNightCleaning() {
+        // Find basement floor
+        const basement = this.floors.find(f => f.typeId === 'basement' && f.status === 'ready');
+        if (!basement) return { cleaned: false, reason: 'No basement' };
+
+        // Check cleaning staff
+        const cleaningPower = this.getCleaningPower(basement);
+        if (cleaningPower === 0) return { cleaned: false, reason: 'No cleaning staff' };
+
+        // Clean all floors
+        let totalCleaned = 0;
+        this.floors.forEach(floor => {
+            if (floor.trash !== undefined && floor.trash > 0) {
+                const amountCleaned = Math.min(floor.trash, cleaningPower);
+                floor.trash -= amountCleaned;
+                totalCleaned += amountCleaned;
+            }
+        });
+
+        this._nightCleaningOccurred = true;
+        this._cleanedAmount = totalCleaned;
+
+        return { cleaned: true, amount: totalCleaned };
+    }
+
+    /**
+     * Get cleaning power from basement staff
+     */
+    getCleaningPower(basement) {
+        if (!basement || !basement.staff) return 0;
+
+        let power = 0;
+        basement.staff.forEach(staffMember => {
+            if (staffMember === 'Janitor') power = Math.max(power, 20);
+            if (staffMember === 'Custodian') power = Math.max(power, 40);
+            if (staffMember === 'Cleaning Crew') power = 999; // Cleans all
+        });
+        return power;
+    }
+
+    /**
+     * Check if library needs bathrooms warning
+     */
+    getBathroomWarning() {
+        const regularFloors = this.floors.filter(f =>
+            f.status === 'ready' && f.typeId !== 'bathroom' && f.typeId !== 'basement'
+        ).length;
+        const bathroomCount = this.floors.filter(f =>
+            f.typeId === 'bathroom' && f.status === 'ready'
+        ).length;
+        const neededBathrooms = Math.floor(regularFloors / 5);
+
+        if (bathroomCount < neededBathrooms) {
+            return {
+                needed: true,
+                have: bathroomCount,
+                need: neededBathrooms,
+                message: `Need ${neededBathrooms - bathroomCount} more restroom(s)!`
+            };
+        }
+        return { needed: false };
+    }
+
+    /**
+     * Check and trigger Event Hall events (every 2-3 days)
+     */
+    checkEventHallEvent() {
+        // Check if we have an Event Hall
+        const eventHall = this.floors.find(f => f.typeId === 'event_hall' && f.status === 'ready');
+        if (!eventHall) return;
+
+        const currentDay = this.getGameDay();
+        const daysSinceLastEvent = currentDay - this.lastEventHallDay;
+
+        // Trigger event every 2-3 days (random)
+        const eventInterval = 2 + Math.floor(Math.random() * 2); // 2 or 3
+
+        if (daysSinceLastEvent >= eventInterval && !this.currentHallEvent) {
+            this.triggerHallEvent();
+            this.lastEventHallDay = currentDay;
+        }
+    }
+
+    /**
+     * Trigger a random Event Hall event
+     */
+    triggerHallEvent() {
+        const eventType = this.hallEventTypes[Math.floor(Math.random() * this.hallEventTypes.length)];
+        const now = Date.now();
+
+        this.currentHallEvent = {
+            id: this.generateId(),
+            type: eventType.id,
+            name: eventType.name,
+            emoji: eventType.emoji,
+            description: eventType.description,
+            effect: eventType.effect,
+            reward: eventType.reward,
+            startTime: now,
+            endTime: now + eventType.duration
+        };
+
+        // Flag for UI notification
+        this._newHallEvent = this.currentHallEvent;
+    }
+
+    /**
+     * Get Event Hall event effect multiplier
+     */
+    getHallEventEffect(effectType) {
+        if (!this.currentHallEvent || this.currentHallEvent.effect.type !== effectType) {
+            return 1;
+        }
+        return this.currentHallEvent.effect.value;
+    }
+
+    /**
+     * Check and end Event Hall events
+     */
+    updateHallEvent() {
+        if (!this.currentHallEvent) return;
+
+        const now = Date.now();
+        if (now >= this.currentHallEvent.endTime) {
+            // Award reward stars
+            this.stars += this.currentHallEvent.reward;
+            this.stats.totalStarsEarned += this.currentHallEvent.reward;
+
+            // Flag for UI notification
+            this._hallEventEnded = {
+                name: this.currentHallEvent.name,
+                emoji: this.currentHallEvent.emoji,
+                reward: this.currentHallEvent.reward
+            };
+
+            this.currentHallEvent = null;
+        }
     }
 
     /**
@@ -2607,6 +2923,10 @@ class GameState {
                     const starMultiplier = this.getEventEffect('star_multiplier');
                     let finalEarnings = Math.floor(reader.earningAmount * starMultiplier);
 
+                    // Apply Event Hall star bonus
+                    const hallBonus = this.getHallEventEffect('star_bonus');
+                    finalEarnings = Math.floor(finalEarnings * hallBonus);
+
                     // Apply floor synergy bonus
                     const synergyBonus = this.getSynergyBonus(floor.type);
                     finalEarnings = Math.floor(finalEarnings * synergyBonus);
@@ -2618,6 +2938,12 @@ class GameState {
                     } else if (this.mood < 30) {
                         // Low mood = reduced earnings
                         finalEarnings = Math.floor(finalEarnings * 0.75); // 25% penalty
+                    }
+
+                    // Apply trash penalty (high trash = reduced earnings)
+                    if (floor.trash >= 50) {
+                        const trashPenalty = 1 - (floor.trash - 50) / 100; // Up to 50% penalty at 100 trash
+                        finalEarnings = Math.floor(finalEarnings * trashPenalty);
                     }
 
                     // Apply perk earning bonus
@@ -2657,6 +2983,21 @@ class GameState {
 
                     // Track reader in collection
                     this.trackReaderInCollection(reader);
+
+                    // Generate trash from reader visit
+                    if (floor.trash !== undefined) {
+                        let trashAmount = 1; // Base trash per checkout
+
+                        // Bathrooms reduce trash generation
+                        const bathroomCount = this.floors.filter(f =>
+                            f.typeId === 'bathroom' && f.status === 'ready'
+                        ).length;
+                        if (bathroomCount > 0) {
+                            trashAmount *= Math.pow(0.7, bathroomCount); // 30% reduction per bathroom
+                        }
+
+                        floor.trash = Math.min(100, floor.trash + trashAmount);
+                    }
 
                     // Register or update regular customer
                     this.registerRegularCustomer(reader);
@@ -2725,6 +3066,9 @@ class GameState {
         // Apply event spawn rate multiplier
         spawnChance *= this.getEventEffect('spawn_rate');
 
+        // Apply Event Hall spawn bonus
+        spawnChance *= this.getHallEventEffect('spawn_bonus');
+
         // Apply mood effect on spawn rate
         if (this.mood >= 70) {
             spawnChance *= 1.25; // 25% more visitors when happy
@@ -2783,6 +3127,15 @@ class GameState {
             if (now >= visitor.endTime) {
                 // Visitor is leaving
                 this._departingVisitor = visitor;
+
+                // Apply inspector bonus based on actual tidiness
+                if (visitor.type === 'inspector') {
+                    const bonus = this.getInspectorBonus();
+                    this.stars += bonus;
+                    this.stats.totalStarsEarned += bonus;
+                    this._inspectorBonus = bonus;
+                }
+
                 return false;
             }
 
@@ -2797,6 +3150,17 @@ class GameState {
 
         // Update mood meter
         this.updateMood();
+
+        // Check for night cleaning (when day changes)
+        const currentDay = this.getGameDay();
+        if (currentDay > this.lastCleanedDay) {
+            this.runNightCleaning();
+            this.lastCleanedDay = currentDay;
+        }
+
+        // Check for Event Hall events
+        this.checkEventHallEvent();
+        this.updateHallEvent();
 
         // Check floor synergies
         this.checkFloorSynergies();
@@ -2874,6 +3238,9 @@ class GameState {
             unlockedPerks: this.unlockedPerks,
             purchasedUpgrades: this.purchasedUpgrades,
             totalStarsEarned: this.totalStarsEarned,
+            lastCleanedDay: this.lastCleanedDay,
+            lastEventHallDay: this.lastEventHallDay,
+            currentHallEvent: this.currentHallEvent,
             timestamp: Date.now()
         };
         localStorage.setItem('simlibrary_save_v2', JSON.stringify(saveData));
@@ -2951,13 +3318,23 @@ class GameState {
                 this.purchasedUpgrades = data.purchasedUpgrades || [];
                 this.totalStarsEarned = data.totalStarsEarned || this.stats.totalStarsEarned || 0;
 
-                // Migrate old floors to have staff array and upgradeLevel if missing
+                // Load cleaning system state
+                this.lastCleanedDay = data.lastCleanedDay || 0;
+
+                // Load Event Hall system state
+                this.lastEventHallDay = data.lastEventHallDay || 0;
+                this.currentHallEvent = data.currentHallEvent || null;
+
+                // Migrate old floors to have staff array, upgradeLevel, and trash if missing
                 this.floors.forEach(floor => {
                     if (!floor.staff) {
                         floor.staff = [];
                     }
                     if (!floor.upgradeLevel) {
                         floor.upgradeLevel = 1;
+                    }
+                    if (floor.trash === undefined) {
+                        floor.trash = 0;
                     }
                 });
 
