@@ -1788,18 +1788,25 @@ class TowerRenderer {
         const deltaX = Math.abs(e.touches[0].clientX - this.dragStartX);
         const deltaY = Math.abs(e.touches[0].clientY - this.dragStartY);
 
-        // Only consider it a scroll if moved more than 10px
-        if (deltaX > 10 || deltaY > 10) {
-            this._touchMoved = true;
-        }
-
-        // Scroll tower internally on mobile
-        if (this._touchMoved && this.maxScrollY > 0) {
+        // If tower is scrollable, prevent page scroll and handle internally
+        if (this.maxScrollY > 0) {
             e.preventDefault(); // Prevent page scroll when scrolling canvas
+
+            // Only consider it a scroll if moved more than 10px
+            if (deltaX > 10 || deltaY > 10) {
+                this._touchMoved = true;
+            }
+
+            // Update scroll position
             const scrollDeltaY = e.touches[0].clientY - this.dragStartY;
             this.scrollY = this.dragStartScrollY - scrollDeltaY;
             // Clamp scroll position
             this.scrollY = Math.max(0, Math.min(this.scrollY, this.maxScrollY));
+        } else {
+            // Tower not scrollable, just track if moved for tap detection
+            if (deltaX > 10 || deltaY > 10) {
+                this._touchMoved = true;
+            }
         }
     }
 
