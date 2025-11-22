@@ -788,7 +788,7 @@ class TowerRenderer {
                     readerEmoji: reader.emoji,
                     floorX: floorX,
                     floorY: floorY,
-                    x: floorX + startOffset, // Start position (scaled)
+                    x: floorX + startOffset, // Absolute position (scaled)
                     targetX: floorX + targetOffset, // Walking to bookshelf (scaled)
                     direction: 1, // 1 = right, -1 = left
                     walkSpeed: (0.5 + Math.random() * 0.5) * scale,
@@ -796,6 +796,16 @@ class TowerRenderer {
                     animationFrame: 0
                 };
                 this.characters.push(char);
+            } else {
+                // Update floor position in case it moved (e.g., new floor built)
+                if (char.floorX !== floorX || char.floorY !== floorY) {
+                    const offsetX = char.x - char.floorX;
+                    const targetOffsetX = char.targetX - char.floorX;
+                    char.floorX = floorX;
+                    char.floorY = floorY;
+                    char.x = floorX + offsetX;
+                    char.targetX = floorX + targetOffsetX;
+                }
             }
 
             // Draw character
