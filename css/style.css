@@ -1151,9 +1151,9 @@ body {
 .mission-banner {
     background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
     color: #000;
-    padding: 12px 20px;
-    margin: 0 20px 10px 20px;
-    border-radius: 8px;
+    padding: 6px 12px;
+    margin: 0 10px 5px 10px;
+    border-radius: 6px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     display: flex;
     justify-content: space-between;
@@ -1178,20 +1178,20 @@ body {
 
 .mission-title {
     font-weight: bold;
-    font-size: 14px;
-    margin-bottom: 4px;
+    font-size: 12px;
+    margin-bottom: 2px;
 }
 
 .mission-details {
-    font-size: 12px;
+    font-size: 10px;
     opacity: 0.8;
 }
 
 .mission-progress {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 10px;
-    height: 8px;
-    margin-top: 6px;
+    height: 6px;
+    margin-top: 4px;
     overflow: hidden;
 }
 
@@ -1204,11 +1204,11 @@ body {
 .mission-reward {
     text-align: right;
     font-weight: bold;
-    font-size: 16px;
+    font-size: 12px;
 }
 
 .mission-timer {
-    font-size: 12px;
+    font-size: 10px;
     opacity: 0.8;
 }
 
