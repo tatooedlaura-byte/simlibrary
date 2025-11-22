@@ -527,7 +527,7 @@ class TowerRenderer {
         } else {
             // Draw book shelves (3 categories) - scale with floor size
             const scale = this.getScale();
-            const shelfY = y + 25; // Fixed position below floor name
+            const shelfY = y + 35; // Fixed position below floor name with more space
             const shelfWidth = 120 * scale;
             const shelfHeight = 60 * scale;
             const shelfSpacing = (this.floorWidth - 60 * scale - shelfWidth * 3) / 2;
