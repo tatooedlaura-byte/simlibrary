@@ -543,6 +543,47 @@ class TowerRenderer {
 
         // Draw hidden items for find mission
         this.drawFindMissionItems(floor, x, y);
+
+        // Draw mini-quest item if on this floor
+        this.drawMiniQuestItem(floor, x, y);
+    }
+
+    /**
+     * Draw mini-quest item on floor
+     */
+    drawMiniQuestItem(floor, floorX, floorY) {
+        if (!this.game.currentMiniQuest) return;
+        if (this.game.currentMiniQuest.floorId !== floor.id) return;
+
+        const quest = this.game.currentMiniQuest;
+        const x = floorX + quest.x * this.floorWidth;
+        const y = floorY + quest.y * this.floorHeight;
+        const scale = this.getScale();
+        const size = 28 * scale;
+
+        // Pulsing glow effect
+        const pulse = Math.sin(Date.now() / 200) * 0.3 + 0.7;
+
+        // Draw glowing background
+        const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, size * 1.5);
+        gradient.addColorStop(0, `rgba(255, 200, 0, ${0.6 * pulse})`);
+        gradient.addColorStop(1, 'rgba(255, 200, 0, 0)');
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(x - size * 1.5, y - size * 1.5, size * 3, size * 3);
+
+        // Draw item emoji
+        this.ctx.font = `${Math.round(size)}px Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(quest.emoji, x, y);
+
+        // Store bounds for tap detection
+        quest._renderBounds = {
+            x: x - size,
+            y: y - size,
+            width: size * 2,
+            height: size * 2
+        };
     }
 
     /**
@@ -1231,6 +1272,25 @@ class TowerRenderer {
             }
         }
 
+        // Check mini-quest item
+        if (this.game.currentMiniQuest && this.game.currentMiniQuest._renderBounds) {
+            const b = this.game.currentMiniQuest._renderBounds;
+            const padding = b.width * 0.25;
+            if (clickX >= b.x - padding && clickX <= b.x + b.width + padding &&
+                clickY >= b.y - padding && clickY <= b.y + b.height + padding) {
+                console.log('Mini-quest clicked:', this.game.currentMiniQuest.emoji);
+
+                // Spawn celebration effect
+                this.spawnSparkle(clickX, clickY + this.scrollY);
+                this.spawnTextParticle(clickX, clickY + this.scrollY, `+${this.game.currentMiniQuest.reward} ⭐`, '#FFD700');
+
+                // Complete quest
+                this.game.completeMiniQuest();
+
+                return; // Don't open floor
+            }
+        }
+
         // Check floor clicks (check all floors)
         const floors = [...this.game.floors].reverse(); // Top to bottom for click priority
         for (const floor of floors) {
@@ -1732,6 +1792,26 @@ class TowerRenderer {
                             return;
                         }
                     }
+                }
+            }
+
+            // Check mini-quest item
+            if (this.game.currentMiniQuest && this.game.currentMiniQuest._renderBounds) {
+                const b = this.game.currentMiniQuest._renderBounds;
+                const padding = b.width * 0.25;
+                if (clickX >= b.x - padding && clickX <= b.x + b.width + padding &&
+                    clickY >= b.y - padding && clickY <= b.y + b.height + padding) {
+                    console.log('Mini-quest tapped:', this.game.currentMiniQuest.emoji);
+
+                    // Spawn celebration effect
+                    this.spawnSparkle(clickX, clickY + this.scrollY);
+                    this.spawnTextParticle(clickX, clickY + this.scrollY, `+${this.game.currentMiniQuest.reward} ⭐`, '#FFD700');
+
+                    // Complete quest
+                    this.game.completeMiniQuest();
+
+                    this.isDragging = false;
+                    return;
                 }
             }
 

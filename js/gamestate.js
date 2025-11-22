@@ -336,6 +336,60 @@ class GameState {
         ];
         this.nextCozyEventTime = Date.now() + 120000; // First cozy event in 2 minutes
 
+        // Mini-quests (tap to complete)
+        this.miniQuestTypes = [
+            {
+                id: 'lost_teddy',
+                name: 'Lost Teddy',
+                emoji: '🧸',
+                description: 'A child lost their teddy bear!',
+                reward: 25,
+                rewardBucks: 0
+            },
+            {
+                id: 'shelve_books',
+                name: 'Shelve Books',
+                emoji: '📚',
+                description: 'Help shelve some returned books!',
+                reward: 30,
+                rewardBucks: 0
+            },
+            {
+                id: 'find_glasses',
+                name: 'Lost Glasses',
+                emoji: '👓',
+                description: 'Someone left their glasses!',
+                reward: 20,
+                rewardBucks: 0
+            },
+            {
+                id: 'water_plant',
+                name: 'Thirsty Plant',
+                emoji: '🪴',
+                description: 'The plant needs watering!',
+                reward: 15,
+                rewardBucks: 0
+            },
+            {
+                id: 'fix_lamp',
+                name: 'Flickering Lamp',
+                emoji: '💡',
+                description: 'Fix the flickering lamp!',
+                reward: 20,
+                rewardBucks: 0
+            },
+            {
+                id: 'coffee_delivery',
+                name: 'Coffee Delivery',
+                emoji: '☕',
+                description: 'Deliver coffee to a patron!',
+                reward: 35,
+                rewardBucks: 1
+            }
+        ];
+        this.currentMiniQuest = null;
+        this.nextMiniQuestTime = Date.now() + 90000; // First mini-quest in 1.5 minutes
+
         // Stats tracking (all-time)
         this.stats = {
             totalBooksCheckedOut: 0,
@@ -1734,6 +1788,63 @@ class GameState {
     }
 
     /**
+     * Spawn a mini-quest on a random floor
+     */
+    spawnMiniQuest() {
+        const readyFloors = this.floors.filter(f => f.status === 'ready');
+        if (readyFloors.length === 0) return;
+
+        // Pick random quest type
+        const questType = this.miniQuestTypes[Math.floor(Math.random() * this.miniQuestTypes.length)];
+
+        // Pick random floor
+        const floor = readyFloors[Math.floor(Math.random() * readyFloors.length)];
+
+        this.currentMiniQuest = {
+            id: this.generateId(),
+            type: questType.id,
+            name: questType.name,
+            emoji: questType.emoji,
+            description: questType.description,
+            reward: questType.reward,
+            rewardBucks: questType.rewardBucks,
+            floorId: floor.id,
+            x: 0.2 + Math.random() * 0.6, // Position on floor
+            y: 0.3 + Math.random() * 0.4,
+            startTime: Date.now(),
+            expiryTime: Date.now() + 60000 // 60 seconds to complete
+        };
+
+        // Store for notification
+        this._newMiniQuest = this.currentMiniQuest;
+    }
+
+    /**
+     * Complete the current mini-quest
+     */
+    completeMiniQuest() {
+        if (!this.currentMiniQuest) return;
+
+        // Award rewards
+        this.stars += this.currentMiniQuest.reward;
+        this.stats.totalStarsEarned += this.currentMiniQuest.reward;
+
+        if (this.currentMiniQuest.rewardBucks > 0) {
+            this.towerBucks += this.currentMiniQuest.rewardBucks;
+            this.stats.totalTowerBucksEarned += this.currentMiniQuest.rewardBucks;
+        }
+
+        // Store for notification
+        this._completedMiniQuest = this.currentMiniQuest;
+
+        // Clear quest
+        this.currentMiniQuest = null;
+
+        // Next mini-quest in 1-3 minutes
+        this.nextMiniQuestTime = Date.now() + (60000 + Math.random() * 120000);
+    }
+
+    /**
      * Check and unlock achievements
      */
     checkAchievements() {
@@ -2125,6 +2236,17 @@ class GameState {
         // Trigger cozy micro-events
         if (now >= this.nextCozyEventTime && this.floors.length > 0) {
             this.triggerCozyEvent();
+        }
+
+        // Spawn mini-quest if it's time
+        if (!this.currentMiniQuest && now >= this.nextMiniQuestTime && this.floors.length > 0) {
+            this.spawnMiniQuest();
+        }
+
+        // Check mini-quest expiry
+        if (this.currentMiniQuest && now >= this.currentMiniQuest.expiryTime) {
+            this.currentMiniQuest = null;
+            this.nextMiniQuestTime = now + (60000 + Math.random() * 120000);
         }
 
         // Update time played stat (every tick = 1 second)

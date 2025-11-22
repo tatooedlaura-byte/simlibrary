@@ -333,6 +333,19 @@ function updateGlobalStats() {
         showToast(`${game._cozyEvent.emoji} ${game._cozyEvent.name}! ${game._cozyEvent.description}`);
         delete game._cozyEvent;
     }
+
+    // Check for new mini-quest
+    if (game._newMiniQuest) {
+        showToast(`${game._newMiniQuest.emoji} ${game._newMiniQuest.description} Tap to help!`);
+        delete game._newMiniQuest;
+    }
+
+    // Check for completed mini-quest
+    if (game._completedMiniQuest) {
+        const bucks = game._completedMiniQuest.rewardBucks > 0 ? ` + ${game._completedMiniQuest.rewardBucks} 💎` : '';
+        showToast(`✅ ${game._completedMiniQuest.name} complete! +${game._completedMiniQuest.reward} ⭐${bucks}`);
+        delete game._completedMiniQuest;
+    }
 }
 
 /**
