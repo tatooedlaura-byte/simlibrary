@@ -83,9 +83,9 @@ class TowerRenderer {
         this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
         this.canvas.addEventListener('mouseleave', (e) => this.handleMouseUp(e));
 
-        // Touch support for mobile - passive: true allows browser to scroll
-        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
-        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: true });
+        // Touch support for mobile - passive: false allows us to prevent page scroll
+        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
         this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
 
         // Set cursor style
@@ -1783,9 +1783,14 @@ class TowerRenderer {
             this._touchMoved = true;
         }
 
-        // Don't scroll tower internally on mobile - let page scroll handle it
-        // const scrollDeltaY = e.touches[0].clientY - this.dragStartY;
-        // this.scrollY = this.dragStartScrollY - scrollDeltaY;
+        // Scroll tower internally on mobile
+        if (this._touchMoved && this.maxScrollY > 0) {
+            e.preventDefault(); // Prevent page scroll when scrolling canvas
+            const scrollDeltaY = e.touches[0].clientY - this.dragStartY;
+            this.scrollY = this.dragStartScrollY - scrollDeltaY;
+            // Clamp scroll position
+            this.scrollY = Math.max(0, Math.min(this.scrollY, this.maxScrollY));
+        }
     }
 
     /**
