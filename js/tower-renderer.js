@@ -2531,30 +2531,44 @@ class TowerRenderer {
                     this.ctx.fill();
                 }
 
-                // Draw sink area
+                // Draw sink area (front view)
                 const sinkX = x + this.floorWidth - 100;
-                const sinkY = y + 50;
-
-                // Counter
-                this.ctx.fillStyle = '#ECEFF1';
-                this.ctx.fillRect(sinkX, sinkY, 80, 40);
-
-                // Sink basin
-                this.ctx.fillStyle = '#CFD8DC';
-                this.ctx.beginPath();
-                this.ctx.ellipse(sinkX + 40, sinkY + 20, 25, 15, 0, 0, Math.PI * 2);
-                this.ctx.fill();
-
-                // Faucet
-                this.ctx.fillStyle = '#78909C';
-                this.ctx.fillRect(sinkX + 35, sinkY + 5, 10, 15);
+                const sinkY = y + 45;
 
                 // Mirror above sink
                 this.ctx.fillStyle = '#E3F2FD';
-                this.ctx.fillRect(sinkX + 15, sinkY - 25, 50, 25);
+                this.ctx.fillRect(sinkX + 15, sinkY, 50, 35);
                 this.ctx.strokeStyle = '#90A4AE';
                 this.ctx.lineWidth = 2;
-                this.ctx.strokeRect(sinkX + 15, sinkY - 25, 50, 25);
+                this.ctx.strokeRect(sinkX + 15, sinkY, 50, 35);
+
+                // Sink pedestal/cabinet (front view)
+                this.ctx.fillStyle = '#ECEFF1';
+                this.ctx.fillRect(sinkX + 10, sinkY + 40, 60, 50);
+
+                // Cabinet door lines
+                this.ctx.strokeStyle = '#B0BEC5';
+                this.ctx.lineWidth = 1;
+                this.ctx.beginPath();
+                this.ctx.moveTo(sinkX + 40, sinkY + 45);
+                this.ctx.lineTo(sinkX + 40, sinkY + 85);
+                this.ctx.stroke();
+
+                // Door handles
+                this.ctx.fillStyle = '#78909C';
+                this.ctx.fillRect(sinkX + 32, sinkY + 60, 4, 10);
+                this.ctx.fillRect(sinkX + 44, sinkY + 60, 4, 10);
+
+                // Sink basin (front view - visible rim)
+                this.ctx.fillStyle = '#CFD8DC';
+                this.ctx.fillRect(sinkX + 15, sinkY + 38, 50, 8);
+
+                // Faucet
+                this.ctx.fillStyle = '#78909C';
+                this.ctx.fillRect(sinkX + 37, sinkY + 30, 6, 12);
+
+                // Faucet spout
+                this.ctx.fillRect(sinkX + 35, sinkY + 28, 10, 4);
                 break;
 
             case 'basement':
