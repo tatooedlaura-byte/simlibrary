@@ -21,7 +21,7 @@ class TowerRenderer {
         this.ctx.scale(dpr, dpr);
 
         // Floor dimensions
-        this.floorHeight = 140;
+        this.floorHeight = 110;
         this.floorWidth = 500;
         this.floorX = 50;
 
@@ -117,7 +117,7 @@ class TowerRenderer {
             this.scale = displayWidth / 600;
             this.floorWidth = 500 * this.scale;
             this.floorX = 50 * this.scale;
-            this.floorHeight = 140 * this.scale;
+            this.floorHeight = 110 * this.scale;
             this.elevatorWidth = 40 * this.scale;
             this.elevatorX = 5 * this.scale;
             this.elevatorCarHeight = 80 * this.scale;
@@ -626,7 +626,7 @@ class TowerRenderer {
             const scale = this.getScale();
             const shelfY = y + 35; // Fixed position below floor name with more space
             const shelfWidth = 120 * scale;
-            const shelfHeight = 85 * scale; // Taller shelves to fill more space
+            const shelfHeight = 60 * scale;
             const shelfSpacing = (this.floorWidth - 60 * scale - shelfWidth * 3) / 2;
 
             floor.bookStock.forEach((category, index) => {
