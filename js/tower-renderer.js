@@ -813,13 +813,33 @@ class TowerRenderer {
         // Get character style based on reader type
         const style = this.getCharacterStyle(reader);
 
-        // Walking animation offset
-        const legOffset = Math.sin(char.animationFrame * 0.2) * 2;
-        const armSwing = Math.sin(char.animationFrame * 0.2) * 4;
-        const bobbing = Math.abs(Math.sin(char.animationFrame * 0.2)) * 1;
+        // Different animations based on state and reader type
+        let legOffset = 0;
+        let armSwing = 0;
+        let bobbing = 0;
+        let extraBounce = 0;
 
-        const headY = baseY - charHeight + 8 - bobbing;
-        const bodyY = baseY - charHeight + 16 - bobbing;
+        if (char.state === 'walking') {
+            // Walking animation
+            legOffset = Math.sin(char.animationFrame * 0.2) * 2;
+            armSwing = Math.sin(char.animationFrame * 0.2) * 4;
+            bobbing = Math.abs(Math.sin(char.animationFrame * 0.2)) * 1;
+        } else if (char.state === 'reading') {
+            // Idle/reading animations based on reader type
+            if (reader.type === 'kid') {
+                // Kids bounce excitedly
+                extraBounce = Math.abs(Math.sin(char.animationFrame * 0.15)) * 3;
+            } else if (reader.type === 'teen') {
+                // Teens sway slightly
+                armSwing = Math.sin(char.animationFrame * 0.05) * 2;
+            } else {
+                // Adults/seniors gentle breathing sway
+                bobbing = Math.sin(char.animationFrame * 0.03) * 0.5;
+            }
+        }
+
+        const headY = baseY - charHeight + 8 - bobbing - extraBounce;
+        const bodyY = baseY - charHeight + 16 - bobbing - extraBounce;
         const legY = baseY - 6 - bobbing;
 
         // Shadow
@@ -1281,7 +1301,7 @@ class TowerRenderer {
                 console.log('Mini-quest clicked:', this.game.currentMiniQuest.emoji);
 
                 // Spawn celebration effect
-                this.spawnSparkle(clickX, clickY + this.scrollY);
+                this.spawnConfetti(clickX, clickY + this.scrollY, 20);
                 this.spawnTextParticle(clickX, clickY + this.scrollY, `+${this.game.currentMiniQuest.reward} ⭐`, '#FFD700');
 
                 // Complete quest
@@ -1531,6 +1551,29 @@ class TowerRenderer {
     }
 
     /**
+     * Spawn confetti burst for celebrations
+     */
+    spawnConfetti(x, y, count = 15) {
+        const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#DDA0DD', '#87CEEB'];
+
+        for (let i = 0; i < count; i++) {
+            this.particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 6,
+                vy: -2 - Math.random() * 4,
+                life: 1.0,
+                decay: 0.01,
+                size: 4 + Math.random() * 4,
+                type: 'confetti',
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.3
+            });
+        }
+    }
+
+    /**
      * Spawn coin particles for checkout rewards
      */
     spawnCoinBurst(x, y, amount, isVIP = false) {
@@ -1611,8 +1654,8 @@ class TowerRenderer {
             p.x += p.vx;
             p.y += p.vy;
 
-            // Apply gravity for stars and coins
-            if (p.type === 'star' || p.type === 'coin') {
+            // Apply gravity for stars, coins, and confetti
+            if (p.type === 'star' || p.type === 'coin' || p.type === 'confetti') {
                 p.vy += 0.15;
                 p.rotation += p.rotationSpeed;
             }
@@ -1661,6 +1704,12 @@ class TowerRenderer {
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
                 this.ctx.fillText('🪙', 0, 0);
+            } else if (p.type === 'confetti') {
+                // Draw confetti rectangle
+                this.ctx.translate(p.x, p.y);
+                this.ctx.rotate(p.rotation);
+                this.ctx.fillStyle = p.color;
+                this.ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
             }
 
             this.ctx.restore();
@@ -1804,7 +1853,7 @@ class TowerRenderer {
                     console.log('Mini-quest tapped:', this.game.currentMiniQuest.emoji);
 
                     // Spawn celebration effect
-                    this.spawnSparkle(clickX, clickY + this.scrollY);
+                    this.spawnConfetti(clickX, clickY + this.scrollY, 20);
                     this.spawnTextParticle(clickX, clickY + this.scrollY, `+${this.game.currentMiniQuest.reward} ⭐`, '#FFD700');
 
                     // Complete quest
