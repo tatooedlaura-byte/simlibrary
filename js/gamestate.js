@@ -880,6 +880,106 @@ class GameState {
                     { name: 'Fruit & Yogurt', stockCost: 38, stockTime: 45, stockAmount: 100, earningRate: 8 }
                 ]
             },
+            // Media & Technology
+            {
+                id: 'newspapers',
+                name: 'Newspapers & Periodicals',
+                emoji: '📰',
+                color: 'gray',
+                description: 'Current events and magazines',
+                buildCost: 400,
+                buildTime: 70,
+                bookCategories: [
+                    { name: 'Daily Papers', stockCost: 25, stockTime: 30, stockAmount: 100, earningRate: 5 },
+                    { name: 'Magazines', stockCost: 35, stockTime: 40, stockAmount: 100, earningRate: 7 },
+                    { name: 'Journals', stockCost: 50, stockTime: 55, stockAmount: 100, earningRate: 10 }
+                ]
+            },
+            {
+                id: 'music_audio',
+                name: 'Music & Audiobooks',
+                emoji: '🎵',
+                color: 'purple',
+                description: 'Listen and learn',
+                buildCost: 550,
+                buildTime: 100,
+                bookCategories: [
+                    { name: 'Music CDs', stockCost: 40, stockTime: 45, stockAmount: 100, earningRate: 8 },
+                    { name: 'Audiobooks', stockCost: 55, stockTime: 60, stockAmount: 100, earningRate: 11 },
+                    { name: 'Vinyl Records', stockCost: 75, stockTime: 80, stockAmount: 100, earningRate: 15 }
+                ]
+            },
+            {
+                id: 'movies',
+                name: 'Movies & DVDs',
+                emoji: '🎬',
+                color: 'red',
+                description: 'Film collection for all ages',
+                buildCost: 600,
+                buildTime: 110,
+                bookCategories: [
+                    { name: 'Family Films', stockCost: 42, stockTime: 48, stockAmount: 100, earningRate: 9 },
+                    { name: 'Documentaries', stockCost: 58, stockTime: 65, stockAmount: 100, earningRate: 12 },
+                    { name: 'Classics', stockCost: 78, stockTime: 85, stockAmount: 100, earningRate: 16 }
+                ]
+            },
+            {
+                id: 'gaming_lounge',
+                name: 'Gaming Lounge',
+                emoji: '🎮',
+                color: 'neon',
+                description: 'Video games and esports',
+                buildCost: 800,
+                buildTime: 150,
+                bookCategories: [
+                    { name: 'Retro Games', stockCost: 50, stockTime: 55, stockAmount: 100, earningRate: 10 },
+                    { name: 'Current Gen', stockCost: 70, stockTime: 75, stockAmount: 100, earningRate: 14 },
+                    { name: 'VR Experiences', stockCost: 95, stockTime: 100, stockAmount: 100, earningRate: 19 }
+                ]
+            },
+            {
+                id: 'computer_lab',
+                name: 'Computer Lab',
+                emoji: '🖥️',
+                color: 'blue',
+                description: 'Public computers and internet',
+                buildCost: 700,
+                buildTime: 130,
+                bookCategories: [
+                    { name: 'Basic Access', stockCost: 45, stockTime: 50, stockAmount: 100, earningRate: 9 },
+                    { name: 'Research Tools', stockCost: 62, stockTime: 68, stockAmount: 100, earningRate: 12 },
+                    { name: 'Design Software', stockCost: 85, stockTime: 90, stockAmount: 100, earningRate: 17 }
+                ]
+            },
+            {
+                id: 'art_gallery',
+                name: 'Art Gallery',
+                emoji: '🎨',
+                color: 'rainbow',
+                description: 'Rotating exhibits and art books',
+                buildCost: 750,
+                buildTime: 140,
+                bookCategories: [
+                    { name: 'Local Artists', stockCost: 48, stockTime: 52, stockAmount: 100, earningRate: 10 },
+                    { name: 'Art History', stockCost: 65, stockTime: 70, stockAmount: 100, earningRate: 13 },
+                    { name: 'Special Exhibits', stockCost: 88, stockTime: 95, stockAmount: 100, earningRate: 18 }
+                ]
+            },
+            {
+                id: 'maps_travel',
+                name: 'Maps & Travel',
+                emoji: '🗺️',
+                color: 'tan',
+                description: 'Explore the world from here',
+                buildCost: 500,
+                buildTime: 90,
+                bookCategories: [
+                    { name: 'Travel Guides', stockCost: 38, stockTime: 42, stockAmount: 100, earningRate: 8 },
+                    { name: 'Atlases', stockCost: 52, stockTime: 58, stockAmount: 100, earningRate: 10 },
+                    { name: 'Rare Maps', stockCost: 72, stockTime: 78, stockAmount: 100, earningRate: 14 }
+                ]
+            },
+
             // Special Rooms (provide bonuses instead of books)
             {
                 id: 'study_room',
