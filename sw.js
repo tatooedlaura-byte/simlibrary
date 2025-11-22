@@ -3,7 +3,7 @@
  * Enables offline play and caching
  */
 
-const CACHE_NAME = 'simlibrary-v52';
+const CACHE_NAME = 'simlibrary-v53';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

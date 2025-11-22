@@ -511,11 +511,13 @@ class TowerRenderer {
      */
     drawReadyFloor(floor, x, y, colors, floorIndex) {
         // Floor name/number
+        this.ctx.save();
         this.ctx.fillStyle = '#000';
         this.ctx.font = 'bold 14px Arial';
         this.ctx.textAlign = 'left';
         this.ctx.textBaseline = 'top';
         this.ctx.fillText(`${floor.emoji} ${floor.name}`, x + 10, y + 5);
+        this.ctx.restore();
 
         // Check if this is a special room
         const floorType = this.game.floorTypes.find(ft => ft.id === floor.typeId);
