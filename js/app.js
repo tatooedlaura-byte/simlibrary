@@ -687,14 +687,21 @@ function renderMoveButtons(floor) {
     container.innerHTML = '';
 
     const floorIndex = game.floors.findIndex(f => f.id === floor.id);
+    const currentFloorNum = floor.floorNumber;
+    const totalFloors = game.floors.length;
     const canMoveUp = floorIndex < game.floors.length - 1;
     const canMoveDown = floorIndex > 0;
+
+    // Floor position indicator
+    const positionLabel = document.createElement('div');
+    positionLabel.className = 'floor-position';
+    positionLabel.textContent = `Floor ${currentFloorNum} of ${totalFloors}`;
 
     // Move up button (higher floor number)
     const upBtn = document.createElement('button');
     upBtn.className = 'move-btn' + (canMoveUp ? '' : ' disabled');
     upBtn.innerHTML = '⬆️';
-    upBtn.title = 'Move floor up';
+    upBtn.title = canMoveUp ? `Move to floor ${currentFloorNum + 1}` : 'Already at top';
     upBtn.disabled = !canMoveUp;
     if (canMoveUp) {
         upBtn.addEventListener('click', () => {
@@ -710,7 +717,7 @@ function renderMoveButtons(floor) {
     const downBtn = document.createElement('button');
     downBtn.className = 'move-btn' + (canMoveDown ? '' : ' disabled');
     downBtn.innerHTML = '⬇️';
-    downBtn.title = 'Move floor down';
+    downBtn.title = canMoveDown ? `Move to floor ${currentFloorNum - 1}` : 'Already at bottom';
     downBtn.disabled = !canMoveDown;
     if (canMoveDown) {
         downBtn.addEventListener('click', () => {
@@ -722,6 +729,7 @@ function renderMoveButtons(floor) {
         });
     }
 
+    container.appendChild(positionLabel);
     container.appendChild(upBtn);
     container.appendChild(downBtn);
 }
