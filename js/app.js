@@ -1247,14 +1247,16 @@ function renderPrestigeBanner() {
 
     let progressHtml = '';
     if (info.next) {
-        const starsProgress = Math.min(info.current.totalStarsEarned / info.next.minStarsEarned * 100, 100);
-        const floorsProgress = Math.min(info.current.floors / info.next.minFloors * 100, 100);
+        const currentFloors = game.floors.length;
+        const currentStars = game.totalStarsEarned || 0;
+        const starsProgress = Math.min(currentStars / info.next.minStarsEarned * 100, 100);
+        const floorsProgress = Math.min(currentFloors / info.next.minFloors * 100, 100);
         const overallProgress = Math.min(starsProgress, floorsProgress);
 
         progressHtml = `
             <div class="prestige-progress">
                 Next: ${info.next.emoji} ${info.next.name}
-                <br>${info.current.floors}/${info.next.minFloors} floors | ${info.current.totalStarsEarned.toLocaleString()}/${info.next.minStarsEarned.toLocaleString()} stars
+                <br>${currentFloors}/${info.next.minFloors} floors | ${currentStars.toLocaleString()}/${info.next.minStarsEarned.toLocaleString()} stars
             </div>
             <div class="prestige-progress-bar">
                 <div class="prestige-progress-fill" style="width: ${overallProgress}%"></div>
@@ -1265,7 +1267,7 @@ function renderPrestigeBanner() {
     }
 
     banner.innerHTML = `
-        <div class="prestige-current">${info.currentLevel.emoji} ${info.currentLevel.name}</div>
+        <div class="prestige-current">${info.current.emoji} ${info.current.name}</div>
         ${progressHtml}
     `;
 }
