@@ -322,10 +322,15 @@ class TowerRenderer {
         // Debug: show scroll info
         this.ctx.fillStyle = 'rgba(0,0,0,0.7)';
         this.ctx.fillRect(5, this.height - 25, 200, 20);
-        this.ctx.fillStyle = '#fff';
+        // Flash green when touch detected
+        if (this._touchDebug && Date.now() - this._touchDebug < 500) {
+            this.ctx.fillStyle = '#0f0';
+        } else {
+            this.ctx.fillStyle = '#fff';
+        }
         this.ctx.font = '10px Arial';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`scroll:${Math.round(this.scrollY)}/${Math.round(this.maxScrollY)} h:${Math.round(this.height)} fh:${Math.round(this.floorHeight)}`, 10, this.height - 10);
+        this.ctx.fillText(`scroll:${Math.round(this.scrollY)}/${Math.round(this.maxScrollY)} drag:${this.isDragging ? 'Y' : 'N'}`, 10, this.height - 10);
 
         // Continue loop
         this.animationFrame = requestAnimationFrame(() => this.render());
@@ -1784,6 +1789,8 @@ class TowerRenderer {
             this._touchMoved = false;
             // Store rect at touch start to avoid page scroll mismatch
             this._touchStartRect = this.canvas.getBoundingClientRect();
+            // Debug: flash to show touch registered
+            this._touchDebug = Date.now();
 
             // Prevent default if tower is scrollable to capture the gesture
             if (this.maxScrollY > 0) {
