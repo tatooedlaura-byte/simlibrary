@@ -773,16 +773,21 @@ function renderBookCategories(floor) {
             let statusText = '';
             let actionButton = '';
 
+            // Calculate actual cost based on books needed
+            const booksNeeded = category.maxStock - category.currentStock;
+            const costPerBook = category.stockCost / category.maxStock;
+            const actualCost = Math.ceil(booksNeeded * costPerBook);
+
             if (isRestocking) {
                 const remaining = Math.max(0, Math.ceil((category.restockEndTime - Date.now()) / 1000));
                 statusText = `📦 Restocking... ${remaining}s`;
                 actionButton = `<button class="rush-restock-btn" data-floor-id="${floor.id}" data-category="${index}">💎 Rush</button>`;
             } else if (isFull) {
                 statusText = '✅ Fully Stocked';
-                actionButton = `<button class="restock-btn disabled" disabled>Restock (${category.stockCost} ⭐)</button>`;
+                actionButton = `<button class="restock-btn disabled" disabled>Restock (0 ⭐)</button>`;
             } else {
                 statusText = `${category.currentStock}/${category.maxStock} books`;
-                actionButton = `<button class="restock-btn" data-floor-id="${floor.id}" data-category="${index}">Restock (${category.stockCost} ⭐)</button>`;
+                actionButton = `<button class="restock-btn" data-floor-id="${floor.id}" data-category="${index}">Restock (${actualCost} ⭐)</button>`;
             }
 
             card.innerHTML = `

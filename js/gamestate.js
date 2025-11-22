@@ -1027,12 +1027,17 @@ class GameState {
             return { success: false, error: 'Already full' };
         }
 
-        if (this.stars < category.stockCost) {
+        // Calculate cost based on how many books need restocking
+        const booksNeeded = category.maxStock - category.currentStock;
+        const costPerBook = category.stockCost / category.maxStock;
+        const actualCost = Math.ceil(booksNeeded * costPerBook);
+
+        if (this.stars < actualCost) {
             return { success: false, error: 'Not enough stars' };
         }
 
         // Deduct cost
-        this.stars -= category.stockCost;
+        this.stars -= actualCost;
 
         // Start restocking
         category.restocking = true;
