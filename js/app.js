@@ -252,6 +252,32 @@ function setupEventListeners() {
         }
     });
 
+    // Upgrades button - opens upgrades modal
+    document.getElementById('open-upgrades-btn').addEventListener('click', () => {
+        openUpgradesModal();
+    });
+
+    // Upgrades modal close button
+    document.getElementById('close-upgrades-modal').addEventListener('click', () => {
+        closeUpgradesModal();
+    });
+
+    // Close upgrades modal when clicking outside
+    document.getElementById('upgrades-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'upgrades-modal') {
+            closeUpgradesModal();
+        }
+    });
+
+    // Tab buttons for upgrades modal
+    document.querySelectorAll('.upgrades-tabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.upgrades-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderUpgradesTab(btn.dataset.tab);
+        });
+    });
+
     // Confirmation modal buttons
     document.getElementById('close-confirm-modal').addEventListener('click', () => {
         closeConfirmModal(false);
@@ -1187,6 +1213,294 @@ function openCollectionModal() {
  */
 function closeCollectionModal() {
     document.getElementById('collection-modal').classList.remove('active');
+}
+
+/**
+ * Open upgrades modal
+ */
+function openUpgradesModal() {
+    // Render prestige banner
+    renderPrestigeBanner();
+
+    // Default to decorations tab
+    document.querySelectorAll('.upgrades-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.upgrades-tabs .tab-btn[data-tab="decorations"]').classList.add('active');
+    renderUpgradesTab('decorations');
+
+    // Show modal
+    document.getElementById('upgrades-modal').classList.add('active');
+}
+
+/**
+ * Close upgrades modal
+ */
+function closeUpgradesModal() {
+    document.getElementById('upgrades-modal').classList.remove('active');
+}
+
+/**
+ * Render prestige banner
+ */
+function renderPrestigeBanner() {
+    const banner = document.getElementById('prestige-banner');
+    const info = game.getPrestigeInfo();
+
+    let progressHtml = '';
+    if (info.next) {
+        const starsProgress = Math.min(info.current.totalStarsEarned / info.next.minStarsEarned * 100, 100);
+        const floorsProgress = Math.min(info.current.floors / info.next.minFloors * 100, 100);
+        const overallProgress = Math.min(starsProgress, floorsProgress);
+
+        progressHtml = `
+            <div class="prestige-progress">
+                Next: ${info.next.emoji} ${info.next.name}
+                <br>${info.current.floors}/${info.next.minFloors} floors | ${info.current.totalStarsEarned.toLocaleString()}/${info.next.minStarsEarned.toLocaleString()} stars
+            </div>
+            <div class="prestige-progress-bar">
+                <div class="prestige-progress-fill" style="width: ${overallProgress}%"></div>
+            </div>
+        `;
+    } else {
+        progressHtml = `<div class="prestige-progress">Maximum prestige reached!</div>`;
+    }
+
+    banner.innerHTML = `
+        <div class="prestige-current">${info.currentLevel.emoji} ${info.currentLevel.name}</div>
+        ${progressHtml}
+    `;
+}
+
+/**
+ * Render upgrades tab content
+ */
+function renderUpgradesTab(tab) {
+    const container = document.getElementById('upgrades-content');
+    container.innerHTML = '';
+
+    if (tab === 'decorations') {
+        renderDecorationsTab(container);
+    } else if (tab === 'perks') {
+        renderPerksTab(container);
+    } else if (tab === 'staff') {
+        renderStaffUpgradesTab(container);
+    }
+}
+
+/**
+ * Render decorations tab
+ */
+function renderDecorationsTab(container) {
+    const prestigeInfo = game.getPrestigeInfo();
+    const prestigeOrder = ['community', 'town', 'city', 'regional', 'national', 'world'];
+    const currentPrestigeIndex = prestigeOrder.indexOf(game.currentPrestige);
+
+    game.decorations.forEach(decoration => {
+        const owned = game.ownedDecorations.includes(decoration.id);
+        const prestigeIndex = prestigeOrder.indexOf(decoration.unlockPrestige);
+        const unlocked = prestigeIndex <= currentPrestigeIndex;
+        const canAfford = game.stars >= decoration.cost;
+
+        const item = document.createElement('div');
+        item.className = `upgrade-item ${owned ? 'owned' : ''} ${!unlocked ? 'locked' : ''}`;
+
+        let actionHtml = '';
+        if (owned) {
+            actionHtml = `<span class="owned-badge">OWNED</span>`;
+        } else if (!unlocked) {
+            const requiredPrestige = game.prestigeLevels.find(p => p.id === decoration.unlockPrestige);
+            actionHtml = `<span class="locked-badge">${requiredPrestige.emoji} Required</span>`;
+        } else {
+            actionHtml = `<button class="buy-upgrade-btn" data-type="decoration" data-id="${decoration.id}" ${!canAfford ? 'disabled' : ''}>
+                ${decoration.cost} ⭐
+            </button>`;
+        }
+
+        item.innerHTML = `
+            <div class="upgrade-icon">${decoration.emoji}</div>
+            <div class="upgrade-info">
+                <div class="upgrade-name">${decoration.name}</div>
+                <div class="upgrade-desc">Decorative item for your library</div>
+            </div>
+            ${actionHtml}
+        `;
+
+        container.appendChild(item);
+    });
+
+    // Add event listeners
+    container.querySelectorAll('.buy-upgrade-btn[data-type="decoration"]').forEach(btn => {
+        btn.addEventListener('click', () => handlePurchaseDecoration(btn.dataset.id));
+    });
+}
+
+/**
+ * Render perks tab
+ */
+function renderPerksTab(container) {
+    game.readerPerks.forEach(perk => {
+        const owned = game.unlockedPerks.includes(perk.id);
+        const canAfford = game.stars >= perk.cost;
+
+        const item = document.createElement('div');
+        item.className = `upgrade-item ${owned ? 'owned' : ''}`;
+
+        let actionHtml = '';
+        if (owned) {
+            actionHtml = `<span class="owned-badge">ACTIVE</span>`;
+        } else {
+            actionHtml = `<button class="buy-upgrade-btn" data-type="perk" data-id="${perk.id}" ${!canAfford ? 'disabled' : ''}>
+                ${perk.cost} ⭐
+            </button>`;
+        }
+
+        item.innerHTML = `
+            <div class="upgrade-icon">${perk.emoji}</div>
+            <div class="upgrade-info">
+                <div class="upgrade-name">${perk.name}</div>
+                <div class="upgrade-desc">${perk.description}</div>
+            </div>
+            ${actionHtml}
+        `;
+
+        container.appendChild(item);
+    });
+
+    // Add event listeners
+    container.querySelectorAll('.buy-upgrade-btn[data-type="perk"]').forEach(btn => {
+        btn.addEventListener('click', () => handlePurchasePerk(btn.dataset.id));
+    });
+}
+
+/**
+ * Render staff upgrades tab
+ */
+function renderStaffUpgradesTab(container) {
+    // Group upgrades by level requirement
+    const upgradesByLevel = {};
+    game.staffUpgrades.forEach(upgrade => {
+        const level = upgrade.level || 1;
+        if (!upgradesByLevel[level]) upgradesByLevel[level] = [];
+        upgradesByLevel[level].push(upgrade);
+    });
+
+    // Render in order
+    Object.keys(upgradesByLevel).sort((a, b) => a - b).forEach(level => {
+        upgradesByLevel[level].forEach(upgrade => {
+            const owned = game.purchasedUpgrades.includes(upgrade.id);
+            const canAfford = game.stars >= upgrade.cost;
+
+            // Check if previous level is owned (for upgrades with levels)
+            let canPurchase = true;
+            if (upgrade.level > 1) {
+                const prevLevelId = upgrade.id.replace(/_\d+$/, `_${upgrade.level - 1}`);
+                if (!game.purchasedUpgrades.includes(prevLevelId)) {
+                    canPurchase = false;
+                }
+            }
+
+            const item = document.createElement('div');
+            item.className = `upgrade-item ${owned ? 'owned' : ''} ${!canPurchase && !owned ? 'locked' : ''}`;
+
+            let actionHtml = '';
+            if (owned) {
+                actionHtml = `<span class="owned-badge">ACTIVE</span>`;
+            } else if (!canPurchase) {
+                actionHtml = `<span class="locked-badge">Requires Level ${upgrade.level - 1}</span>`;
+            } else {
+                actionHtml = `<button class="buy-upgrade-btn" data-type="upgrade" data-id="${upgrade.id}" ${!canAfford ? 'disabled' : ''}>
+                    ${upgrade.cost} ⭐
+                </button>`;
+            }
+
+            item.innerHTML = `
+                <div class="upgrade-icon">${upgrade.emoji}</div>
+                <div class="upgrade-info">
+                    <div class="upgrade-name">${upgrade.name}</div>
+                    <div class="upgrade-desc">${upgrade.description}</div>
+                </div>
+                ${actionHtml}
+            `;
+
+            container.appendChild(item);
+        });
+    });
+
+    // Add event listeners
+    container.querySelectorAll('.buy-upgrade-btn[data-type="upgrade"]').forEach(btn => {
+        btn.addEventListener('click', () => handlePurchaseUpgrade(btn.dataset.id));
+    });
+}
+
+/**
+ * Handle purchasing a decoration
+ */
+async function handlePurchaseDecoration(decorationId) {
+    const decoration = game.decorations.find(d => d.id === decorationId);
+    if (!decoration) return;
+
+    const confirmed = await showConfirm(
+        'Purchase Decoration',
+        `Buy ${decoration.name} for ${decoration.cost} ⭐?`
+    );
+
+    if (!confirmed) return;
+
+    const result = game.purchaseDecoration(decorationId);
+    if (result.success) {
+        renderUpgradesTab('decorations');
+        updateGlobalStats();
+        showToast(`${decoration.emoji} ${decoration.name} purchased!`);
+    } else {
+        alert(result.error || 'Cannot purchase decoration');
+    }
+}
+
+/**
+ * Handle purchasing a perk
+ */
+async function handlePurchasePerk(perkId) {
+    const perk = game.readerPerks.find(p => p.id === perkId);
+    if (!perk) return;
+
+    const confirmed = await showConfirm(
+        'Purchase Perk',
+        `Buy ${perk.name} for ${perk.cost} ⭐?`
+    );
+
+    if (!confirmed) return;
+
+    const result = game.purchasePerk(perkId);
+    if (result.success) {
+        renderUpgradesTab('perks');
+        updateGlobalStats();
+        showToast(`${perk.emoji} ${perk.name} activated!`);
+    } else {
+        alert(result.error || 'Cannot purchase perk');
+    }
+}
+
+/**
+ * Handle purchasing a staff upgrade
+ */
+async function handlePurchaseUpgrade(upgradeId) {
+    const upgrade = game.staffUpgrades.find(u => u.id === upgradeId);
+    if (!upgrade) return;
+
+    const confirmed = await showConfirm(
+        'Purchase Upgrade',
+        `Buy ${upgrade.name} for ${upgrade.cost} ⭐?`
+    );
+
+    if (!confirmed) return;
+
+    const result = game.purchaseUpgrade(upgradeId);
+    if (result.success) {
+        renderUpgradesTab('staff');
+        updateGlobalStats();
+        showToast(`${upgrade.emoji} ${upgrade.name} purchased!`);
+    } else {
+        alert(result.error || 'Cannot purchase upgrade');
+    }
 }
 
 /**
