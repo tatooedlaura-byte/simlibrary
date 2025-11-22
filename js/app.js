@@ -1199,18 +1199,8 @@ function renderMissionBanner() {
         const seconds = timeRemaining;
 
         banner.innerHTML = `
-            <div class="mission-info">
-                <div class="mission-title">
-                    🔍 Find ${findMission.total} ${findMission.itemType.emoji} ${findMission.itemType.name}s!
-                </div>
-                <div class="mission-details">
-                    Found: ${findMission.found}/${findMission.total} • Tap the items hidden on floors
-                </div>
-            </div>
-            <div class="mission-reward">
-                <div>${findMission.reward} ⭐${findMission.rewardBucks > 0 ? ` + ${findMission.rewardBucks} 💎` : ''}</div>
-                <div class="mission-timer">${seconds}s</div>
-            </div>
+            <span>🔍 Find ${findMission.itemType.emoji} ${findMission.found}/${findMission.total}</span>
+            <span>${findMission.reward}⭐ ${seconds}s</span>
         `;
 
         banner.style.display = 'flex';
@@ -1224,17 +1214,8 @@ function renderMissionBanner() {
         const seconds = timeRemaining % 60;
 
         banner.innerHTML = `
-            <div class="mission-info">
-                <div class="mission-title">
-                    ${event.emoji} ${event.name}
-                </div>
-                <div class="mission-details">
-                    ${event.description}
-                </div>
-            </div>
-            <div class="mission-reward">
-                <div class="mission-timer">${seconds}s</div>
-            </div>
+            <span>${event.emoji} ${event.name}</span>
+            <span>${seconds}s</span>
         `;
 
         banner.style.display = 'flex';
@@ -1251,21 +1232,8 @@ function renderMissionBanner() {
         const seconds = timeRemaining % 60;
 
         banner.innerHTML = `
-            <div class="mission-info">
-                <div class="mission-title">
-                    📝 ${mission.requesterName} needs ${mission.requestCount} ${mission.categoryName} books!
-                </div>
-                <div class="mission-details">
-                    Floor: ${mission.floorName} • Progress: ${mission.progress}/${mission.requestCount}
-                </div>
-                <div class="mission-progress">
-                    <div class="mission-progress-fill" style="width: ${progressPercent}%"></div>
-                </div>
-            </div>
-            <div class="mission-reward">
-                <div>${mission.reward} ⭐${mission.rewardBucks > 0 ? ` + ${mission.rewardBucks} 💎` : ''}</div>
-                <div class="mission-timer">${minutes}:${seconds.toString().padStart(2, '0')}</div>
-            </div>
+            <span>📝 ${mission.categoryName} ${mission.progress}/${mission.requestCount}</span>
+            <span>${mission.reward}⭐ ${minutes}:${seconds.toString().padStart(2, '0')}</span>
         `;
 
         banner.style.display = 'flex';
