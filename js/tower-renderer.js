@@ -319,6 +319,14 @@ class TowerRenderer {
             this.drawScrollIndicator();
         }
 
+        // Debug: show scroll info
+        this.ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        this.ctx.fillRect(5, this.height - 25, 200, 20);
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '10px Arial';
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText(`scroll:${Math.round(this.scrollY)}/${Math.round(this.maxScrollY)} h:${Math.round(this.height)} fh:${Math.round(this.floorHeight)}`, 10, this.height - 10);
+
         // Continue loop
         this.animationFrame = requestAnimationFrame(() => this.render());
     }
@@ -1792,8 +1800,6 @@ class TowerRenderer {
 
         const deltaX = Math.abs(e.touches[0].clientX - this.dragStartX);
         const deltaY = Math.abs(e.touches[0].clientY - this.dragStartY);
-
-        console.log('Touch move - maxScrollY:', this.maxScrollY, 'height:', this.height, 'floorHeight:', this.floorHeight, 'floors:', this.game.floors.length);
 
         // If tower is scrollable, prevent page scroll and handle internally
         if (this.maxScrollY > 0) {
