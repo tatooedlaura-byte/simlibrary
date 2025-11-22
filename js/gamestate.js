@@ -1244,6 +1244,48 @@ class GameState {
     }
 
     /**
+     * Move a floor up (swap with the floor above it)
+     */
+    moveFloorUp(floorId) {
+        const index = this.floors.findIndex(f => f.id === floorId);
+        if (index === -1 || index === this.floors.length - 1) {
+            return { success: false, error: 'Cannot move up' };
+        }
+
+        // Swap with the floor above
+        [this.floors[index], this.floors[index + 1]] = [this.floors[index + 1], this.floors[index]];
+
+        // Update floor numbers
+        this.floors.forEach((floor, i) => {
+            floor.floorNumber = i + 1;
+        });
+
+        this.save();
+        return { success: true };
+    }
+
+    /**
+     * Move a floor down (swap with the floor below it)
+     */
+    moveFloorDown(floorId) {
+        const index = this.floors.findIndex(f => f.id === floorId);
+        if (index === -1 || index === 0) {
+            return { success: false, error: 'Cannot move down' };
+        }
+
+        // Swap with the floor below
+        [this.floors[index], this.floors[index - 1]] = [this.floors[index - 1], this.floors[index]];
+
+        // Update floor numbers
+        this.floors.forEach((floor, i) => {
+            floor.floorNumber = i + 1;
+        });
+
+        this.save();
+        return { success: true };
+    }
+
+    /**
      * Spawn a reader to visit a random ready floor
      */
     spawnReader() {

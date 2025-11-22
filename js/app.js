@@ -543,6 +543,9 @@ function openFloorDetail(floorId) {
     document.getElementById('detail-emoji').textContent = floor.emoji;
     document.getElementById('detail-name').textContent = floor.name;
 
+    // Render move buttons
+    renderMoveButtons(floor);
+
     // Update status
     const statusEl = document.getElementById('detail-status');
     if (floor.status === 'building') {
@@ -674,6 +677,53 @@ async function handleUpgradeFloor(floorId) {
     } else {
         alert(result.error || 'Cannot upgrade floor');
     }
+}
+
+/**
+ * Render move up/down buttons for floor reordering
+ */
+function renderMoveButtons(floor) {
+    const container = document.getElementById('move-buttons');
+    container.innerHTML = '';
+
+    const floorIndex = game.floors.findIndex(f => f.id === floor.id);
+    const canMoveUp = floorIndex < game.floors.length - 1;
+    const canMoveDown = floorIndex > 0;
+
+    // Move up button (higher floor number)
+    const upBtn = document.createElement('button');
+    upBtn.className = 'move-btn' + (canMoveUp ? '' : ' disabled');
+    upBtn.innerHTML = '⬆️';
+    upBtn.title = 'Move floor up';
+    upBtn.disabled = !canMoveUp;
+    if (canMoveUp) {
+        upBtn.addEventListener('click', () => {
+            const result = game.moveFloorUp(floor.id);
+            if (result.success) {
+                towerRenderer.render();
+                renderMoveButtons(floor);
+            }
+        });
+    }
+
+    // Move down button (lower floor number)
+    const downBtn = document.createElement('button');
+    downBtn.className = 'move-btn' + (canMoveDown ? '' : ' disabled');
+    downBtn.innerHTML = '⬇️';
+    downBtn.title = 'Move floor down';
+    downBtn.disabled = !canMoveDown;
+    if (canMoveDown) {
+        downBtn.addEventListener('click', () => {
+            const result = game.moveFloorDown(floor.id);
+            if (result.success) {
+                towerRenderer.render();
+                renderMoveButtons(floor);
+            }
+        });
+    }
+
+    container.appendChild(upBtn);
+    container.appendChild(downBtn);
 }
 
 /**

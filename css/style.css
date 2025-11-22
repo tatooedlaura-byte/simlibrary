@@ -1121,6 +1121,39 @@ body {
     margin-top: 5px;
 }
 
+/* Move Floor Buttons */
+.move-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-left: auto;
+    margin-right: 10px;
+}
+
+.move-btn {
+    background: var(--mint);
+    border: none;
+    border-radius: 8px;
+    width: 36px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.move-btn:hover:not(.disabled) {
+    background: var(--gradient-mint);
+    transform: scale(1.1);
+}
+
+.move-btn.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
 /* ===================================
    VIP Reader Styling
    =================================== */
