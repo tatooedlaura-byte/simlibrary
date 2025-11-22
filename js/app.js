@@ -1333,11 +1333,22 @@ function renderDecorationsTab(container) {
             </button>`;
         }
 
+        // Build description with unlock info
+        let descText = `${typeLabel}`;
+        if (owned) {
+            descText += ' - Owned';
+        } else if (!unlocked) {
+            const requiredPrestige = game.prestigeLevels.find(p => p.id === decoration.unlockPrestige);
+            descText += ` - Reach ${requiredPrestige.name}`;
+        } else {
+            descText += ` - ${decoration.cost}⭐ to buy`;
+        }
+
         item.innerHTML = `
             <div class="upgrade-icon">${decoration.emoji}</div>
             <div class="upgrade-info">
                 <div class="upgrade-name">${decoration.name}</div>
-                <div class="upgrade-desc">${typeLabel} decoration</div>
+                <div class="upgrade-desc">${descText}</div>
             </div>
             ${actionHtml}
         `;
