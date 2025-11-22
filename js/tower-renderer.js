@@ -47,6 +47,13 @@ class TowerRenderer {
         this.dragStartY = 0;
         this.dragStartScrollY = 0;
 
+        // Floor reorder drag-and-drop
+        this.isReorderMode = false;
+        this.reorderFloor = null; // Floor being dragged
+        this.reorderTargetIndex = -1; // Where it will drop
+        this.longPressTimer = null;
+        this.longPressDuration = 500; // ms to trigger long press
+
         // Animation frame
         this.animationFrame = null;
 
@@ -295,6 +302,40 @@ class TowerRenderer {
         const floorsReversed = floors.reverse();
         floorsReversed.forEach((floor, index) => {
             const y = this.height - 40 - (index + 2) * this.floorHeight; // +2 to account for lobby
+
+            // In reorder mode, show drop indicator
+            if (this.isReorderMode && this.reorderFloor) {
+                const actualIndex = this.game.floors.length - 1 - index; // Convert visual index to array index
+
+                // Draw drop indicator at target position
+                if (actualIndex === this.reorderTargetIndex) {
+                    this.ctx.save();
+                    this.ctx.strokeStyle = '#4CAF50';
+                    this.ctx.lineWidth = 4;
+                    this.ctx.setLineDash([10, 5]);
+                    this.ctx.strokeRect(this.floorX - 2, y - 2, this.floorWidth + 4, this.floorHeight + 4);
+                    this.ctx.restore();
+                }
+
+                // Draw the dragged floor with highlight/opacity
+                if (floor.id === this.reorderFloor.id) {
+                    this.ctx.save();
+                    this.ctx.globalAlpha = 0.5;
+                    this.drawFloor(floor, this.floorX, y, index);
+                    this.ctx.restore();
+
+                    // Draw floating version at cursor position
+                    this.ctx.save();
+                    const dragY = this._reorderCurrentY - this.floorHeight / 2;
+                    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                    this.ctx.shadowBlur = 20;
+                    this.ctx.shadowOffsetY = 10;
+                    this.drawFloor(floor, this.floorX, dragY, index);
+                    this.ctx.restore();
+                    return;
+                }
+            }
+
             this.drawFloor(floor, this.floorX, y, index);
         });
 
@@ -1876,8 +1917,53 @@ class TowerRenderer {
     handleMouseDown(e) {
         this.isDragging = true;
         this.dragStartY = e.clientY;
+        this.dragStartX = e.clientX;
         this.dragStartScrollY = this.scrollY;
+        this._mouseMoved = false;
         this.canvas.style.cursor = 'grabbing';
+
+        // Clear any existing long press timer
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+
+        // Check if click is on a floor for long press detection
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.width / rect.width;
+        const scaleY = this.height / rect.height;
+        const clickX = (e.clientX - rect.left) * scaleX;
+        const clickY = ((e.clientY - rect.top) * scaleY) - this.scrollY;
+
+        // Find floor at click position
+        let clickedFloor = null;
+        const floors = [...this.game.floors].reverse();
+        for (const floor of floors) {
+            if (floor._renderBounds) {
+                const b = floor._renderBounds;
+                if (clickX >= b.x && clickX <= b.x + b.width &&
+                    clickY >= b.y && clickY <= b.y + b.height) {
+                    clickedFloor = floor;
+                    break;
+                }
+            }
+        }
+
+        // Set up long press timer for floor reordering
+        if (clickedFloor && this.game.floors.length > 1) {
+            this._potentialReorderFloor = clickedFloor;
+            this._mouseStartRect = rect;
+            this.longPressTimer = setTimeout(() => {
+                if (!this._mouseMoved && this._potentialReorderFloor) {
+                    // Enter reorder mode
+                    this.isReorderMode = true;
+                    this.reorderFloor = this._potentialReorderFloor;
+                    this._reorderCurrentY = clickY;
+                    this.canvas.style.cursor = 'move';
+                    console.log('Reorder mode activated for:', this.reorderFloor.name);
+                }
+            }, this.longPressDuration);
+        }
     }
 
     /**
@@ -1885,15 +1971,61 @@ class TowerRenderer {
      */
     handleMouseMove(e) {
         if (!this.isDragging) return;
+
+        const deltaX = Math.abs(e.clientX - this.dragStartX);
+        const deltaY = Math.abs(e.clientY - this.dragStartY);
+
+        // Cancel long press if moved too much
+        if ((deltaX > 10 || deltaY > 10) && this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+            this._potentialReorderFloor = null;
+        }
+
+        if (deltaX > 5 || deltaY > 5) {
+            this._mouseMoved = true;
+        }
+
+        // Handle reorder mode dragging
+        if (this.isReorderMode && this.reorderFloor) {
+            const rect = this._mouseStartRect || this.canvas.getBoundingClientRect();
+            const scaleY = this.height / rect.height;
+            this._reorderCurrentY = ((e.clientY - rect.top) * scaleY) - this.scrollY;
+            this.reorderTargetIndex = this.calculateReorderTargetIndex(this._reorderCurrentY);
+            return;
+        }
+
         this._hasScrolled = true;
-        const deltaY = e.clientY - this.dragStartY;
-        this.scrollY = this.dragStartScrollY - deltaY;
+        const scrollDelta = e.clientY - this.dragStartY;
+        this.scrollY = this.dragStartScrollY - scrollDelta;
     }
 
     /**
      * Handle mouse up for drag scrolling
      */
     handleMouseUp(e) {
+        // Clear long press timer
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+        this._potentialReorderFloor = null;
+
+        // Handle reorder mode drop
+        if (this.isReorderMode && this.reorderFloor) {
+            const currentIndex = this.game.floors.findIndex(f => f.id === this.reorderFloor.id);
+            const targetIndex = this.reorderTargetIndex;
+
+            if (targetIndex !== -1 && targetIndex !== currentIndex) {
+                this.game.reorderFloor(this.reorderFloor.id, targetIndex);
+                console.log(`Moved ${this.reorderFloor.name} from index ${currentIndex} to ${targetIndex}`);
+            }
+
+            this.isReorderMode = false;
+            this.reorderFloor = null;
+            this.reorderTargetIndex = -1;
+        }
+
         this.isDragging = false;
         this.canvas.style.cursor = 'grab';
     }
@@ -1911,6 +2043,51 @@ class TowerRenderer {
             // Store rect at touch start to avoid page scroll mismatch
             this._touchStartRect = this.canvas.getBoundingClientRect();
 
+            // Clear any existing long press timer
+            if (this.longPressTimer) {
+                clearTimeout(this.longPressTimer);
+                this.longPressTimer = null;
+            }
+
+            // Check if touch is on a floor for long press detection
+            const rect = this._touchStartRect;
+            const scaleX = this.width / rect.width;
+            const scaleY = this.height / rect.height;
+            const touchX = (this.dragStartX - rect.left) * scaleX;
+            const touchY = ((this.dragStartY - rect.top) * scaleY) - this.scrollY;
+
+            // Find floor at touch position
+            let touchedFloor = null;
+            const floors = [...this.game.floors].reverse();
+            for (const floor of floors) {
+                if (floor._renderBounds) {
+                    const b = floor._renderBounds;
+                    if (touchX >= b.x && touchX <= b.x + b.width &&
+                        touchY >= b.y && touchY <= b.y + b.height) {
+                        touchedFloor = floor;
+                        break;
+                    }
+                }
+            }
+
+            // Set up long press timer for floor reordering
+            if (touchedFloor && this.game.floors.length > 1) {
+                this._potentialReorderFloor = touchedFloor;
+                this.longPressTimer = setTimeout(() => {
+                    if (!this._touchMoved && this._potentialReorderFloor) {
+                        // Enter reorder mode
+                        this.isReorderMode = true;
+                        this.reorderFloor = this._potentialReorderFloor;
+                        this._reorderCurrentY = touchY;
+                        // Haptic feedback if available
+                        if (navigator.vibrate) {
+                            navigator.vibrate(50);
+                        }
+                        console.log('Reorder mode activated for:', this.reorderFloor.name);
+                    }
+                }, this.longPressDuration);
+            }
+
             // Prevent default if tower is scrollable to capture the gesture
             if (this.maxScrollY > 0) {
                 e.preventDefault();
@@ -1926,6 +2103,29 @@ class TowerRenderer {
 
         const deltaX = Math.abs(e.touches[0].clientX - this.dragStartX);
         const deltaY = Math.abs(e.touches[0].clientY - this.dragStartY);
+
+        // Cancel long press if moved too much before timer fires
+        if ((deltaX > 10 || deltaY > 10) && this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+            this._potentialReorderFloor = null;
+        }
+
+        // Handle reorder mode dragging
+        if (this.isReorderMode && this.reorderFloor) {
+            e.preventDefault();
+            this._touchMoved = true;
+
+            // Update current drag position
+            const rect = this._touchStartRect || this.canvas.getBoundingClientRect();
+            const scaleY = this.height / rect.height;
+            this._reorderCurrentY = ((e.touches[0].clientY - rect.top) * scaleY) - this.scrollY;
+
+            // Calculate target index based on Y position
+            this.reorderTargetIndex = this.calculateReorderTargetIndex(this._reorderCurrentY);
+
+            return;
+        }
 
         // If tower is scrollable, prevent page scroll and handle internally
         if (this.maxScrollY > 0) {
@@ -1952,9 +2152,60 @@ class TowerRenderer {
     }
 
     /**
+     * Calculate target index for reorder based on Y position
+     */
+    calculateReorderTargetIndex(y) {
+        const floors = this.game.floors;
+        const currentIndex = floors.findIndex(f => f.id === this.reorderFloor.id);
+
+        // Find which floor slot the Y position is closest to
+        for (let i = floors.length - 1; i >= 0; i--) {
+            const floor = floors[i];
+            if (floor._renderBounds) {
+                const b = floor._renderBounds;
+                const floorCenterY = b.y + b.height / 2;
+
+                // If drag position is above this floor's center, target this index
+                if (y < floorCenterY) {
+                    return i;
+                }
+            }
+        }
+
+        // Default to bottom
+        return 0;
+    }
+
+    /**
      * Handle touch end for mobile
      */
     handleTouchEnd(e) {
+        // Clear long press timer
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+        this._potentialReorderFloor = null;
+
+        // Handle reorder mode drop
+        if (this.isReorderMode && this.reorderFloor) {
+            const currentIndex = this.game.floors.findIndex(f => f.id === this.reorderFloor.id);
+            const targetIndex = this.reorderTargetIndex;
+
+            if (targetIndex !== -1 && targetIndex !== currentIndex) {
+                // Perform the reorder
+                this.game.reorderFloor(this.reorderFloor.id, targetIndex);
+                console.log(`Moved ${this.reorderFloor.name} from index ${currentIndex} to ${targetIndex}`);
+            }
+
+            // Exit reorder mode
+            this.isReorderMode = false;
+            this.reorderFloor = null;
+            this.reorderTargetIndex = -1;
+            this.isDragging = false;
+            return;
+        }
+
         // If we didn't move much, treat it as a tap/click
         if (!this._touchMoved) {
             // Use the rect stored at touch start to avoid page scroll mismatch

@@ -1286,6 +1286,33 @@ class GameState {
     }
 
     /**
+     * Reorder a floor to a specific index (for drag-and-drop)
+     */
+    reorderFloor(floorId, targetIndex) {
+        const currentIndex = this.floors.findIndex(f => f.id === floorId);
+        if (currentIndex === -1 || targetIndex === currentIndex) {
+            return { success: false, error: 'Invalid move' };
+        }
+
+        // Clamp target index
+        targetIndex = Math.max(0, Math.min(targetIndex, this.floors.length - 1));
+
+        // Remove floor from current position
+        const [floor] = this.floors.splice(currentIndex, 1);
+
+        // Insert at new position
+        this.floors.splice(targetIndex, 0, floor);
+
+        // Update floor numbers
+        this.floors.forEach((f, i) => {
+            f.floorNumber = i + 1;
+        });
+
+        this.save();
+        return { success: true };
+    }
+
+    /**
      * Spawn a reader to visit a random ready floor
      */
     spawnReader() {
