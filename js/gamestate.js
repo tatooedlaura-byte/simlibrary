@@ -2313,6 +2313,41 @@ class GameState {
     }
 
     /**
+     * Run continuous cleaning during the day - custodians actively clean floors
+     */
+    runContinuousCleaning() {
+        // Only clean every 5 ticks
+        this._cleaningTickCounter = (this._cleaningTickCounter || 0) + 1;
+        if (this._cleaningTickCounter < 5) return;
+        this._cleaningTickCounter = 0;
+
+        // Find basement floor
+        const basement = this.floors.find(f => f.typeId === 'basement' && f.status === 'ready');
+        if (!basement) return;
+
+        // Count custodians
+        const custodianCount = basement.staff.filter(s => s === 'Custodian').length;
+        if (custodianCount === 0) return;
+
+        // Find dirty floors (trash > 0), sorted by most dirty first
+        const dirtyFloors = this.floors
+            .filter(f => f.status === 'ready' && f.trash !== undefined && f.trash > 0)
+            .sort((a, b) => b.trash - a.trash);
+
+        if (dirtyFloors.length === 0) return;
+
+        // Each custodian cleans 1 trash per cleaning cycle from the dirtiest floor they're assigned to
+        // Distribute custodians across dirty floors
+        for (let i = 0; i < custodianCount; i++) {
+            const floorIndex = i % dirtyFloors.length;
+            const floor = dirtyFloors[floorIndex];
+            if (floor.trash > 0) {
+                floor.trash = Math.max(0, floor.trash - 1);
+            }
+        }
+    }
+
+    /**
      * Check if library needs bathrooms warning
      */
     getBathroomWarning() {
@@ -3600,7 +3635,10 @@ class GameState {
         // Update mood meter
         this.updateMood();
 
-        // Check for night cleaning (when day changes)
+        // Run continuous cleaning (custodians clean throughout the day)
+        this.runContinuousCleaning();
+
+        // Check for night cleaning (when day changes) - bonus deep clean
         const currentDay = this.getGameDay();
         if (currentDay > this.lastCleanedDay) {
             this.runNightCleaning();
