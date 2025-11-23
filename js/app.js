@@ -351,8 +351,8 @@ function updateGlobalStats() {
         document.getElementById('mood-value').textContent = Math.floor(game.mood);
     }
 
-    // Update day counter
-    document.getElementById('day-counter').textContent = `Day ${game.getGameDay()}`;
+    // Update day counter with clock
+    document.getElementById('day-counter').textContent = `Day ${game.getGameDay()} • ${game.getGameClock()}`;
 
     // Update weather indicator
     const currentWeather = game.getCurrentWeather();

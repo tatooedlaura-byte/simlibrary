@@ -2272,6 +2272,35 @@ class GameState {
     }
 
     /**
+     * Get time remaining in current day (in seconds)
+     */
+    getTimeRemainingInDay() {
+        const secondsInDay = 3600; // 1 hour = 1 day
+        const secondsIntoCurrentDay = this.stats.timePlayed % secondsInDay;
+        return secondsInDay - secondsIntoCurrentDay;
+    }
+
+    /**
+     * Get current time of day as a clock (6:00 AM to 6:00 AM next day)
+     */
+    getGameClock() {
+        const secondsInDay = 3600; // 1 hour real = 1 day game
+        const secondsIntoDay = this.stats.timePlayed % secondsInDay;
+
+        // Map 0-3600 seconds to 6:00 AM - 6:00 AM (24 hours)
+        const gameMinutes = (secondsIntoDay / secondsInDay) * 1440; // 1440 minutes in a day
+        const totalMinutes = (6 * 60) + gameMinutes; // Start at 6 AM
+
+        const hours = Math.floor(totalMinutes / 60) % 24;
+        const minutes = Math.floor(totalMinutes % 60);
+
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+
+        return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    }
+
+    /**
      * Run night cleaning cycle - cleans trash based on basement staff
      */
     runNightCleaning() {
