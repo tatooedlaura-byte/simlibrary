@@ -1203,7 +1203,8 @@ class GameState {
      * Get available floor types (all types available, just need stars)
      */
     getAvailableFloorTypes() {
-        return this.floorTypes; // All floors unlocked, just need money
+        // Exclude basement - it's auto-created
+        return this.floorTypes.filter(t => t.id !== 'basement');
     }
 
     /**
@@ -1223,9 +1224,9 @@ class GameState {
             return { success: false, error: 'Tower is full' };
         }
 
-        // Check if trying to build second basement
-        if (floorTypeId === 'basement' && this.floors.some(f => f.typeId === 'basement')) {
-            return { success: false, error: 'Only one basement allowed' };
+        // Basement is auto-created, not buildable
+        if (floorTypeId === 'basement') {
+            return { success: false, error: 'Basement is automatically provided' };
         }
 
         // Deduct cost
@@ -3804,6 +3805,9 @@ class GameState {
                     }
                 });
 
+                // Ensure basement exists (auto-create or migrate)
+                this.ensureBasement();
+
                 // Process any time-based events that happened while offline
                 this.processOfflineProgress(data.timestamp);
             } catch (e) {
@@ -3898,6 +3902,41 @@ class GameState {
     }
 
     /**
+     * Ensure basement exists (auto-created, not buildable)
+     */
+    ensureBasement() {
+        // Check if basement already exists
+        if (this.floors.some(f => f.typeId === 'basement')) {
+            // Migrate existing basement to position 0
+            const basement = this.floors.find(f => f.typeId === 'basement');
+            basement.floorNumber = 0;
+            return;
+        }
+
+        // Create basement automatically
+        const basementType = this.floorTypes.find(t => t.id === 'basement');
+        if (!basementType) return;
+
+        const basement = {
+            id: this.generateId(),
+            floorNumber: 0,
+            typeId: 'basement',
+            name: basementType.name,
+            emoji: basementType.emoji,
+            color: basementType.color,
+            status: 'ready', // Basement starts ready
+            buildStartTime: Date.now(),
+            buildEndTime: Date.now(),
+            upgradeLevel: 1,
+            staff: [], // No staff initially - need to hire
+            bookStock: [],
+            trash: 0
+        };
+
+        this.floors.push(basement);
+    }
+
+    /**
      * Initialize new game
      */
     initializeNewGame() {
@@ -3910,11 +3949,17 @@ class GameState {
         this.nextFloorSlot = 1;
         this.readers = [];
 
+        // Auto-create basement
+        this.ensureBasement();
+
         // Build starter floor (Board Books - cheapest!)
         this.buildFloor('board_books');
         // Instantly complete it for tutorial
-        this.floors[0].status = 'ready';
-        this.floors[0].buildEndTime = Date.now();
+        const starterFloor = this.floors.find(f => f.typeId === 'board_books');
+        if (starterFloor) {
+            starterFloor.status = 'ready';
+            starterFloor.buildEndTime = Date.now();
+        }
 
         this.save();
     }
