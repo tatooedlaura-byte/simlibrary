@@ -1223,13 +1223,19 @@ class GameState {
             return { success: false, error: 'Tower is full' };
         }
 
+        // Check if trying to build second basement
+        if (floorTypeId === 'basement' && this.floors.some(f => f.typeId === 'basement')) {
+            return { success: false, error: 'Only one basement allowed' };
+        }
+
         // Deduct cost
         this.stars -= floorType.buildCost;
 
-        // Create new floor
+        // Create new floor - basement gets floorNumber 0, others get next slot
+        const floorNumber = floorTypeId === 'basement' ? 0 : this.nextFloorSlot++;
         const newFloor = {
             id: this.generateId(),
-            floorNumber: this.nextFloorSlot++,
+            floorNumber: floorNumber,
             typeId: floorTypeId,
             name: floorType.name,
             emoji: floorType.emoji,

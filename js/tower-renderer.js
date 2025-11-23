@@ -252,7 +252,8 @@ class TowerRenderer {
     render() {
         // Calculate max scroll based on tower height
         const floors = [...this.game.floors];
-        const towerHeight = (floors.length + 2) * this.floorHeight + 40; // +1 for build slot, +1 for lobby, +40 for ground
+        const hasBasement = floors.some(f => f.typeId === 'basement');
+        const towerHeight = (floors.length + 2 + (hasBasement ? 1 : 0)) * this.floorHeight + 40; // +1 for build slot, +1 for lobby, +1 for basement if exists, +40 for ground
         const maxScrollY = Math.max(0, towerHeight - this.height);
 
         // Auto-scroll to show top floors by default if tower is taller than canvas
@@ -297,20 +298,32 @@ class TowerRenderer {
         // Draw elevator shaft
         this.drawElevatorShaft();
 
-        // Draw lobby floor at bottom
+        // Separate basement from other floors
+        const basement = floors.find(f => f.typeId === 'basement');
+        const regularFloors = floors.filter(f => f.typeId !== 'basement');
+
+        // Draw basement below lobby if it exists
+        if (basement) {
+            const basementY = this.height - 40; // Below ground level
+            this.drawFloor(basement, this.floorX, basementY, -1);
+        }
+
+        // Draw lobby floor at bottom (above basement)
         const lobbyY = this.height - 40 - this.floorHeight;
         this.drawLobby(this.floorX, lobbyY);
 
-        // Draw floors (bottom to top) - reuse floors variable from above
-        const floorsReversed = floors.reverse();
+        // Draw floors (bottom to top) - only regular floors
+        const floorsReversed = regularFloors.reverse();
 
-        // In reorder mode, calculate shifted positions
+        // In reorder mode, calculate shifted positions (only for regular floors)
         if (this.isReorderMode && this.reorderFloor) {
-            const draggedIndex = this.game.floors.findIndex(f => f.id === this.reorderFloor.id);
-            const targetIndex = this.reorderTargetIndex;
+            // Work with regular floors only for reorder calculations
+            const reorderableFloors = this.game.floors.filter(f => f.typeId !== 'basement');
+            const draggedIndex = reorderableFloors.findIndex(f => f.id === this.reorderFloor.id);
+            const targetIndex = Math.min(this.reorderTargetIndex, reorderableFloors.length - 1);
 
             floorsReversed.forEach((floor, visualIndex) => {
-                const actualIndex = this.game.floors.length - 1 - visualIndex;
+                const actualIndex = reorderableFloors.length - 1 - visualIndex;
                 let shiftedIndex = actualIndex;
 
                 // Calculate where this floor should appear visually
@@ -331,14 +344,14 @@ class TowerRenderer {
                         }
                     }
 
-                    const shiftedVisualIndex = this.game.floors.length - 1 - shiftedIndex;
+                    const shiftedVisualIndex = reorderableFloors.length - 1 - shiftedIndex;
                     const y = this.height - 40 - (shiftedVisualIndex + 2) * this.floorHeight;
                     this.drawFloor(floor, this.floorX, y, shiftedVisualIndex);
                 }
             });
 
             // Draw the gap indicator where floor will drop
-            const targetVisualIndex = this.game.floors.length - 1 - targetIndex;
+            const targetVisualIndex = reorderableFloors.length - 1 - targetIndex;
             const gapY = this.height - 40 - (targetVisualIndex + 2) * this.floorHeight;
 
             this.ctx.save();
@@ -357,7 +370,7 @@ class TowerRenderer {
             this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
             this.ctx.shadowBlur = 25;
             this.ctx.shadowOffsetY = 15;
-            const draggedVisualIndex = this.game.floors.length - 1 - draggedIndex;
+            const draggedVisualIndex = reorderableFloors.length - 1 - draggedIndex;
             this.drawFloor(this.reorderFloor, this.floorX, dragY, draggedVisualIndex);
             this.ctx.restore();
 
@@ -2032,8 +2045,8 @@ class TowerRenderer {
             }
         }
 
-        // Set up long press timer for floor reordering
-        if (clickedFloor && this.game.floors.length > 1) {
+        // Set up long press timer for floor reordering (exclude basement)
+        if (clickedFloor && clickedFloor.typeId !== 'basement' && this.game.floors.length > 1) {
             this._potentialReorderFloor = clickedFloor;
             this._mouseStartRect = rect;
             this.longPressTimer = setTimeout(() => {
