@@ -302,9 +302,9 @@ class TowerRenderer {
         const basement = floors.find(f => f.typeId === 'basement');
         const regularFloors = floors.filter(f => f.typeId !== 'basement');
 
-        // Draw basement below lobby if it exists
+        // Draw basement below lobby if it exists (one floor below ground)
         if (basement) {
-            const basementY = this.height - 40; // Below ground level
+            const basementY = this.height - 40 + this.floorHeight; // One floor below ground level
             this.drawFloor(basement, this.floorX, basementY, -1);
         }
 
