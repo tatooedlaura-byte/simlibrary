@@ -2598,17 +2598,6 @@ class TowerRenderer {
                 this.ctx.fillText('🪣', x + this.floorWidth - 60, y + 80);
                 break;
         }
-
-        // Show staff hired if basement
-        if (floorType.id === 'basement' && floor.staff && floor.staff.length > 0) {
-            this.ctx.fillStyle = 'rgba(76, 175, 80, 0.3)';
-            this.ctx.fillRect(x + 10, y + this.floorHeight - 25, this.floorWidth - 20, 15);
-
-            this.ctx.fillStyle = '#4CAF50';
-            this.ctx.font = 'bold 11px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(`🧹 CLEANING CREW: ${floor.staff.join(', ')}`, centerX, y + this.floorHeight - 13);
-        }
     }
 
     /**
