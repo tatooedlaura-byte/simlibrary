@@ -333,6 +333,13 @@ function updateGlobalStats() {
     // Update day counter
     document.getElementById('day-counter').textContent = `Day ${game.getGameDay()}`;
 
+    // Update weather indicator
+    const currentWeather = game.getCurrentWeather();
+    if (currentWeather) {
+        document.getElementById('weather-emoji').textContent = currentWeather.emoji;
+        document.getElementById('weather-emoji').title = `${currentWeather.name} - Mood: ${currentWeather.moodEffect >= 0 ? '+' : ''}${currentWeather.moodEffect}, Visitors: ${Math.round(currentWeather.spawnEffect * 100)}%`;
+    }
+
     // Check for special visitor notifications
     if (game._newSpecialVisitor) {
         showToast(`${game._newSpecialVisitor.emoji} ${game._newSpecialVisitor.name} arrived! ${game._newSpecialVisitor.description}`);
@@ -373,6 +380,49 @@ function updateGlobalStats() {
     if (game._hallEventEnded) {
         showToast(`🎭 ${game._hallEventEnded.emoji} ${game._hallEventEnded.name} ended! +${game._hallEventEnded.reward} ⭐`);
         delete game._hallEventEnded;
+    }
+
+    // Check for weather changes
+    if (game._weatherChanged) {
+        const weather = game._weatherChanged;
+        let effectText = '';
+        if (weather.moodEffect > 0) effectText = `Mood +${weather.moodEffect}`;
+        else if (weather.moodEffect < 0) effectText = `Mood ${weather.moodEffect}`;
+        if (weather.spawnEffect < 1) effectText += effectText ? ', fewer visitors' : 'Fewer visitors';
+        else if (weather.spawnEffect > 1) effectText += effectText ? ', more visitors' : 'More visitors';
+        showToast(`${weather.emoji} Weather: ${weather.name}${effectText ? ' - ' + effectText : ''}`);
+        delete game._weatherChanged;
+    }
+
+    // Check for holiday notifications
+    if (game._holidayStarted) {
+        const holiday = game._holidayStarted;
+        showToast(`${holiday.emoji} ${holiday.name} has begun! Special bonuses active for ${holiday.duration} day(s).`);
+        delete game._holidayStarted;
+    }
+    if (game._holidayEnded) {
+        const holiday = game._holidayEnded;
+        showToast(`${holiday.emoji} ${holiday.name} has ended. See you next year!`);
+        delete game._holidayEnded;
+    }
+
+    // Check for book donations
+    if (game._bookDonation) {
+        const donation = game._bookDonation;
+        showToast(`${donation.source.emoji} ${donation.source.name}: +${donation.booksAdded} ${donation.categoryEmoji} ${donation.categoryName} at ${donation.floorName}!`);
+        delete game._bookDonation;
+    }
+
+    // Check for library card notifications
+    if (game._newLibraryCard) {
+        const card = game._newLibraryCard;
+        showToast(`📇 New library card member: ${card.emoji} ${card.name}!`);
+        delete game._newLibraryCard;
+    }
+    if (game._cardMilestone) {
+        const milestone = game._cardMilestone;
+        showToast(`🎉 ${milestone.cardHolder.emoji} ${milestone.cardHolder.name} reached ${milestone.cardHolder.visits} visits! ${milestone.benefit.description}`);
+        delete game._cardMilestone;
     }
 
     // Check for night cleaning

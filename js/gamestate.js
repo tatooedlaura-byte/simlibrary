@@ -34,6 +34,56 @@ class GameState {
         // Cleaning system
         this.lastCleanedDay = 0; // Track last day cleaning occurred
 
+        // Weather system
+        this.weather = {
+            current: 'sunny',
+            nextChange: Date.now() + (5 * 60 * 1000), // Change every 5 minutes
+            types: [
+                { id: 'sunny', name: 'Sunny', emoji: '☀️', moodEffect: 10, spawnEffect: 1.2 },
+                { id: 'cloudy', name: 'Cloudy', emoji: '☁️', moodEffect: 0, spawnEffect: 1.0 },
+                { id: 'rainy', name: 'Rainy', emoji: '🌧️', moodEffect: -10, spawnEffect: 0.7 },
+                { id: 'stormy', name: 'Stormy', emoji: '⛈️', moodEffect: -20, spawnEffect: 0.5 },
+                { id: 'snowy', name: 'Snowy', emoji: '❄️', moodEffect: 5, spawnEffect: 0.6 }
+            ]
+        };
+
+        // Seasons and holidays system
+        this.seasons = {
+            current: this.getCurrentSeason(),
+            holidays: [
+                { id: 'new_year', name: "New Year's Day", emoji: '🎆', month: 1, day: 1, bonus: 'double_stars', duration: 1 },
+                { id: 'valentines', name: "Valentine's Day", emoji: '❤️', month: 2, day: 14, bonus: 'romance_boost', duration: 1 },
+                { id: 'spring_break', name: 'Spring Break', emoji: '🌸', month: 3, day: 20, bonus: 'kid_spawn', duration: 7 },
+                { id: 'easter', name: 'Easter', emoji: '🐰', month: 4, day: 1, bonus: 'mood_boost', duration: 1 },
+                { id: 'summer_reading', name: 'Summer Reading', emoji: '☀️', month: 6, day: 1, bonus: 'spawn_boost', duration: 90 },
+                { id: 'back_to_school', name: 'Back to School', emoji: '📚', month: 9, day: 1, bonus: 'student_spawn', duration: 14 },
+                { id: 'halloween', name: 'Halloween', emoji: '🎃', month: 10, day: 31, bonus: 'mystery_boost', duration: 1 },
+                { id: 'thanksgiving', name: 'Thanksgiving', emoji: '🦃', month: 11, day: 28, bonus: 'star_bonus', duration: 1 },
+                { id: 'winter_holiday', name: 'Winter Holidays', emoji: '🎄', month: 12, day: 20, bonus: 'all_boost', duration: 12 }
+            ],
+            currentHoliday: null
+        };
+
+        // Book donation system - random free stock events
+        this.nextDonationTime = Date.now() + (2 * 60 * 1000); // First donation after 2 minutes
+        this.donationSources = [
+            { id: 'estate_sale', name: 'Estate Sale', emoji: '🏠', amount: 3, description: 'Books from an estate sale!' },
+            { id: 'library_friend', name: 'Friend of Library', emoji: '❤️', amount: 2, description: 'A kind donation!' },
+            { id: 'publisher', name: 'Publisher Gift', emoji: '📦', amount: 4, description: 'Review copies from a publisher!' },
+            { id: 'spring_cleaning', name: 'Spring Cleaning', emoji: '🧹', amount: 3, description: 'Donated during spring cleaning!' },
+            { id: 'moving_family', name: 'Moving Family', emoji: '🏡', amount: 5, description: 'Family moving donated their books!' },
+            { id: 'anonymous', name: 'Anonymous Donor', emoji: '🎁', amount: 2, description: 'A mystery benefactor!' }
+        ];
+
+        // Library card system - track regular patrons
+        this.libraryCards = []; // List of card holders
+        this.maxLibraryCards = 10;
+        this.cardBenefits = [
+            { visits: 3, bonus: 'fast_checkout', description: '10% faster checkout' },
+            { visits: 5, bonus: 'extra_stars', description: '+20% stars' },
+            { visits: 10, bonus: 'vip_spawn', description: 'May bring friends' }
+        ];
+
         // Event Hall system
         this.lastEventHallDay = 0; // Track last day an event hall event occurred
         this.currentHallEvent = null; // Current event hall event
@@ -1662,6 +1712,21 @@ class GameState {
             }
         }
 
+        // Register with library card system
+        const cardHolder = this.registerLibraryCardVisit(reader.name, reader.emoji, reader.type);
+        reader.hasLibraryCard = !!cardHolder;
+        reader.cardVisits = cardHolder ? cardHolder.visits : 0;
+
+        // Apply library card checkout bonus
+        if (reader.hasLibraryCard) {
+            const cardBonus = this.getLibraryCardBonus(reader.name);
+            // Apply faster checkout time for card holders
+            if (cardBonus.checkoutBonus < 1) {
+                const timeRemaining = reader.checkoutTime - Date.now();
+                reader.checkoutTime = Date.now() + Math.floor(timeRemaining * cardBonus.checkoutBonus);
+            }
+        }
+
         this.readers.push(reader);
         return reader;
     }
@@ -2160,6 +2225,12 @@ class GameState {
             targetMood += this.currentHallEvent.effect.value;
         }
 
+        // Weather effect on mood
+        targetMood += this.getWeatherMoodEffect();
+
+        // Holiday mood bonus
+        targetMood += this.getHolidayMoodBonus();
+
         // Boost during rush hour
         if (this.transitSchedule.isRushHour) targetMood += 10;
 
@@ -2255,6 +2326,314 @@ class GameState {
             };
         }
         return { needed: false };
+    }
+
+    /**
+     * Update weather system
+     */
+    updateWeather() {
+        const now = Date.now();
+        if (now >= this.weather.nextChange) {
+            // Change weather
+            const oldWeather = this.weather.current;
+            const weatherTypes = this.weather.types;
+
+            // Weight towards sunny/cloudy, less chance of extreme weather
+            const weights = [0.3, 0.3, 0.2, 0.1, 0.1]; // sunny, cloudy, rainy, stormy, snowy
+            const random = Math.random();
+            let cumulative = 0;
+            let newWeatherIndex = 0;
+
+            for (let i = 0; i < weights.length; i++) {
+                cumulative += weights[i];
+                if (random < cumulative) {
+                    newWeatherIndex = i;
+                    break;
+                }
+            }
+
+            this.weather.current = weatherTypes[newWeatherIndex].id;
+            this.weather.nextChange = now + (3 + Math.random() * 4) * 60 * 1000; // 3-7 minutes
+
+            // Notify if weather changed
+            if (this.weather.current !== oldWeather) {
+                const newWeather = weatherTypes[newWeatherIndex];
+                this._weatherChanged = newWeather;
+            }
+        }
+    }
+
+    /**
+     * Get current weather data
+     */
+    getCurrentWeather() {
+        return this.weather.types.find(w => w.id === this.weather.current) || this.weather.types[0];
+    }
+
+    /**
+     * Get weather effect on mood
+     */
+    getWeatherMoodEffect() {
+        const weather = this.getCurrentWeather();
+        return weather.moodEffect;
+    }
+
+    /**
+     * Get weather effect on spawn rate
+     */
+    getWeatherSpawnEffect() {
+        const weather = this.getCurrentWeather();
+        return weather.spawnEffect;
+    }
+
+    /**
+     * Get current season based on real date
+     */
+    getCurrentSeason() {
+        const now = new Date();
+        const month = now.getMonth() + 1; // 1-12
+
+        if (month >= 3 && month <= 5) return 'spring';
+        if (month >= 6 && month <= 8) return 'summer';
+        if (month >= 9 && month <= 11) return 'fall';
+        return 'winter';
+    }
+
+    /**
+     * Check and update holidays based on real date
+     */
+    updateSeasonAndHoliday() {
+        // Update current season
+        this.seasons.current = this.getCurrentSeason();
+
+        // Check for active holiday
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const day = now.getDate();
+
+        let activeHoliday = null;
+        for (const holiday of this.seasons.holidays) {
+            // Check if we're within the holiday period
+            const startDate = new Date(now.getFullYear(), holiday.month - 1, holiday.day);
+            const endDate = new Date(startDate.getTime() + (holiday.duration * 24 * 60 * 60 * 1000));
+
+            if (now >= startDate && now < endDate) {
+                activeHoliday = holiday;
+                break;
+            }
+        }
+
+        // Notify if holiday changed
+        if (activeHoliday && (!this.seasons.currentHoliday || this.seasons.currentHoliday.id !== activeHoliday.id)) {
+            this._holidayStarted = activeHoliday;
+        } else if (!activeHoliday && this.seasons.currentHoliday) {
+            this._holidayEnded = this.seasons.currentHoliday;
+        }
+
+        this.seasons.currentHoliday = activeHoliday;
+    }
+
+    /**
+     * Get holiday bonus multiplier for stars
+     */
+    getHolidayStarBonus() {
+        if (!this.seasons.currentHoliday) return 1;
+
+        switch (this.seasons.currentHoliday.bonus) {
+            case 'double_stars':
+            case 'all_boost':
+                return 2;
+            case 'star_bonus':
+                return 1.5;
+            default:
+                return 1;
+        }
+    }
+
+    /**
+     * Get holiday bonus for spawn rate
+     */
+    getHolidaySpawnBonus() {
+        if (!this.seasons.currentHoliday) return 1;
+
+        switch (this.seasons.currentHoliday.bonus) {
+            case 'spawn_boost':
+            case 'all_boost':
+                return 1.5;
+            case 'kid_spawn':
+            case 'student_spawn':
+                return 1.3;
+            default:
+                return 1;
+        }
+    }
+
+    /**
+     * Get holiday mood bonus
+     */
+    getHolidayMoodBonus() {
+        if (!this.seasons.currentHoliday) return 0;
+
+        switch (this.seasons.currentHoliday.bonus) {
+            case 'mood_boost':
+            case 'all_boost':
+                return 15;
+            default:
+                return 5; // Small mood boost for any holiday
+        }
+    }
+
+    /**
+     * Get season effect on weather probability
+     */
+    getSeasonWeatherWeight() {
+        // Adjust weather probabilities based on season
+        switch (this.seasons.current) {
+            case 'winter':
+                return { sunny: 0.2, cloudy: 0.3, rainy: 0.15, stormy: 0.05, snowy: 0.3 };
+            case 'spring':
+                return { sunny: 0.3, cloudy: 0.25, rainy: 0.3, stormy: 0.1, snowy: 0.05 };
+            case 'summer':
+                return { sunny: 0.45, cloudy: 0.25, rainy: 0.15, stormy: 0.15, snowy: 0 };
+            case 'fall':
+                return { sunny: 0.25, cloudy: 0.35, rainy: 0.25, stormy: 0.1, snowy: 0.05 };
+            default:
+                return { sunny: 0.3, cloudy: 0.3, rainy: 0.2, stormy: 0.1, snowy: 0.1 };
+        }
+    }
+
+    /**
+     * Check and trigger book donations
+     */
+    checkBookDonation() {
+        const now = Date.now();
+        if (now < this.nextDonationTime) return;
+
+        // Get floors that can receive donations (not full)
+        const eligibleFloors = this.floors.filter(f =>
+            f.status === 'ready' &&
+            f.bookStock &&
+            f.bookStock.some(cat => cat.currentStock < cat.maxStock)
+        );
+
+        if (eligibleFloors.length === 0) {
+            this.nextDonationTime = now + (60 * 1000); // Check again in 1 minute
+            return;
+        }
+
+        // Pick a random floor and category
+        const floor = eligibleFloors[Math.floor(Math.random() * eligibleFloors.length)];
+        const notFullCategories = floor.bookStock.filter(cat => cat.currentStock < cat.maxStock);
+        const category = notFullCategories[Math.floor(Math.random() * notFullCategories.length)];
+
+        // Pick a random donation source
+        const source = this.donationSources[Math.floor(Math.random() * this.donationSources.length)];
+
+        // Add books (up to max stock)
+        const spaceAvailable = category.maxStock - category.currentStock;
+        const booksAdded = Math.min(source.amount, spaceAvailable);
+        category.currentStock += booksAdded;
+
+        // Notify
+        this._bookDonation = {
+            source: source,
+            floorName: floor.name,
+            floorEmoji: floor.emoji,
+            categoryName: category.name,
+            categoryEmoji: category.emoji,
+            booksAdded: booksAdded
+        };
+
+        // Schedule next donation (2-4 minutes)
+        this.nextDonationTime = now + (120 * 1000 + Math.random() * 120 * 1000);
+    }
+
+    /**
+     * Register a patron visit for library card system
+     */
+    registerLibraryCardVisit(readerName, readerEmoji, readerType) {
+        // Find existing card holder or create new
+        let cardHolder = this.libraryCards.find(c => c.name === readerName);
+
+        if (!cardHolder) {
+            // Create new card if we have space
+            if (this.libraryCards.length >= this.maxLibraryCards) {
+                // Remove least active card holder
+                this.libraryCards.sort((a, b) => a.visits - b.visits);
+                this.libraryCards.shift();
+            }
+
+            cardHolder = {
+                id: this.generateId(),
+                name: readerName,
+                emoji: readerEmoji,
+                type: readerType,
+                visits: 0,
+                totalStars: 0,
+                firstVisit: Date.now(),
+                lastVisit: Date.now()
+            };
+            this.libraryCards.push(cardHolder);
+            this._newLibraryCard = cardHolder;
+        }
+
+        // Increment visits
+        const oldVisits = cardHolder.visits;
+        cardHolder.visits += 1;
+        cardHolder.lastVisit = Date.now();
+
+        // Check for milestone
+        for (const benefit of this.cardBenefits) {
+            if (oldVisits < benefit.visits && cardHolder.visits >= benefit.visits) {
+                this._cardMilestone = {
+                    cardHolder: cardHolder,
+                    benefit: benefit
+                };
+                break;
+            }
+        }
+
+        return cardHolder;
+    }
+
+    /**
+     * Get library card bonus for a patron
+     */
+    getLibraryCardBonus(readerName) {
+        const cardHolder = this.libraryCards.find(c => c.name === readerName);
+        if (!cardHolder) return { starBonus: 1, checkoutBonus: 1, canBringFriend: false };
+
+        let starBonus = 1;
+        let checkoutBonus = 1;
+        let canBringFriend = false;
+
+        for (const benefit of this.cardBenefits) {
+            if (cardHolder.visits >= benefit.visits) {
+                switch (benefit.bonus) {
+                    case 'fast_checkout':
+                        checkoutBonus = 0.9; // 10% faster
+                        break;
+                    case 'extra_stars':
+                        starBonus = 1.2; // 20% more stars
+                        break;
+                    case 'vip_spawn':
+                        canBringFriend = true;
+                        break;
+                }
+            }
+        }
+
+        return { starBonus, checkoutBonus, canBringFriend };
+    }
+
+    /**
+     * Update card holder's total stars earned
+     */
+    updateLibraryCardStars(readerName, stars) {
+        const cardHolder = this.libraryCards.find(c => c.name === readerName);
+        if (cardHolder) {
+            cardHolder.totalStars += stars;
+        }
     }
 
     /**
@@ -2989,6 +3368,18 @@ class GameState {
                     const perkBonus = this.getPerkEffect('earning_bonus');
                     finalEarnings = Math.floor(finalEarnings * perkBonus);
 
+                    // Apply holiday star bonus
+                    const holidayBonus = this.getHolidayStarBonus();
+                    finalEarnings = Math.floor(finalEarnings * holidayBonus);
+
+                    // Apply library card bonus
+                    if (reader.hasLibraryCard) {
+                        const cardBonus = this.getLibraryCardBonus(reader.name);
+                        finalEarnings = Math.floor(finalEarnings * cardBonus.starBonus);
+                        // Update card holder stats
+                        this.updateLibraryCardStars(reader.name, finalEarnings);
+                    }
+
                     // Earn stars
                     this.stars += finalEarnings;
 
@@ -3115,6 +3506,12 @@ class GameState {
             spawnChance *= 0.5; // 50% fewer visitors when sad
         }
 
+        // Apply weather effect on spawn rate
+        spawnChance *= this.getWeatherSpawnEffect();
+
+        // Apply holiday spawn bonus
+        spawnChance *= this.getHolidaySpawnBonus();
+
         if (Math.random() < spawnChance) {
             this.spawnReader();
         }
@@ -3187,6 +3584,12 @@ class GameState {
             return true;
         });
 
+        // Update weather
+        this.updateWeather();
+
+        // Update seasons and holidays
+        this.updateSeasonAndHoliday();
+
         // Update mood meter
         this.updateMood();
 
@@ -3200,6 +3603,9 @@ class GameState {
         // Check for Event Hall events
         this.checkEventHallEvent();
         this.updateHallEvent();
+
+        // Check for book donations
+        this.checkBookDonation();
 
         // Check floor synergies
         this.checkFloorSynergies();
@@ -3280,6 +3686,9 @@ class GameState {
             lastCleanedDay: this.lastCleanedDay,
             lastEventHallDay: this.lastEventHallDay,
             currentHallEvent: this.currentHallEvent,
+            weather: this.weather,
+            nextDonationTime: this.nextDonationTime,
+            libraryCards: this.libraryCards,
             timestamp: Date.now()
         };
         localStorage.setItem('simlibrary_save_v2', JSON.stringify(saveData));
@@ -3363,6 +3772,18 @@ class GameState {
                 // Load Event Hall system state
                 this.lastEventHallDay = data.lastEventHallDay || 0;
                 this.currentHallEvent = data.currentHallEvent || null;
+
+                // Load weather system state
+                if (data.weather) {
+                    this.weather.current = data.weather.current || 'sunny';
+                    this.weather.nextChange = data.weather.nextChange || (Date.now() + (5 * 60 * 1000));
+                }
+
+                // Load donation time
+                this.nextDonationTime = data.nextDonationTime || (Date.now() + (2 * 60 * 1000));
+
+                // Load library cards
+                this.libraryCards = data.libraryCards || [];
 
                 // Migrate old floors to have staff array, upgradeLevel, and trash if missing
                 this.floors.forEach(floor => {
