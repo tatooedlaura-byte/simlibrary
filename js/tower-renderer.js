@@ -491,29 +491,68 @@ class TowerRenderer {
      */
     drawLobbyDecorations(x, y) {
         const decorations = this.game.lobbyDecorations;
-        if (!decorations || decorations.length === 0) return;
 
-        // Position decorations in the lobby
+        // Draw player-placed decorations
+        if (decorations && decorations.length > 0) {
+            // Position decorations in the lobby
+            const positions = [
+                { x: x + this.floorWidth - 80, y: y + 40 },  // Right side upper
+                { x: x + this.floorWidth - 50, y: y + this.floorHeight - 40 }, // Right side lower
+                { x: x + this.floorWidth / 2, y: y + 50 }, // Center
+            ];
+
+            decorations.forEach((decorId, index) => {
+                const decoration = this.game.decorations.find(d => d.id === decorId);
+                if (!decoration || index >= positions.length) return;
+
+                const pos = positions[index];
+
+                // Draw decoration emoji (3x larger)
+                this.ctx.save();
+                this.ctx.font = '72px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(decoration.emoji, pos.x, pos.y);
+                this.ctx.restore();
+            });
+        }
+
+        // Draw holiday decorations if active
+        this.drawHolidayDecorations(x, y);
+    }
+
+    /**
+     * Draw holiday decorations on lobby and track for floors
+     */
+    drawHolidayDecorations(x, y) {
+        const holiday = this.game.seasons?.currentHoliday;
+        if (!holiday || !holiday.decorations) return;
+
+        const lobbyDecor = holiday.decorations.lobby;
+        if (!lobbyDecor || lobbyDecor.length === 0) return;
+
+        const scale = this.getScale();
+        const fontSize = Math.max(16, Math.round(24 * scale));
+
+        // Holiday decoration positions in lobby (different from player decorations)
         const positions = [
-            { x: x + this.floorWidth - 80, y: y + 40 },  // Right side upper
-            { x: x + this.floorWidth - 50, y: y + this.floorHeight - 40 }, // Right side lower
-            { x: x + this.floorWidth / 2, y: y + 50 }, // Center
+            { x: x + 30, y: y + 30 },  // Top left
+            { x: x + 60, y: y + this.floorHeight - 30 }, // Bottom left
+            { x: x + this.floorWidth - 30, y: y + 30 }, // Top right
         ];
 
-        decorations.forEach((decorId, index) => {
-            const decoration = this.game.decorations.find(d => d.id === decorId);
-            if (!decoration || index >= positions.length) return;
+        this.ctx.save();
+        this.ctx.font = `${fontSize}px Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
 
+        lobbyDecor.forEach((emoji, index) => {
+            if (index >= positions.length) return;
             const pos = positions[index];
-
-            // Draw decoration emoji (3x larger)
-            this.ctx.save();
-            this.ctx.font = '72px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(decoration.emoji, pos.x, pos.y);
-            this.ctx.restore();
+            this.ctx.fillText(emoji, pos.x, pos.y);
         });
+
+        this.ctx.restore();
     }
 
     /**
@@ -806,28 +845,57 @@ class TowerRenderer {
      */
     drawFloorDecorations(floor, x, y) {
         const decorations = this.game.floorDecorations[floor.id];
-        if (!decorations || decorations.length === 0) return;
 
-        // Position decorations on the floor (left and right corners)
-        const positions = [
-            { x: x + 15, y: y + this.floorHeight - 25 },  // Left corner
-            { x: x + this.floorWidth - 15, y: y + this.floorHeight - 25 }, // Right corner
-        ];
+        // Draw player-placed decorations
+        if (decorations && decorations.length > 0) {
+            // Position decorations on the floor (left and right corners)
+            const positions = [
+                { x: x + 15, y: y + this.floorHeight - 25 },  // Left corner
+                { x: x + this.floorWidth - 15, y: y + this.floorHeight - 25 }, // Right corner
+            ];
 
-        decorations.forEach((decorId, index) => {
-            const decoration = this.game.decorations.find(d => d.id === decorId);
-            if (!decoration || index >= positions.length) return;
+            decorations.forEach((decorId, index) => {
+                const decoration = this.game.decorations.find(d => d.id === decorId);
+                if (!decoration || index >= positions.length) return;
 
-            const pos = positions[index];
+                const pos = positions[index];
 
-            // Draw decoration emoji (3x larger)
+                // Draw decoration emoji (3x larger)
+                this.ctx.save();
+                this.ctx.font = '48px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(decoration.emoji, pos.x, pos.y);
+                this.ctx.restore();
+            });
+        }
+
+        // Draw holiday decorations on floor
+        const holiday = this.game.seasons?.currentHoliday;
+        if (holiday && holiday.decorations && holiday.decorations.floors) {
+            const floorDecor = holiday.decorations.floors;
+            const scale = this.getScale();
+            const fontSize = Math.max(12, Math.round(16 * scale));
+
+            // Holiday decorations on floors (top corners, smaller)
+            const positions = [
+                { x: x + 20, y: y + 20 },  // Top left
+                { x: x + this.floorWidth - 40, y: y + 20 }, // Top right (offset from happiness emoji)
+            ];
+
             this.ctx.save();
-            this.ctx.font = '48px Arial';
+            this.ctx.font = `${fontSize}px Arial`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(decoration.emoji, pos.x, pos.y);
+
+            floorDecor.forEach((emoji, index) => {
+                if (index >= positions.length) return;
+                const pos = positions[index];
+                this.ctx.fillText(emoji, pos.x, pos.y);
+            });
+
             this.ctx.restore();
-        });
+        }
     }
 
     /**

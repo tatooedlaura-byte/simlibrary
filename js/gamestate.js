@@ -51,15 +51,24 @@ class GameState {
         this.seasons = {
             current: this.getCurrentSeason(),
             holidays: [
-                { id: 'new_year', name: "New Year's Day", emoji: '🎆', month: 1, day: 1, bonus: 'double_stars', duration: 1 },
-                { id: 'valentines', name: "Valentine's Day", emoji: '❤️', month: 2, day: 14, bonus: 'romance_boost', duration: 1 },
-                { id: 'spring_break', name: 'Spring Break', emoji: '🌸', month: 3, day: 20, bonus: 'kid_spawn', duration: 7 },
-                { id: 'easter', name: 'Easter', emoji: '🐰', month: 4, day: 1, bonus: 'mood_boost', duration: 1 },
-                { id: 'summer_reading', name: 'Summer Reading', emoji: '☀️', month: 6, day: 1, bonus: 'spawn_boost', duration: 90 },
-                { id: 'back_to_school', name: 'Back to School', emoji: '📚', month: 9, day: 1, bonus: 'student_spawn', duration: 14 },
-                { id: 'halloween', name: 'Halloween', emoji: '🎃', month: 10, day: 31, bonus: 'mystery_boost', duration: 1 },
-                { id: 'thanksgiving', name: 'Thanksgiving', emoji: '🦃', month: 11, day: 28, bonus: 'star_bonus', duration: 1 },
-                { id: 'winter_holiday', name: 'Winter Holidays', emoji: '🎄', month: 12, day: 20, bonus: 'all_boost', duration: 12 }
+                { id: 'new_year', name: "New Year's Day", emoji: '🎆', month: 12, day: 29, bonus: 'double_stars', duration: 7,
+                  decorations: { lobby: ['🎆', '🥂', '🎊'], floors: ['✨', '🎉'] } },
+                { id: 'valentines', name: "Valentine's Day", emoji: '❤️', month: 2, day: 11, bonus: 'romance_boost', duration: 7,
+                  decorations: { lobby: ['❤️', '💕', '💘'], floors: ['💗', '💝'] } },
+                { id: 'spring_break', name: 'Spring Break', emoji: '🌸', month: 3, day: 17, bonus: 'kid_spawn', duration: 10,
+                  decorations: { lobby: ['🌸', '🌷', '🌼'], floors: ['🌺', '🦋'] } },
+                { id: 'easter', name: 'Easter', emoji: '🐰', month: 3, day: 29, bonus: 'mood_boost', duration: 7,
+                  decorations: { lobby: ['🐰', '🥚', '🐣'], floors: ['🌷', '🥕'] } },
+                { id: 'summer_reading', name: 'Summer Reading', emoji: '☀️', month: 6, day: 1, bonus: 'spawn_boost', duration: 90,
+                  decorations: { lobby: ['☀️', '🏖️', '🌴'], floors: ['🍦', '🌊'] } },
+                { id: 'back_to_school', name: 'Back to School', emoji: '📚', month: 8, day: 25, bonus: 'student_spawn', duration: 14,
+                  decorations: { lobby: ['📚', '✏️', '🎒'], floors: ['📝', '🍎'] } },
+                { id: 'halloween', name: 'Halloween', emoji: '🎃', month: 10, day: 25, bonus: 'mystery_boost', duration: 7,
+                  decorations: { lobby: ['🎃', '👻', '🦇'], floors: ['🕷️', '🕸️'] } },
+                { id: 'thanksgiving', name: 'Thanksgiving', emoji: '🦃', month: 11, day: 22, bonus: 'star_bonus', duration: 7,
+                  decorations: { lobby: ['🦃', '🍂', '🌽'], floors: ['🥧', '🍁'] } },
+                { id: 'winter_holiday', name: 'Winter Holidays', emoji: '🎄', month: 12, day: 18, bonus: 'all_boost', duration: 14,
+                  decorations: { lobby: ['🎄', '⭐', '🎁'], floors: ['❄️', '☃️'] } }
             ],
             currentHoliday: null
         };
