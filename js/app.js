@@ -295,7 +295,13 @@ function setupEventListeners() {
     });
 
     // Help button - opens help modal
-    document.getElementById('open-help-btn').addEventListener('click', () => {
+    const helpBtn = document.getElementById('open-help-btn');
+    helpBtn.addEventListener('click', () => {
+        haptic('medium');
+        openHelpModal();
+    });
+    helpBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
         haptic('medium');
         openHelpModal();
     });
