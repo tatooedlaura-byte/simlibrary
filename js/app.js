@@ -369,8 +369,8 @@ function showWeatherForecast() {
                 <span style="font-size: 24px;">${item.weather.emoji}</span>
                 <div>
                     <div>${item.weather.name}</div>
-                    <div style="font-size: 12px; color: var(--text-secondary);">${item.timeLabel}</div>
-                    <div style="font-size: 11px; color: var(--text-secondary);">${effectText}</div>
+                    <div style="font-size: 12px; color: #666;">${item.timeLabel}</div>
+                    <div style="font-size: 11px; color: #666;">${effectText}</div>
                 </div>
             </div>
         `;
@@ -386,7 +386,8 @@ function showWeatherForecast() {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: var(--card-bg);
+        background: #ffffff;
+        color: #333;
         padding: 20px;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.3);
@@ -394,7 +395,7 @@ function showWeatherForecast() {
         min-width: 250px;
     `;
     popup.innerHTML = `
-        <h3 style="margin: 0 0 15px 0; text-align: center;">Weather Forecast</h3>
+        <h3 style="margin: 0 0 15px 0; text-align: center; color: #333;">Weather Forecast</h3>
         ${forecastHtml}
         <button onclick="this.parentElement.remove()" style="
             width: 100%;

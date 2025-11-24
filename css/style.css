@@ -1766,6 +1766,7 @@ body {
 .mood-stat {
     min-width: auto;
     padding: 4px 8px;
+    cursor: pointer;
 }
 
 .mood-stat .stat-icon {
@@ -1774,6 +1775,10 @@ body {
 
 .mood-stat .stat-value {
     font-size: 11px;
+}
+
+.weather-stat {
+    cursor: pointer;
 }
 
 /* ===================================

@@ -787,6 +787,75 @@ class TowerRenderer {
 
         // Draw floor happiness indicator (based on trash level)
         this.drawFloorHappiness(floor, x, y);
+
+        // Draw incident overlay if floor has active incidents
+        this.drawIncidentOverlay(floor, x, y);
+    }
+
+    /**
+     * Draw incident overlay (caution tape and warning) for closed floors
+     */
+    drawIncidentOverlay(floor, x, y) {
+        if (!floor.incidents || Object.keys(floor.incidents).length === 0) return;
+
+        const scale = this.getScale();
+
+        // Semi-transparent dark overlay
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.fillRect(x, y, this.floorWidth, this.floorHeight);
+
+        // Draw caution tape stripes
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.rect(x, y, this.floorWidth, this.floorHeight);
+        this.ctx.clip();
+
+        const stripeWidth = 20 * scale;
+        const stripeHeight = this.floorHeight;
+
+        // Yellow and black diagonal stripes at top and bottom
+        for (let i = -2; i < this.floorWidth / stripeWidth + 2; i++) {
+            const stripeX = x + i * stripeWidth * 2;
+
+            // Top caution tape
+            this.ctx.fillStyle = i % 2 === 0 ? '#FFD700' : '#000';
+            this.ctx.beginPath();
+            this.ctx.moveTo(stripeX, y);
+            this.ctx.lineTo(stripeX + stripeWidth, y);
+            this.ctx.lineTo(stripeX + stripeWidth + 15, y + 15);
+            this.ctx.lineTo(stripeX + 15, y + 15);
+            this.ctx.closePath();
+            this.ctx.fill();
+
+            // Bottom caution tape
+            this.ctx.beginPath();
+            this.ctx.moveTo(stripeX, y + this.floorHeight - 15);
+            this.ctx.lineTo(stripeX + stripeWidth, y + this.floorHeight - 15);
+            this.ctx.lineTo(stripeX + stripeWidth + 15, y + this.floorHeight);
+            this.ctx.lineTo(stripeX + 15, y + this.floorHeight);
+            this.ctx.closePath();
+            this.ctx.fill();
+        }
+        this.ctx.restore();
+
+        // Get the incident emoji to display
+        let incidentEmoji = '⚠️';
+        if (floor.incidents.powerOut) incidentEmoji = '⚡';
+        else if (floor.incidents.flooded) incidentEmoji = '🌊';
+        else if (floor.incidents.brokenWindow) incidentEmoji = '🪟';
+        else if (floor.incidents.messySpill) incidentEmoji = '🤮';
+
+        // Draw incident emoji in center
+        const fontSize = Math.max(24, Math.round(32 * scale));
+        this.ctx.font = `${fontSize}px Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(incidentEmoji, x + this.floorWidth / 2, y + this.floorHeight / 2);
+
+        // Draw "CLOSED" text
+        this.ctx.fillStyle = '#FF0000';
+        this.ctx.font = `bold ${Math.round(14 * scale)}px Arial`;
+        this.ctx.fillText('CLOSED', x + this.floorWidth / 2, y + this.floorHeight / 2 + fontSize * 0.7);
     }
 
     /**
