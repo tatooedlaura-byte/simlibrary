@@ -2618,33 +2618,33 @@ class GameState {
         this.floors.forEach(floor => {
             if (!floor.incidents) return;
 
-            // Electrician fixes power outages
+            // Electrician fixes power outages (30-60 seconds)
             if (hasElectrician && floor.incidents.powerOut) {
-                if (Date.now() - floor.incidents.powerOut.startTime > 5000 + Math.random() * 5000) {
+                if (Date.now() - floor.incidents.powerOut.startTime > 30000 + Math.random() * 30000) {
                     delete floor.incidents.powerOut;
                     this._incidentFixed = { floor: floor.name, emoji: '⚡', type: 'Power restored' };
                 }
             }
 
-            // Custodian fixes broken windows and spills
+            // Custodian fixes broken windows (45-90 seconds) and spills (20-40 seconds)
             if (hasCustodian) {
                 if (floor.incidents.brokenWindow) {
-                    if (Date.now() - floor.incidents.brokenWindow.startTime > 8000 + Math.random() * 7000) {
+                    if (Date.now() - floor.incidents.brokenWindow.startTime > 45000 + Math.random() * 45000) {
                         delete floor.incidents.brokenWindow;
                         this._incidentFixed = { floor: floor.name, emoji: '🪟', type: 'Window fixed' };
                     }
                 }
                 if (floor.incidents.messySpill) {
-                    if (Date.now() - floor.incidents.messySpill.startTime > 3000 + Math.random() * 4000) {
+                    if (Date.now() - floor.incidents.messySpill.startTime > 20000 + Math.random() * 20000) {
                         delete floor.incidents.messySpill;
                         this._incidentFixed = { floor: floor.name, emoji: '🧹', type: 'Spill cleaned' };
                     }
                 }
             }
 
-            // Plumber fixes floods
+            // Plumber fixes floods (60-120 seconds)
             if (hasPlumber && floor.incidents.flooded) {
-                if (Date.now() - floor.incidents.flooded.startTime > 6000 + Math.random() * 6000) {
+                if (Date.now() - floor.incidents.flooded.startTime > 60000 + Math.random() * 60000) {
                     delete floor.incidents.flooded;
                     this._incidentFixed = { floor: floor.name, emoji: '🔧', type: 'Flood fixed' };
                 }
