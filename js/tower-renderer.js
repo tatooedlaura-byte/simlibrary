@@ -25,6 +25,10 @@ class TowerRenderer {
         this.floorWidth = 500;
         this.floorX = (this.width - this.floorWidth) / 2; // Center horizontally
 
+        // Platform-specific emoji scaling (Android emojis render larger)
+        this.isAndroid = /Android/i.test(navigator.userAgent);
+        this.emojiScale = this.isAndroid ? 0.85 : 1.0;
+
         // Elevator dimensions
         this.elevatorWidth = 40;
         this.elevatorX = 5;
@@ -105,6 +109,14 @@ class TowerRenderer {
 
         // Start render loop
         this.render();
+    }
+
+    /**
+     * Get scaled emoji font size for platform consistency
+     * Android emojis render larger, so we scale them down
+     */
+    getEmojiFontSize(baseSize) {
+        return Math.round(baseSize * this.emojiScale);
     }
 
     resizeCanvas() {
@@ -510,7 +522,7 @@ class TowerRenderer {
 
                 // Draw decoration emoji (3x larger)
                 this.ctx.save();
-                this.ctx.font = '72px Arial';
+                this.ctx.font = `${this.getEmojiFontSize(72)}px Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
                 this.ctx.fillText(decoration.emoji, pos.x, pos.y);
@@ -534,7 +546,7 @@ class TowerRenderer {
         if (!decoration) return;
 
         const scale = this.getScale();
-        const fontSize = Math.max(36, Math.round(48 * scale));
+        const fontSize = this.getEmojiFontSize(Math.max(36, Math.round(48 * scale)));
 
         this.ctx.save();
         this.ctx.font = `${fontSize}px Arial`;
@@ -695,7 +707,7 @@ class TowerRenderer {
             const readerY = elevatorY + this.elevatorCarHeight / 2;
 
             // Reader emoji
-            this.ctx.font = '24px Arial';
+            this.ctx.font = `${this.getEmojiFontSize(24)}px Arial`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText(reader.emoji, readerX, readerY);
@@ -848,7 +860,7 @@ class TowerRenderer {
         else if (floor.incidents.fireAlarm) incidentEmoji = '🚨';
 
         // Draw incident emoji in center
-        const fontSize = Math.max(24, Math.round(32 * scale));
+        const fontSize = this.getEmojiFontSize(Math.max(24, Math.round(32 * scale)));
         this.ctx.font = `${fontSize}px Arial`;
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
@@ -882,7 +894,7 @@ class TowerRenderer {
         }
 
         this.ctx.save();
-        this.ctx.font = '14px Arial';
+        this.ctx.font = `${this.getEmojiFontSize(14)}px Arial`;
         this.ctx.textAlign = 'right';
         this.ctx.textBaseline = 'top';
 
@@ -927,7 +939,7 @@ class TowerRenderer {
 
                 // Draw decoration emoji (3x larger)
                 this.ctx.save();
-                this.ctx.font = '48px Arial';
+                this.ctx.font = `${this.getEmojiFontSize(48)}px Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
                 this.ctx.fillText(decoration.emoji, pos.x, pos.y);
@@ -961,7 +973,7 @@ class TowerRenderer {
         this.ctx.fillRect(x - size * 1.5, y - size * 1.5, size * 3, size * 3);
 
         // Draw item emoji
-        this.ctx.font = `${Math.round(size)}px Arial`;
+        this.ctx.font = `${this.getEmojiFontSize(Math.round(size))}px Arial`;
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText(quest.emoji, x, y);
@@ -999,7 +1011,7 @@ class TowerRenderer {
 
             // Draw item emoji (reset fillStyle to ensure emoji renders in full color)
             this.ctx.fillStyle = '#000000';
-            this.ctx.font = `${Math.round(size)}px Arial`;
+            this.ctx.font = `${this.getEmojiFontSize(Math.round(size))}px Arial`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText(item.emoji, x, y);
@@ -1456,7 +1468,7 @@ class TowerRenderer {
             this.ctx.fillRect(x - glowSize, y - 15 - glowSize, glowSize * 2, glowSize * 2);
 
             // Draw large emoji
-            this.ctx.font = `${20 * scale}px Arial`;
+            this.ctx.font = `${this.getEmojiFontSize(20 * scale)}px Arial`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'bottom';
             this.ctx.fillText(visitor.emoji, x, y);
@@ -2086,7 +2098,7 @@ class TowerRenderer {
                 this.ctx.translate(p.x, p.y);
                 this.ctx.rotate(p.rotation);
                 this.ctx.fillStyle = '#FFD700';
-                this.ctx.font = `${p.size}px Arial`;
+                this.ctx.font = `${this.getEmojiFontSize(p.size)}px Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
                 this.ctx.fillText('⭐', 0, 0);
@@ -2110,7 +2122,7 @@ class TowerRenderer {
                 // Draw coin emoji
                 this.ctx.translate(p.x, p.y);
                 this.ctx.rotate(p.rotation);
-                this.ctx.font = `${p.size}px Arial`;
+                this.ctx.font = `${this.getEmojiFontSize(p.size)}px Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
                 this.ctx.fillText('🪙', 0, 0);
@@ -2609,7 +2621,7 @@ class TowerRenderer {
 
                 // 3D printer emoji
                 this.ctx.fillStyle = '#000';
-                this.ctx.font = '40px Arial';
+                this.ctx.font = `${this.getEmojiFontSize(40)}px Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.fillText('🖨️', x + 150, y + 90);
                 this.ctx.fillText('🔧', x + 350, y + 90);
@@ -2739,7 +2751,7 @@ class TowerRenderer {
                     this.ctx.fillRect(shelfX, shelfY + 33, shelfWidth, 3);
 
                     // Cleaning supplies on shelves
-                    const fontSize = Math.max(10, Math.round(14 * this.getScale()));
+                    const fontSize = this.getEmojiFontSize(Math.max(10, Math.round(14 * this.getScale())));
                     this.ctx.font = `${fontSize}px Arial`;
                     this.ctx.fillText('🧹', shelfX + shelfWidth * 0.17, shelfY + 13);
                     this.ctx.fillText('🧴', shelfX + shelfWidth * 0.42, shelfY + 13);
@@ -2749,7 +2761,7 @@ class TowerRenderer {
                 }
 
                 // Mop and bucket
-                const bucketSize = Math.max(20, Math.round(30 * this.getScale()));
+                const bucketSize = this.getEmojiFontSize(Math.max(20, Math.round(30 * this.getScale())));
                 this.ctx.font = `${bucketSize}px Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.fillText('🪣', x + this.floorWidth * 0.88, y + 65); // Shifted up from 80
