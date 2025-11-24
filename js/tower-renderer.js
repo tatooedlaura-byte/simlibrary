@@ -541,10 +541,10 @@ class TowerRenderer {
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
 
-        // Draw one large decoration centered in lobby
-        const centerX = x + this.floorWidth / 2;
-        const centerY = y + this.floorHeight / 2;
-        this.ctx.fillText(decoration, centerX, centerY);
+        // Draw one large decoration in bottom left of lobby
+        const decoX = x + 50;
+        const decoY = y + this.floorHeight - 40;
+        this.ctx.fillText(decoration, decoX, decoY);
 
         this.ctx.restore();
     }
