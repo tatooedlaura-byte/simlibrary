@@ -2753,6 +2753,21 @@ class TowerRenderer {
                 this.ctx.font = `${bucketSize}px Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.fillText('🪣', x + this.floorWidth * 0.88, y + 80);
+
+                // Draw concrete floor at bottom of basement
+                this.ctx.fillStyle = '#5D4E37';
+                this.ctx.fillRect(x, y + this.floorHeight - 8, this.floorWidth, 8);
+
+                // Floor texture lines
+                this.ctx.strokeStyle = '#4A3F2F';
+                this.ctx.lineWidth = 1;
+                for (let i = 0; i < 5; i++) {
+                    const lineX = x + (this.floorWidth / 5) * i + (this.floorWidth / 10);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(lineX, y + this.floorHeight - 8);
+                    this.ctx.lineTo(lineX, y + this.floorHeight);
+                    this.ctx.stroke();
+                }
                 break;
         }
     }

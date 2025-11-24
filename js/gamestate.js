@@ -2593,14 +2593,7 @@ class GameState {
         ).length;
 
         // No incidents until at least 4 floors are built
-        if (regularFloorCount < 4) {
-            // Still fix any existing incidents
-            this.floors.forEach(floor => {
-                if (!floor.incidents) return;
-                // ... fixing logic handled below
-            });
-            return;
-        }
+        const canSpawnNewIncidents = regularFloorCount >= 4;
 
         // Cooldown between incidents (2-3 minutes after last incident was fixed)
         if (!this._lastIncidentFixed) {
@@ -2619,8 +2612,8 @@ class GameState {
             { id: 'fireAlarm', emoji: '🚨', name: 'Fire alarm pulled', fixer: null, hasFixer: true, baseChance: 0.002 }
         ];
 
-        // Only spawn new incidents if none are active and cooldown has passed
-        if (!hasActiveIncident && canSpawnIncident) {
+        // Only spawn new incidents if none are active, cooldown has passed, and we have enough floors
+        if (!hasActiveIncident && canSpawnIncident && canSpawnNewIncidents) {
             // Check regular floors for incidents
             this.floors.forEach(floor => {
                 if (floor.status === 'ready' && floor.typeId !== 'basement' && floor.typeId !== 'bathroom') {
