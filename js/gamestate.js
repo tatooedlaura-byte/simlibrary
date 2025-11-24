@@ -4442,6 +4442,8 @@ class GameState {
             starterFloor.status = 'ready';
             starterFloor.buildEndTime = Date.now();
         }
+        // Give back the cost so player starts with 1000 stars + one free floor
+        this.stars = 1000;
 
         this.save();
     }
