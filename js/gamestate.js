@@ -1576,7 +1576,9 @@ class GameState {
             const missionFloor = this.getFloor(this.currentMission.floorId);
             if (missionFloor && missionFloor.status === 'ready') {
                 const missionCategory = missionFloor.bookStock[this.currentMission.categoryIndex];
-                if (missionCategory && missionCategory.currentStock > 0) {
+                // Check category is stocked AND unlocked by staff
+                const categoryUnlocked = missionFloor.staff.length > this.currentMission.categoryIndex;
+                if (missionCategory && missionCategory.currentStock > 0 && categoryUnlocked) {
                     // Send reader to mission floor/category
                     floor = missionFloor;
                     cat = missionCategory;
@@ -1620,10 +1622,10 @@ class GameState {
             // Pick a random floor from selection
             floor = selectedFloors[Math.floor(Math.random() * selectedFloors.length)];
 
-            // Pick a category with stock
+            // Pick a category with stock AND unlocked by staff
             const stockedCategories = floor.bookStock
                 .map((cat, idx) => ({ cat, idx }))
-                .filter(({ cat }) => cat.currentStock > 0);
+                .filter(({ cat, idx }) => cat.currentStock > 0 && floor.staff.length > idx);
 
             if (stockedCategories.length === 0) return null;
 
