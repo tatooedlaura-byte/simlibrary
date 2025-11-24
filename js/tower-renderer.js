@@ -533,13 +533,13 @@ class TowerRenderer {
         if (!lobbyDecor || lobbyDecor.length === 0) return;
 
         const scale = this.getScale();
-        const fontSize = Math.max(16, Math.round(24 * scale));
+        const fontSize = Math.max(14, Math.round(18 * scale));
 
-        // Holiday decoration positions in lobby (different from player decorations)
+        // Holiday decoration positions in lobby (spread across top, smaller size)
         const positions = [
-            { x: x + 30, y: y + 30 },  // Top left
-            { x: x + 60, y: y + this.floorHeight - 30 }, // Bottom left
-            { x: x + this.floorWidth - 30, y: y + 30 }, // Top right
+            { x: x + this.floorWidth * 0.2, y: y + 15 },  // Left of center
+            { x: x + this.floorWidth * 0.5, y: y + 15 },  // Center top
+            { x: x + this.floorWidth * 0.8, y: y + 15 },  // Right of center
         ];
 
         this.ctx.save();
@@ -871,32 +871,6 @@ class TowerRenderer {
             });
         }
 
-        // Draw holiday decorations on floor
-        const holiday = this.game.seasons?.currentHoliday;
-        if (holiday && holiday.decorations && holiday.decorations.floors) {
-            const floorDecor = holiday.decorations.floors;
-            const scale = this.getScale();
-            const fontSize = Math.max(12, Math.round(16 * scale));
-
-            // Holiday decorations on floors (top corners, smaller)
-            const positions = [
-                { x: x + 20, y: y + 20 },  // Top left
-                { x: x + this.floorWidth - 40, y: y + 20 }, // Top right (offset from happiness emoji)
-            ];
-
-            this.ctx.save();
-            this.ctx.font = `${fontSize}px Arial`;
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-
-            floorDecor.forEach((emoji, index) => {
-                if (index >= positions.length) return;
-                const pos = positions[index];
-                this.ctx.fillText(emoji, pos.x, pos.y);
-            });
-
-            this.ctx.restore();
-        }
     }
 
     /**
