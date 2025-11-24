@@ -2414,13 +2414,13 @@ class GameState {
 
         if (dirtyFloors.length === 0) return;
 
-        // Each custodian cleans 1 trash per cleaning cycle from the dirtiest floor they're assigned to
+        // Each custodian cleans 2 trash per cleaning cycle from the dirtiest floor they're assigned to
         // Distribute custodians across dirty floors
         for (let i = 0; i < custodianCount; i++) {
             const floorIndex = i % dirtyFloors.length;
             const floor = dirtyFloors[floorIndex];
             if (floor.trash > 0) {
-                floor.trash = Math.max(0, floor.trash - 1);
+                floor.trash = Math.max(0, floor.trash - 2);
             }
         }
     }
