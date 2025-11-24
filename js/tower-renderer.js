@@ -900,7 +900,7 @@ class TowerRenderer {
 
         // Draw emoji in upper right corner
         const emojiX = x + this.floorWidth - 8;
-        const emojiY = y + 8;
+        const emojiY = y + 18; // Lowered from 8 to avoid hitting ceiling
         this.ctx.fillText(emoji, emojiX, emojiY);
 
         this.ctx.restore();

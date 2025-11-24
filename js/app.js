@@ -685,13 +685,6 @@ function updateGlobalStats() {
         delete game._inspectorBonus;
     }
 
-    // Check for new mini-quest
-    if (game._newMiniQuest) {
-        haptic('medium');
-        showToast(`${game._newMiniQuest.emoji} ${game._newMiniQuest.description} Tap to help!`);
-        delete game._newMiniQuest;
-    }
-
     // Check for completed mini-quest
     if (game._completedMiniQuest) {
         haptic('success');
@@ -2113,6 +2106,24 @@ function renderMissionBanner() {
     const mission = game.currentMission;
     const event = game.currentEvent;
 
+    // Show mini-quest if active (cyan banner, highest priority)
+    const miniQuest = game.currentMiniQuest;
+    if (miniQuest && Date.now() < miniQuest.expiryTime) {
+        const timeRemaining = Math.max(0, Math.ceil((miniQuest.expiryTime - Date.now()) / 1000));
+        const seconds = timeRemaining;
+
+        banner.innerHTML = `
+            <div>${miniQuest.emoji} ${miniQuest.description}</div>
+            <div>${miniQuest.reward}⭐ | ${seconds}s</div>
+        `;
+
+        banner.style.display = 'flex';
+        banner.style.background = 'linear-gradient(135deg, #00BCD4 0%, #00ACC1 100%)';
+        banner.style.cursor = 'pointer';
+        banner.onclick = () => scrollToMiniQuest();
+        return;
+    }
+
     // Show find mission if active (green banner)
     const findMission = game.currentFindMission;
     if (findMission && Date.now() < findMission.expiryTime) {
@@ -2126,6 +2137,8 @@ function renderMissionBanner() {
 
         banner.style.display = 'flex';
         banner.style.background = 'linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%)';
+        banner.style.cursor = 'default';
+        banner.onclick = null;
         return;
     }
 
@@ -2141,6 +2154,8 @@ function renderMissionBanner() {
 
         banner.style.display = 'flex';
         banner.style.background = 'linear-gradient(135deg, #9C27B0 0%, #E91E63 100%)';
+        banner.style.cursor = 'default';
+        banner.onclick = null;
         return;
     }
 
@@ -2159,10 +2174,36 @@ function renderMissionBanner() {
 
         banner.style.display = 'flex';
         banner.style.background = 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
+        banner.style.cursor = 'default';
+        banner.onclick = null;
         return;
     }
 
     banner.style.display = 'none';
+}
+
+/**
+ * Scroll to the floor with the active mini-quest
+ */
+function scrollToMiniQuest() {
+    if (!game.currentMiniQuest) return;
+
+    const miniQuest = game.currentMiniQuest;
+    const floor = game.getFloor(miniQuest.floorId);
+    if (!floor) return;
+
+    // Find the floor's index in the rendered list
+    const floorIndex = game.floors.indexOf(floor);
+    if (floorIndex === -1) return;
+
+    // Calculate the Y position of this floor
+    const floorY = -(floorIndex * towerRenderer.floorHeight);
+
+    // Scroll to center the floor in view
+    const targetScrollY = -floorY + (towerRenderer.height / 2) - (towerRenderer.floorHeight / 2);
+
+    // Clamp to valid scroll range
+    towerRenderer.scrollY = Math.max(0, Math.min(targetScrollY, towerRenderer.maxScrollY));
 }
 
 // Initialize app when DOM is ready

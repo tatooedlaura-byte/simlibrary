@@ -3300,9 +3300,6 @@ class GameState {
             startTime: Date.now(),
             expiryTime: Date.now() + 60000 // 60 seconds to complete
         };
-
-        // Store for notification
-        this._newMiniQuest = this.currentMiniQuest;
     }
 
     /**
