@@ -3978,6 +3978,9 @@ class GameState {
 
                 // Process any time-based events that happened while offline
                 this.processOfflineProgress(data.timestamp);
+
+                // Update season and holiday immediately on load
+                this.updateSeasonAndHoliday();
             } catch (e) {
                 console.error('Failed to load save:', e);
                 this.initializeNewGame();
@@ -3985,6 +3988,9 @@ class GameState {
         } else {
             this.initializeNewGame();
         }
+
+        // Always update season/holiday on load (for new games too)
+        this.updateSeasonAndHoliday();
     }
 
     /**
