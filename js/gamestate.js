@@ -3057,10 +3057,8 @@ class GameState {
             isNewCard = true;
         }
 
-        // Only notify for new cards or returning patrons (every 5 visits after first)
-        if (isNewCard) {
-            this._newLibraryCard = cardHolder;
-        } else if (cardHolder.visits > 0 && cardHolder.visits % 5 === 0) {
+        // Only notify for returning patrons at milestones (every 5 visits)
+        if (cardHolder.visits > 0 && cardHolder.visits % 5 === 0) {
             this._returningPatron = cardHolder;
         }
 

@@ -2676,7 +2676,7 @@ class TowerRenderer {
 
                 for (let i = 0; i < 3; i++) {
                     const stallX = stallStartX + i * (stallWidth + stallGap);
-                    const stallY = y + 45;
+                    const stallY = y + 35; // Shifted up from 45
 
                     // Stall walls
                     this.ctx.fillStyle = '#B0BEC5';
@@ -2696,7 +2696,7 @@ class TowerRenderer {
                 // Draw sink area (front view - compact) - positioned after stalls
                 const sinkScale = scale;
                 const sinkX = x + this.floorWidth - 60 * sinkScale;
-                const sinkY = y + 48;
+                const sinkY = y + 38; // Shifted up from 48
 
                 // Mirror above sink
                 this.ctx.fillStyle = '#E3F2FD';
