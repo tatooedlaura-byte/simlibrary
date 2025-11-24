@@ -1726,14 +1726,16 @@ class GameState {
         let booksToCheckout = 1;
         const bookRoll = Math.random();
         if (isVIP) {
-            // VIPs check out more books
-            if (bookRoll < 0.5) booksToCheckout = 2;
-            else if (bookRoll < 0.8) booksToCheckout = 3;
+            // VIPs check out more books: 30% 2 books, 40% 3 books, 30% 4 books
+            if (bookRoll < 0.3) booksToCheckout = 2;
+            else if (bookRoll < 0.7) booksToCheckout = 3;
+            else booksToCheckout = 4;
         } else {
-            // Regular readers: 70% 1 book, 25% 2 books, 5% 3 books
-            if (bookRoll < 0.70) booksToCheckout = 1;
-            else if (bookRoll < 0.95) booksToCheckout = 2;
-            else booksToCheckout = 3;
+            // Regular readers: 40% 1 book, 35% 2 books, 20% 3 books, 5% 4 books
+            if (bookRoll < 0.40) booksToCheckout = 1;
+            else if (bookRoll < 0.75) booksToCheckout = 2;
+            else if (bookRoll < 0.95) booksToCheckout = 3;
+            else booksToCheckout = 4;
         }
 
         // Cap by available stock
