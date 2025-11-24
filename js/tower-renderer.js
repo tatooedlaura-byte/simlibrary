@@ -2657,11 +2657,13 @@ class TowerRenderer {
             case 'bathroom':
                 // Draw bathroom stalls - scale with floor width
                 const scale = this.floorWidth / 500; // Base width is 500
-                const stallWidth = 80 * scale;
-                const stallSpacing = (this.floorWidth - 80 * scale) / 4; // Distribute 3 stalls evenly
+                const stallWidth = 60 * scale;
+                const stallGap = 10 * scale;
+                const totalStallsWidth = (stallWidth * 3) + (stallGap * 2);
+                const stallStartX = x + 20 * scale; // Left margin
 
                 for (let i = 0; i < 3; i++) {
-                    const stallX = x + stallSpacing * 0.5 + i * stallSpacing;
+                    const stallX = stallStartX + i * (stallWidth + stallGap);
                     const stallY = y + 45;
 
                     // Stall walls
@@ -2670,18 +2672,18 @@ class TowerRenderer {
 
                     // Stall door
                     this.ctx.fillStyle = '#90A4AE';
-                    this.ctx.fillRect(stallX + 10 * scale, stallY + 5, stallWidth - 20 * scale, 40);
+                    this.ctx.fillRect(stallX + 5 * scale, stallY + 5, stallWidth - 10 * scale, 40);
 
                     // Door handle
                     this.ctx.fillStyle = '#546E7A';
                     this.ctx.beginPath();
-                    this.ctx.arc(stallX + stallWidth - 20 * scale, stallY + 25, 3, 0, Math.PI * 2);
+                    this.ctx.arc(stallX + stallWidth - 10 * scale, stallY + 25, 3, 0, Math.PI * 2);
                     this.ctx.fill();
                 }
 
-                // Draw sink area (front view - compact) - positioned relative to floor width
+                // Draw sink area (front view - compact) - positioned after stalls
                 const sinkScale = scale;
-                const sinkX = x + this.floorWidth - 70 * sinkScale;
+                const sinkX = x + this.floorWidth - 60 * sinkScale;
                 const sinkY = y + 48;
 
                 // Mirror above sink
