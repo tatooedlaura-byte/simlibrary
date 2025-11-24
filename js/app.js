@@ -373,6 +373,16 @@ function setupEventListeners() {
         haptic('light');
         showMoodBreakdown();
     });
+
+    // Tower Bucks click - show usage options
+    document.querySelector('.bucks-stat').addEventListener('click', () => {
+        haptic('light');
+        openUpgradesModal();
+        // Switch to perks tab where trade option is
+        document.querySelectorAll('.upgrades-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.upgrades-tabs .tab-btn[data-tab="perks"]').classList.add('active');
+        renderUpgradesTab('perks');
+    });
 }
 
 /**
@@ -923,6 +933,16 @@ function updateFloorDetail(floor) {
     if (floor.status === 'building') {
         const remaining = Math.max(0, Math.ceil((floor.buildEndTime - Date.now()) / 1000));
         statusEl.textContent = `🏗️ Building... ${remaining}s`;
+    } else if (floor.incidents && Object.keys(floor.incidents).length > 0) {
+        // Show incident status
+        let incidentText = '🚫 CLOSED - ';
+        if (floor.incidents.powerOut) incidentText += '⚡ Power Outage (needs Electrician)';
+        else if (floor.incidents.flooded) incidentText += '🌊 Flooded (needs Plumber)';
+        else if (floor.incidents.brokenWindow) incidentText += '🪟 Broken Window (needs Custodian)';
+        else if (floor.incidents.messySpill) incidentText += '🤮 Messy Spill (needs Custodian)';
+        else if (floor.incidents.bugInfestation) incidentText += '🐜 Bug Infestation (needs Custodian)';
+        else if (floor.incidents.fireAlarm) incidentText += '🚨 Fire Alarm (waiting to reset)';
+        statusEl.textContent = incidentText;
     } else {
         // Show trash level in status
         let trashText = '';

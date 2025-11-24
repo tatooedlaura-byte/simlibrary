@@ -1812,6 +1812,10 @@ body {
     cursor: pointer;
 }
 
+.bucks-stat {
+    cursor: pointer;
+}
+
 /* ===================================
    Upgrades Modal
    =================================== */
