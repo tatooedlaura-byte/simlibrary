@@ -527,7 +527,11 @@ class TowerRenderer {
      */
     drawHolidayDecorations(x, y) {
         const holiday = this.game.seasons?.currentHoliday;
-        if (!holiday || !holiday.decoration) return;
+        if (!holiday) return;
+
+        // Use decoration property, fallback to emoji if not present
+        const decoration = holiday.decoration || holiday.emoji;
+        if (!decoration) return;
 
         const scale = this.getScale();
         const fontSize = Math.max(36, Math.round(48 * scale));
@@ -540,7 +544,7 @@ class TowerRenderer {
         // Draw one large decoration centered in lobby
         const centerX = x + this.floorWidth / 2;
         const centerY = y + this.floorHeight / 2;
-        this.ctx.fillText(holiday.decoration, centerX, centerY);
+        this.ctx.fillText(decoration, centerX, centerY);
 
         this.ctx.restore();
     }
