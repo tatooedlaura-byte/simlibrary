@@ -246,7 +246,7 @@ class GameState {
             { id: 'red_book', emoji: '📕', name: 'Red Book', color: '#FF6B6B' },
             { id: 'blue_book', emoji: '📘', name: 'Blue Book', color: '#4ECDC4' },
             { id: 'green_book', emoji: '📗', name: 'Green Book', color: '#95E1A3' },
-            { id: 'gold_coin', emoji: '🪙', name: 'Gold Coin', color: '#FFD700' },
+            { id: 'coin', emoji: '🪙', name: 'Coin', color: '#FFD700' },
             { id: 'star', emoji: '⭐', name: 'Star', color: '#FFD700' },
             { id: 'heart', emoji: '❤️', name: 'Heart', color: '#FF69B4' },
             { id: 'diamond', emoji: '💎', name: 'Diamond', color: '#00CED1' },
@@ -3546,6 +3546,24 @@ class GameState {
         this.unlockedPerks.push(perkId);
         this.save();
         return { success: true };
+    }
+
+    /**
+     * Trade Tower Bucks for stars
+     */
+    tradeBucksForStars(amount = 1) {
+        if (this.towerBucks < amount) {
+            return { success: false, error: 'Not enough Tower Bucks' };
+        }
+
+        const starsPerBuck = 100;
+        const starsGained = amount * starsPerBuck;
+
+        this.towerBucks -= amount;
+        this.stars += starsGained;
+        this.save();
+
+        return { success: true, starsGained };
     }
 
     /**

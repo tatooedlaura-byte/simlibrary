@@ -1828,6 +1828,44 @@ async function handlePlaceFloorDecoration(decorationId) {
  * Render perks tab
  */
 function renderPerksTab(container) {
+    // Trade section at top
+    const tradeSection = document.createElement('div');
+    tradeSection.className = 'trade-section';
+    tradeSection.style.cssText = 'background: #f0f0f0; padding: 12px; border-radius: 8px; margin-bottom: 16px; text-align: center;';
+
+    const canTrade = game.towerBucks >= 1;
+    tradeSection.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 8px;">💎 Trade Tower Bucks</div>
+        <div style="font-size: 12px; color: #666; margin-bottom: 8px;">1 💎 = 100 ⭐</div>
+        <div style="display: flex; gap: 8px; justify-content: center;">
+            <button class="buy-upgrade-btn trade-bucks-btn" data-amount="1" ${!canTrade ? 'disabled' : ''}>
+                Trade 1 💎
+            </button>
+            <button class="buy-upgrade-btn trade-bucks-btn" data-amount="10" ${game.towerBucks < 10 ? 'disabled' : ''}>
+                Trade 10 💎
+            </button>
+        </div>
+        <div style="font-size: 11px; color: #888; margin-top: 6px;">You have ${game.towerBucks} 💎</div>
+    `;
+    container.appendChild(tradeSection);
+
+    // Add trade event listeners
+    tradeSection.querySelectorAll('.trade-bucks-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const amount = parseInt(btn.dataset.amount);
+            const result = game.tradeBucksForStars(amount);
+            if (result.success) {
+                haptic('success');
+                showToast(`Traded ${amount} 💎 for ${result.starsGained} ⭐`);
+                updateUI();
+                renderUpgradesTab('perks');
+            } else {
+                haptic('error');
+                showToast(result.error);
+            }
+        });
+    });
+
     game.readerPerks.forEach(perk => {
         const owned = game.unlockedPerks.includes(perk.id);
         const canAfford = game.stars >= perk.cost;
