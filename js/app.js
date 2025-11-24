@@ -417,36 +417,20 @@ function showWeatherForecast() {
 }
 
 /**
- * Show mood breakdown popup
+ * Show mood problems popup
  */
 function showMoodBreakdown() {
-    const breakdown = game.getMoodBreakdown();
+    const problems = game.getMoodProblems();
     const moodDesc = game.getMoodDescription();
 
-    let breakdownHtml = breakdown.map(item => {
-        let valueText = item.value >= 0 ? `+${item.value}` : `${item.value}`;
-        let color = item.type === 'positive' ? '#4CAF50' : item.type === 'negative' ? '#F44336' : '#888';
-
-        let detailsHtml = '';
-        if (item.details && item.details.length > 0) {
-            detailsHtml = `<div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">`;
-            if (item.details[0].count !== undefined) {
-                // Empty categories
-                detailsHtml += item.details.map(d => `${d.name}: ${d.count} empty`).join(', ');
-            } else if (item.details[0].trash !== undefined) {
-                // Dirty floors
-                detailsHtml += item.details.map(d => `${d.name}: ${d.trash}%`).join(', ');
-            }
-            detailsHtml += '</div>';
-        }
-
+    let problemsHtml = problems.map(item => {
         return `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
-                <div>
-                    <div>${item.label}</div>
-                    ${detailsHtml}
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                <span style="font-size: 20px;">${item.emoji}</span>
+                <div style="flex: 1;">
+                    <div style="font-weight: 500;">${item.text}</div>
+                    <div style="font-size: 11px; color: #666;">${item.detail}</div>
                 </div>
-                <span style="color: ${color}; font-weight: bold; white-space: nowrap;">${valueText}</span>
             </div>
         `;
     }).join('');
@@ -472,15 +456,16 @@ function showMoodBreakdown() {
     `;
     popup.innerHTML = `
         <h3 style="margin: 0 0 5px 0; text-align: center;">${moodDesc.emoji} Mood: ${Math.floor(game.mood)}</h3>
-        <div style="text-align: center; margin-bottom: 15px; color: var(--text-secondary);">${moodDesc.text}</div>
-        ${breakdownHtml}
+        <div style="text-align: center; margin-bottom: 15px; color: #666;">${moodDesc.text}</div>
+        <div style="font-weight: bold; margin-bottom: 8px; color: #333;">Issues:</div>
+        ${problemsHtml}
         <button onclick="this.parentElement.remove()" style="
             width: 100%;
             margin-top: 15px;
             padding: 10px;
             border: none;
             border-radius: 8px;
-            background: var(--primary);
+            background: #4A90A4;
             color: white;
             font-weight: bold;
             cursor: pointer;

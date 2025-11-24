@@ -2315,119 +2315,93 @@ class GameState {
     }
 
     /**
-     * Get detailed mood breakdown showing boosts and penalties
+     * Get list of problems affecting mood
      */
-    getMoodBreakdown() {
-        const breakdown = [];
+    getMoodProblems() {
+        const problems = [];
 
-        // Base mood
-        breakdown.push({ label: 'Base mood', value: 50, type: 'neutral' });
+        // Check for dirty floors
+        this.floors.forEach(floor => {
+            if (floor.status === 'ready' && floor.trash !== undefined && floor.trash > 30) {
+                problems.push({
+                    emoji: '🗑️',
+                    text: `${floor.name} needs cleaning`,
+                    detail: `${floor.trash}% trash`,
+                    floor: floor.name
+                });
+            }
+        });
 
-        // Readers boost
-        const readerBoost = this.readers.length * 2;
-        if (readerBoost > 0) {
-            breakdown.push({ label: `${this.readers.length} readers visiting`, value: readerBoost, type: 'positive' });
-        }
-
-        // Special visitors boost
-        const visitorBoost = this.specialVisitors.length * 10;
-        if (visitorBoost > 0) {
-            breakdown.push({ label: `${this.specialVisitors.length} VIP visitors`, value: visitorBoost, type: 'positive' });
-        }
-
-        // Empty stock penalty
-        let emptyCategories = 0;
-        const emptyFloors = [];
+        // Check for empty book categories (only unlocked ones)
         this.floors.forEach(floor => {
             if (floor.status === 'ready') {
-                let floorEmpty = 0;
-                floor.bookStock.forEach(cat => {
-                    if (cat.currentStock === 0) {
-                        emptyCategories++;
-                        floorEmpty++;
+                floor.bookStock.forEach((cat, idx) => {
+                    // Only check unlocked categories
+                    if (floor.staff.length > idx && cat.currentStock === 0 && !cat.restocking) {
+                        problems.push({
+                            emoji: '📚',
+                            text: `${floor.name} out of ${cat.name}`,
+                            detail: 'Needs restocking',
+                            floor: floor.name
+                        });
                     }
                 });
-                if (floorEmpty > 0) {
-                    emptyFloors.push({ name: floor.name, count: floorEmpty });
-                }
             }
         });
-        if (emptyCategories > 0) {
-            breakdown.push({
-                label: `${emptyCategories} empty book categories`,
-                value: -emptyCategories * 2,
-                type: 'negative',
-                details: emptyFloors
-            });
-        }
 
-        // Trash penalty
-        let totalTrash = 0;
-        let floorCount = 0;
-        const dirtyFloors = [];
+        // Check for floors without staff
         this.floors.forEach(floor => {
-            if (floor.status === 'ready' && floor.trash !== undefined) {
-                totalTrash += floor.trash;
-                floorCount++;
-                if (floor.trash > 20) {
-                    dirtyFloors.push({ name: floor.name, trash: floor.trash });
+            if (floor.status === 'ready' && !floor.typeId?.includes('bathroom') && !floor.typeId?.includes('basement')) {
+                if (floor.staff.length === 0) {
+                    problems.push({
+                        emoji: '👤',
+                        text: `${floor.name} has no staff`,
+                        detail: 'Hire a Page',
+                        floor: floor.name
+                    });
                 }
             }
         });
-        if (floorCount > 0 && totalTrash > 0) {
-            const avgTrash = totalTrash / floorCount;
-            const trashPenalty = Math.floor(avgTrash / 5);
-            if (trashPenalty > 0) {
-                breakdown.push({
-                    label: `Trash (avg ${Math.floor(avgTrash)})`,
-                    value: -trashPenalty,
-                    type: 'negative',
-                    details: dirtyFloors
-                });
-            }
-        }
 
-        // Bathroom boost
+        // Check bathroom requirement
+        const regularFloors = this.floors.filter(f =>
+            f.status === 'ready' && !f.typeId?.includes('bathroom') && !f.typeId?.includes('basement')
+        ).length;
         const bathroomCount = this.floors.filter(f =>
             f.typeId === 'bathroom' && f.status === 'ready'
         ).length;
-        if (bathroomCount > 0) {
-            breakdown.push({ label: `${bathroomCount} bathroom(s)`, value: bathroomCount * 5, type: 'positive' });
-        }
-
-        // Event boost
-        if (this.currentEvent) {
-            breakdown.push({ label: 'Active event', value: 15, type: 'positive' });
-        }
-
-        // Hall event boost
-        if (this.currentHallEvent && this.currentHallEvent.effect.type === 'mood_boost') {
-            breakdown.push({ label: this.currentHallEvent.name, value: this.currentHallEvent.effect.value, type: 'positive' });
-        }
-
-        // Weather effect
-        const weatherEffect = this.getWeatherMoodEffect();
-        if (weatherEffect !== 0) {
-            const weather = this.getCurrentWeather();
-            breakdown.push({
-                label: `Weather: ${weather?.name || 'Unknown'}`,
-                value: weatherEffect,
-                type: weatherEffect > 0 ? 'positive' : 'negative'
+        const neededBathrooms = Math.floor(regularFloors / 5);
+        if (bathroomCount < neededBathrooms) {
+            problems.push({
+                emoji: '🚻',
+                text: `Need more bathrooms`,
+                detail: `${bathroomCount}/${neededBathrooms} required`,
+                floor: null
             });
         }
 
-        // Holiday bonus
-        const holidayBonus = this.getHolidayMoodBonus();
-        if (holidayBonus > 0) {
-            breakdown.push({ label: `${this.seasons.currentHoliday?.name || 'Holiday'}`, value: holidayBonus, type: 'positive' });
+        // Check for bad weather
+        const weather = this.getCurrentWeather();
+        if (weather && weather.moodEffect < 0) {
+            problems.push({
+                emoji: weather.emoji,
+                text: `${weather.name} weather`,
+                detail: `Mood ${weather.moodEffect}`,
+                floor: null
+            });
         }
 
-        // Rush hour boost
-        if (this.transitSchedule.isRushHour) {
-            breakdown.push({ label: 'Rush hour', value: 10, type: 'positive' });
+        // If no problems, that's good!
+        if (problems.length === 0) {
+            problems.push({
+                emoji: '✨',
+                text: 'No problems!',
+                detail: 'Library is running smoothly',
+                floor: null
+            });
         }
 
-        return breakdown;
+        return problems;
     }
 
     /**
