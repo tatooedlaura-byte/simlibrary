@@ -515,7 +515,11 @@ function updateGlobalStats() {
     if (game._bookDonation) {
         const donation = game._bookDonation;
         haptic('collect');
-        showToast(`${donation.source.emoji} ${donation.source.name}: +${donation.booksAdded} ${donation.categoryEmoji} ${donation.categoryName} at ${donation.floorName}!`);
+        const sourceEmoji = donation.source?.emoji || '📚';
+        const sourceName = donation.source?.name || 'Donation';
+        const catEmoji = donation.categoryEmoji || '📖';
+        const catName = donation.categoryName || 'books';
+        showToast(`${sourceEmoji} ${sourceName}: +${donation.booksAdded} ${catEmoji} ${catName} at ${donation.floorName}!`);
         delete game._bookDonation;
     }
 
