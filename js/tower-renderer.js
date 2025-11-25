@@ -44,6 +44,14 @@ class TowerRenderer {
         this.clouds = [];
         this.initClouds();
 
+        // Sprite images
+        this.sprites = {
+            bookshelf: null,
+            books: []
+        };
+        this.spritesLoaded = false;
+        this.loadSprites();
+
         // Scrolling
         this.scrollY = 0; // Current scroll offset
         this.maxScrollY = 0; // Maximum scroll (calculated based on tower height)
@@ -235,6 +243,52 @@ class TowerRenderer {
                 speed: 0.1 + Math.random() * 0.2,
                 opacity: 0.3 + Math.random() * 0.4
             });
+        }
+    }
+
+    /**
+     * Load sprite images
+     */
+    loadSprites() {
+        // Load bookshelf sprite
+        const bookshelfImg = new Image();
+        bookshelfImg.onload = () => {
+            this.sprites.bookshelf = bookshelfImg;
+            this.checkSpritesLoaded();
+        };
+        bookshelfImg.onerror = () => {
+            console.error('Failed to load bookshelf sprite');
+        };
+        bookshelfImg.src = 'assets/bookshelf-main.png';
+
+        // Load book sprites
+        const bookImg1 = new Image();
+        bookImg1.onload = () => {
+            this.sprites.books.push(bookImg1);
+            this.checkSpritesLoaded();
+        };
+        bookImg1.onerror = () => {
+            console.error('Failed to load book sprite 1');
+        };
+        bookImg1.src = 'assets/book-1.png';
+
+        const bookImg2 = new Image();
+        bookImg2.onload = () => {
+            this.sprites.books.push(bookImg2);
+        };
+        bookImg2.onerror = () => {
+            console.error('Failed to load book sprite 2');
+        };
+        bookImg2.src = 'assets/book-2.png';
+    }
+
+    /**
+     * Check if all sprites are loaded
+     */
+    checkSpritesLoaded() {
+        if (this.sprites.bookshelf && this.sprites.books.length > 0) {
+            this.spritesLoaded = true;
+            console.log('Sprites loaded successfully!');
         }
     }
 
@@ -1030,122 +1084,80 @@ class TowerRenderer {
      * Draw a bookshelf with stock indicator
      */
     drawBookshelf(category, x, y, width, height, colors, floorType, scale = 1) {
-        // Determine shelf style and book colors based on floor type
-        const shelfStyles = this.getShelfStyle(floorType);
+        // Use sprites if loaded, otherwise fall back to drawn shelves
+        if (this.spritesLoaded && this.sprites.bookshelf) {
+            // Draw bookshelf sprite
+            this.ctx.drawImage(this.sprites.bookshelf, x, y, width, height);
 
-        // Draw shelf with custom shape based on style
-        this.ctx.fillStyle = shelfStyles.shelfColor;
-        this.ctx.strokeStyle = shelfStyles.borderColor;
-        this.ctx.lineWidth = 2 * scale;
+            // Draw books based on stock level
+            const stockPercent = category.currentStock / category.maxStock;
+            const bookCount = Math.ceil(stockPercent * 20); // Increased from 10 to 20 for more books
 
-        // Draw different shelf shapes based on floor type
-        this.ctx.beginPath();
+            // Book dimensions (matching your sprite size)
+            const bookWidth = 10 * scale;
+            const bookHeight = 22 * scale;
+            const bookSpacingX = 11 * scale; // Slight gap between books
+            const booksPerRow = 10; // 10 books across
+            const bookStartX = x + 5 * scale; // Left margin
+            const bookStartY = y + 10 * scale; // Top margin
+            const rowSpacing = 24 * scale; // Space between rows
 
-        const r = 10 * scale; // Corner radius scaled
-        const r5 = 5 * scale;
-        const r15 = 15 * scale;
+            // Draw book sprites in multiple rows
+            for (let i = 0; i < bookCount; i++) {
+                const row = Math.floor(i / booksPerRow);
+                const col = i % booksPerRow;
 
-        switch(shelfStyles.shape) {
-            case 'rounded':
-                // Rounded top corners
-                this.ctx.moveTo(x, y + r);
-                this.ctx.arcTo(x, y, x + r, y, r);
-                this.ctx.lineTo(x + width - r, y);
-                this.ctx.arcTo(x + width, y, x + width, y + r, r);
-                this.ctx.lineTo(x + width, y + height);
-                this.ctx.lineTo(x, y + height);
-                this.ctx.closePath();
-                break;
+                const bookX = bookStartX + col * bookSpacingX;
+                const bookY = bookStartY + row * rowSpacing;
 
-            case 'scalloped':
-                // Scalloped top edge
-                this.ctx.moveTo(x, y + r);
-                for (let i = 0; i < 4; i++) {
-                    const scallop_x = x + (width / 4) * i + (width / 8);
-                    const scallop_y = y;
-                    this.ctx.quadraticCurveTo(
-                        x + (width / 4) * i, y + r,
-                        scallop_x, scallop_y
-                    );
-                    this.ctx.quadraticCurveTo(
-                        x + (width / 4) * (i + 1), y + r,
-                        x + (width / 4) * (i + 1), y + r
-                    );
-                }
-                this.ctx.lineTo(x + width, y + height);
-                this.ctx.lineTo(x, y + height);
-                this.ctx.closePath();
-                break;
+                // Pick a book sprite (cycles through available book sprites)
+                const bookSprite = this.sprites.books[i % this.sprites.books.length];
 
-            case 'arched':
-                // Arched top
-                this.ctx.moveTo(x, y + height);
-                this.ctx.lineTo(x, y + r15);
-                this.ctx.quadraticCurveTo(x + width / 2, y - r5, x + width, y + r15);
-                this.ctx.lineTo(x + width, y + height);
-                this.ctx.closePath();
-                break;
+                // Draw the book sprite
+                this.ctx.drawImage(bookSprite, bookX, bookY, bookWidth, bookHeight);
+            }
+        } else {
+            // Fallback: Draw shelf with custom shape based on style (original code)
+            const shelfStyles = this.getShelfStyle(floorType);
 
-            case 'peaked':
-                // Peaked/triangle top
-                this.ctx.moveTo(x, y + r15);
-                this.ctx.lineTo(x + width / 2, y);
-                this.ctx.lineTo(x + width, y + r15);
-                this.ctx.lineTo(x + width, y + height);
-                this.ctx.lineTo(x, y + height);
-                this.ctx.closePath();
-                break;
+            this.ctx.fillStyle = shelfStyles.shelfColor;
+            this.ctx.strokeStyle = shelfStyles.borderColor;
+            this.ctx.lineWidth = 2 * scale;
 
-            case 'ornate':
-                // Ornate with decorative corners
-                this.ctx.moveTo(x + r5, y + r5);
-                this.ctx.lineTo(x, y + r);
-                this.ctx.lineTo(x, y + height);
-                this.ctx.lineTo(x + width, y + height);
-                this.ctx.lineTo(x + width, y + r);
-                this.ctx.lineTo(x + width - r5, y + r5);
-                this.ctx.lineTo(x + width - r5, y);
-                this.ctx.lineTo(x + r5, y);
-                this.ctx.closePath();
-                break;
+            this.ctx.beginPath();
+            this.ctx.rect(x, y, width, height);
+            this.ctx.fill();
+            this.ctx.stroke();
 
-            default: // 'rectangular'
-                // Standard rectangle
-                this.ctx.rect(x, y, width, height);
-                break;
-        }
+            // Inner shadow for depth
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            this.ctx.fillRect(x + 2 * scale, y + 2 * scale, width - 4 * scale, 8 * scale);
 
-        this.ctx.fill();
-        this.ctx.stroke();
+            // Books (as colored rectangles with shadows)
+            const stockPercent = category.currentStock / category.maxStock;
+            const bookCount = Math.ceil(stockPercent * 10);
 
-        // Inner shadow for depth
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-        this.ctx.fillRect(x + 2 * scale, y + 2 * scale, width - 4 * scale, 8 * scale);
+            const bookWidth = 18 * scale;
+            const bookHeight = 20 * scale;
+            const bookSpacingX = 22 * scale;
+            const bookSpacingY = 25 * scale;
 
-        // Books (as colored rectangles with shadows)
-        const stockPercent = category.currentStock / category.maxStock;
-        const bookCount = Math.ceil(stockPercent * 10);
+            for (let i = 0; i < bookCount; i++) {
+                const bookX = x + 5 * scale + (i % 5) * bookSpacingX;
+                const bookY = y + 5 * scale + Math.floor(i / 5) * bookSpacingY;
 
-        const bookWidth = 18 * scale;
-        const bookHeight = 20 * scale;
-        const bookSpacingX = 22 * scale;
-        const bookSpacingY = 25 * scale;
+                // Book shadow
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                this.ctx.fillRect(bookX + 1 * scale, bookY + 1 * scale, bookWidth, bookHeight);
 
-        for (let i = 0; i < bookCount; i++) {
-            const bookX = x + 5 * scale + (i % 5) * bookSpacingX;
-            const bookY = y + 5 * scale + Math.floor(i / 5) * bookSpacingY;
+                // Book
+                this.ctx.fillStyle = shelfStyles.bookColors[i % shelfStyles.bookColors.length];
+                this.ctx.fillRect(bookX, bookY, bookWidth, bookHeight);
 
-            // Book shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.fillRect(bookX + 1 * scale, bookY + 1 * scale, bookWidth, bookHeight);
-
-            // Book
-            this.ctx.fillStyle = shelfStyles.bookColors[i % shelfStyles.bookColors.length];
-            this.ctx.fillRect(bookX, bookY, bookWidth, bookHeight);
-
-            // Book highlight
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            this.ctx.fillRect(bookX, bookY, 2 * scale, bookHeight);
+                // Book highlight
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                this.ctx.fillRect(bookX, bookY, 2 * scale, bookHeight);
+            }
         }
 
         // Stock text
