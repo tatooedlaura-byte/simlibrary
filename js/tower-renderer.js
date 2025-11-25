@@ -261,25 +261,24 @@ class TowerRenderer {
         };
         bookshelfImg.src = 'assets/bookshelf-main.png';
 
-        // Load book sprites
-        const bookImg1 = new Image();
-        bookImg1.onload = () => {
-            this.sprites.books.push(bookImg1);
-            this.checkSpritesLoaded();
-        };
-        bookImg1.onerror = () => {
-            console.error('Failed to load book sprite 1');
-        };
-        bookImg1.src = 'assets/book-1.png';
+        // Load book sprites (6 variations)
+        const bookSprites = ['book-1.png', 'book-2.png', 'book-3.png', 'book-4.png', 'book-5.png', 'book-6.png'];
+        let loadedBooks = 0;
 
-        const bookImg2 = new Image();
-        bookImg2.onload = () => {
-            this.sprites.books.push(bookImg2);
-        };
-        bookImg2.onerror = () => {
-            console.error('Failed to load book sprite 2');
-        };
-        bookImg2.src = 'assets/book-2.png';
+        bookSprites.forEach((filename, index) => {
+            const bookImg = new Image();
+            bookImg.onload = () => {
+                this.sprites.books.push(bookImg);
+                loadedBooks++;
+                if (loadedBooks === 1) {
+                    this.checkSpritesLoaded(); // Check after first book loads
+                }
+            };
+            bookImg.onerror = () => {
+                console.error(`Failed to load book sprite: ${filename}`);
+            };
+            bookImg.src = `assets/${filename}`;
+        });
     }
 
     /**
@@ -1110,8 +1109,9 @@ class TowerRenderer {
                 const bookX = bookStartX + col * bookSpacingX;
                 const bookY = bookStartY + row * rowSpacing;
 
-                // Pick a book sprite (cycles through available book sprites)
-                const bookSprite = this.sprites.books[i % this.sprites.books.length];
+                // Pick a random book sprite for variety
+                const randomIndex = Math.floor(Math.random() * this.sprites.books.length);
+                const bookSprite = this.sprites.books[randomIndex];
 
                 // Draw the book sprite
                 this.ctx.drawImage(bookSprite, bookX, bookY, bookWidth, bookHeight);
