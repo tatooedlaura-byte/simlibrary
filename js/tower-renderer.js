@@ -47,7 +47,8 @@ class TowerRenderer {
         // Sprite images
         this.sprites = {
             bookshelf: null,
-            books: []
+            books: [],
+            floorBackgrounds: {}
         };
         this.spritesLoaded = false;
         this.loadSprites();
@@ -279,6 +280,16 @@ class TowerRenderer {
             };
             bookImg.src = `assets/${filename}`;
         });
+
+        // Load floor background sprites
+        const floorBgImg = new Image();
+        floorBgImg.onload = () => {
+            this.sprites.floorBackgrounds['board_books'] = floorBgImg;
+        };
+        floorBgImg.onerror = () => {
+            console.error('Failed to load board books floor background');
+        };
+        floorBgImg.src = 'assets/floor-boardbooks.png';
     }
 
     /**
@@ -633,16 +644,23 @@ class TowerRenderer {
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(x, y, this.floorWidth, this.floorHeight);
 
-        // Top highlight for lighting effect
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        this.ctx.fillRect(x, y, this.floorWidth, 3);
+        // Draw custom floor background sprite if available for this floor type
+        const floorBg = this.sprites.floorBackgrounds[floor.typeId];
+        if (floorBg && floorBg.complete) {
+            this.ctx.drawImage(floorBg, x, y, this.floorWidth, this.floorHeight);
+        } else {
+            // Fallback to original styling if no custom background
+            // Top highlight for lighting effect
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            this.ctx.fillRect(x, y, this.floorWidth, 3);
 
-        // Side shadow for depth
-        const sideGradient = this.ctx.createLinearGradient(x, y, x + 20, y);
-        sideGradient.addColorStop(0, 'rgba(0, 0, 0, 0.2)');
-        sideGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        this.ctx.fillStyle = sideGradient;
-        this.ctx.fillRect(x, y, 20, this.floorHeight);
+            // Side shadow for depth
+            const sideGradient = this.ctx.createLinearGradient(x, y, x + 20, y);
+            sideGradient.addColorStop(0, 'rgba(0, 0, 0, 0.2)');
+            sideGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            this.ctx.fillStyle = sideGradient;
+            this.ctx.fillRect(x, y, 20, this.floorHeight);
+        }
 
         // Floor border
         this.ctx.strokeStyle = colors.border;
@@ -804,10 +822,20 @@ class TowerRenderer {
      * Draw a ready floor with book shelves and readers
      */
     drawReadyFloor(floor, x, y, colors, floorIndex) {
-        // Floor name/number
+        // Floor name/number with background
         this.ctx.save();
-        this.ctx.fillStyle = '#000';
+
+        // Measure text width for background rectangle
         this.ctx.font = 'bold 14px Arial';
+        const textMetrics = this.ctx.measureText(`${floor.emoji} ${floor.name}`);
+        const textWidth = textMetrics.width;
+
+        // Draw semi-transparent background behind text
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'; // White with 95% opacity
+        this.ctx.fillRect(x + 8, y + 10, textWidth + 8, 18);
+
+        // Draw floor name text
+        this.ctx.fillStyle = '#000';
         this.ctx.textAlign = 'left';
         this.ctx.textBaseline = 'top';
         this.ctx.fillText(`${floor.emoji} ${floor.name}`, x + 10, y + 12);
@@ -824,13 +852,28 @@ class TowerRenderer {
         } else {
             // Draw book shelves (3 categories) - scale with floor size
             const scale = this.getScale();
-            const shelfY = y + 35; // Fixed position below floor name with more space
+            const shelfY = y + 45; // Position to match custom floor backgrounds (moved up)
             const shelfWidth = 120 * scale;
             const shelfHeight = 60 * scale;
             const shelfSpacing = (this.floorWidth - 60 * scale - shelfWidth * 3) / 2;
 
             floor.bookStock.forEach((category, index) => {
-                const shelfX = x + 30 * scale + index * (shelfWidth + shelfSpacing);
+                let shelfX = x + 40 * scale + index * (shelfWidth + shelfSpacing); // Moved right from 30 to 40
+
+                // Custom positioning for board_books floor
+                if (floor.typeId === 'board_books') {
+                    if (index === 0) {
+                        // Move the first shelf on board books floor
+                        shelfX = x + 84 * scale; // 80 + 4 = 84
+                    } else if (index === 1) {
+                        // Move the second shelf on board books floor (back to original)
+                        shelfX = x + 64 * scale + (shelfWidth + shelfSpacing);
+                    } else if (index === 2) {
+                        // Move the third (rightmost) shelf on board books floor
+                        shelfX = x + 44 * scale + 2 * (shelfWidth + shelfSpacing); // +4 from default
+                    }
+                }
+
                 this.drawBookshelf(category, shelfX, shelfY, shelfWidth, shelfHeight, colors, floor.typeId, scale);
             });
         }
@@ -1101,6 +1144,22 @@ class TowerRenderer {
             const bookStartY = y + 10 * scale; // Top margin
             const rowSpacing = 24 * scale; // Space between rows
 
+            // Only draw books if we have sprites loaded
+            if (this.sprites.books.length === 0) return;
+
+            // Pick 3 book colors based on floor position
+            // Use absolute value since y is negative for floors above ground
+            const floorIndex = Math.abs(Math.floor(y / 110)); // 110 is floor height
+
+            // Each floor gets 3 consecutive colors, wrapping around
+            const numBooks = this.sprites.books.length;
+            const startColor = (floorIndex * 3) % numBooks;
+            const shelfColors = [
+                this.sprites.books[startColor % numBooks],
+                this.sprites.books[(startColor + 1) % numBooks],
+                this.sprites.books[(startColor + 2) % numBooks]
+            ];
+
             // Draw book sprites in multiple rows
             for (let i = 0; i < bookCount; i++) {
                 const row = Math.floor(i / booksPerRow);
@@ -1109,12 +1168,13 @@ class TowerRenderer {
                 const bookX = bookStartX + col * bookSpacingX;
                 const bookY = bookStartY + row * rowSpacing;
 
-                // Pick a random book sprite for variety
-                const randomIndex = Math.floor(Math.random() * this.sprites.books.length);
-                const bookSprite = this.sprites.books[randomIndex];
+                // Rotate through the 3 colors
+                const bookSprite = shelfColors[i % shelfColors.length];
 
-                // Draw the book sprite
-                this.ctx.drawImage(bookSprite, bookX, bookY, bookWidth, bookHeight);
+                // Draw the book sprite (only if it's loaded and valid)
+                if (bookSprite && bookSprite.complete) {
+                    this.ctx.drawImage(bookSprite, bookX, bookY, bookWidth, bookHeight);
+                }
             }
         } else {
             // Fallback: Draw shelf with custom shape based on style (original code)
@@ -1159,12 +1219,6 @@ class TowerRenderer {
                 this.ctx.fillRect(bookX, bookY, 2 * scale, bookHeight);
             }
         }
-
-        // Stock text
-        this.ctx.fillStyle = '#FFF';
-        this.ctx.font = `bold ${Math.round(11 * scale)}px Arial`;
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(`${category.currentStock}/${category.maxStock}`, x + width / 2, y + height - 5 * scale);
 
         // Restocking indicator
         if (category.restocking) {
@@ -2655,14 +2709,7 @@ class TowerRenderer {
                 break;
         }
 
-        // Bonus indicator
-        this.ctx.fillStyle = 'rgba(76, 175, 80, 0.3)';
-        this.ctx.fillRect(x + 10, y + this.floorHeight - 25, this.floorWidth - 20, 15);
-
-        this.ctx.fillStyle = '#4CAF50';
-        this.ctx.font = 'bold 11px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(`✨ ACTIVE BONUS: ${floorType.bonus.type.toUpperCase().replace('_', ' ')}`, centerX, y + this.floorHeight - 13);
+        // Bonus indicator removed - no longer displayed
     }
 
     /**
