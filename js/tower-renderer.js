@@ -293,6 +293,16 @@ class TowerRenderer {
             console.error('Failed to load board books floor background');
         };
         floorBgImg.src = 'assets/floor-boardbooks.png';
+
+        // Load scifi floor background
+        const scifiBgImg = new Image();
+        scifiBgImg.onload = () => {
+            this.sprites.floorBackgrounds['scifi'] = scifiBgImg;
+        };
+        scifiBgImg.onerror = () => {
+            console.error('Failed to load scifi floor background');
+        };
+        scifiBgImg.src = 'assets/floor-scifi.png';
     }
 
     /**
@@ -877,7 +887,23 @@ class TowerRenderer {
                     }
                 }
 
-                this.drawBookshelf(category, shelfX, shelfY, shelfWidth, shelfHeight, colors, floor.typeId, scale);
+                // Custom positioning for scifi floor (books on image shelves, no shelf sprite)
+                // Image is 2000px, floor renders at 500px, so multiply image coords by 0.25
+                let scifiShelfY = shelfY;
+                if (floor.typeId === 'scifi') {
+                    if (index === 0) {
+                        shelfX = x + 10; // Left shelf
+                    } else if (index === 1) {
+                        shelfX = x + 302; // Center shelf
+                        scifiShelfY = shelfY - 26; // Moved up 26 total
+                    } else if (index === 2) {
+                        shelfX = x + 407; // Right shelf
+                        scifiShelfY = shelfY - 17; // Moved up 17
+                    }
+                }
+
+                const finalShelfY = (floor.typeId === 'scifi') ? scifiShelfY : shelfY;
+                this.drawBookshelf(category, shelfX, finalShelfY, shelfWidth, shelfHeight, colors, floor.typeId, scale, index);
             });
         }
 
@@ -1128,24 +1154,45 @@ class TowerRenderer {
     /**
      * Draw a bookshelf with stock indicator
      */
-    drawBookshelf(category, x, y, width, height, colors, floorType, scale = 1) {
+    drawBookshelf(category, x, y, width, height, colors, floorType, scale = 1, shelfIndex = 0) {
         // Use sprites if loaded, otherwise fall back to drawn shelves
         if (this.spritesLoaded && this.sprites.bookshelf) {
-            // Draw bookshelf sprite
-            this.ctx.drawImage(this.sprites.bookshelf, x, y, width, height);
+            // Skip drawing bookshelf sprite for floors with custom background shelves
+            if (floorType !== 'scifi') {
+                // Draw bookshelf sprite
+                this.ctx.drawImage(this.sprites.bookshelf, x, y, width, height);
+            }
 
             // Draw books based on stock level
             const stockPercent = category.currentStock / category.maxStock;
-            const bookCount = Math.ceil(stockPercent * 20); // Increased from 10 to 20 for more books
 
-            // Book dimensions (matching your sprite size)
+            // Custom book layout for scifi floor (3 rows, 7 books per row)
+            let bookCount, booksPerRow, bookStartX, bookStartY, rowSpacing;
             const bookWidth = 10 * scale;
             const bookHeight = 22 * scale;
-            const bookSpacingX = 11 * scale; // Slight gap between books
-            const booksPerRow = 10; // 10 books across
-            const bookStartX = x + 5 * scale; // Left margin
-            const bookStartY = y + 10 * scale; // Top margin
-            const rowSpacing = 24 * scale; // Space between rows
+            const bookSpacingX = 11 * scale;
+
+            if (floorType === 'scifi') {
+                booksPerRow = 6;
+                bookStartX = x + 8 * scale;
+                bookStartY = y + 5 * scale;
+                rowSpacing = 26 * scale;
+                // Left shelf (index 0) gets 2 rows with 11 books each, others get 3 rows with 6
+                if (shelfIndex === 0) {
+                    booksPerRow = 11;
+                    bookCount = Math.ceil(stockPercent * 22); // 2 rows x 11 = 22
+                } else if (shelfIndex === 1) {
+                    bookCount = Math.ceil(stockPercent * 18); // 3 rows x 6 = 18
+                } else {
+                    bookCount = Math.ceil(stockPercent * 18); // 3 rows x 6 = 18
+                }
+            } else {
+                bookCount = Math.ceil(stockPercent * 20); // 2 rows x 10 books = 20 max
+                booksPerRow = 10;
+                bookStartX = x + 5 * scale;
+                bookStartY = y + 10 * scale;
+                rowSpacing = 24 * scale;
+            }
 
             // Only draw books if we have sprites loaded
             if (this.sprites.books.length === 0) return;
@@ -1226,9 +1273,10 @@ class TowerRenderer {
         if (category.restocking) {
             this.ctx.fillStyle = 'rgba(255, 152, 0, 0.7)';
             this.ctx.fillRect(x, y, width, height);
-
             this.ctx.fillStyle = '#FFF';
             this.ctx.font = `bold ${Math.round(12 * scale)}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
             this.ctx.fillText('📦 Restocking', x + width / 2, y + height / 2);
         }
     }
