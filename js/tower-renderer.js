@@ -323,6 +323,46 @@ class TowerRenderer {
             console.error('Failed to load scifi floor background');
         };
         scifiBgImg.src = 'assets/floor-scifi.png';
+
+        // Load music floor background
+        const musicBgImg = new Image();
+        musicBgImg.onload = () => {
+            this.sprites.floorBackgrounds['music_audio'] = musicBgImg;
+        };
+        musicBgImg.onerror = () => {
+            console.error('Failed to load music floor background');
+        };
+        musicBgImg.src = 'assets/floor-music.png';
+
+        // Load computer lab floor background
+        const computerLabBgImg = new Image();
+        computerLabBgImg.onload = () => {
+            this.sprites.floorBackgrounds['computer_lab'] = computerLabBgImg;
+        };
+        computerLabBgImg.onerror = () => {
+            console.error('Failed to load computer lab floor background');
+        };
+        computerLabBgImg.src = 'assets/floor-computer-lab.png';
+
+        // Load science floor background
+        const scienceBgImg = new Image();
+        scienceBgImg.onload = () => {
+            this.sprites.floorBackgrounds['science'] = scienceBgImg;
+        };
+        scienceBgImg.onerror = () => {
+            console.error('Failed to load science floor background');
+        };
+        scienceBgImg.src = 'assets/floor-science.png';
+
+        // Load lobby background
+        const lobbyBgImg = new Image();
+        lobbyBgImg.onload = () => {
+            this.sprites.lobbyBackground = lobbyBgImg;
+        };
+        lobbyBgImg.onerror = () => {
+            console.error('Failed to load lobby background');
+        };
+        lobbyBgImg.src = 'assets/floor-lobby.png';
     }
 
     /**
@@ -551,18 +591,25 @@ class TowerRenderer {
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         this.ctx.fillRect(x, y + this.floorHeight, this.floorWidth, 8);
 
-        // Gradient for floor depth
-        const gradient = this.ctx.createLinearGradient(x, y, x, y + this.floorHeight);
-        gradient.addColorStop(0, this.lightenColor(colors.bg, 10));
-        gradient.addColorStop(1, colors.bg);
+        // Check if we have a custom background image
+        if (this.sprites.lobbyBackground) {
+            // Draw the custom background image
+            const img = this.sprites.lobbyBackground;
+            this.ctx.drawImage(img, 0, 0, img.width, img.height, x, y, this.floorWidth, this.floorHeight);
+        } else {
+            // Gradient for floor depth (fallback)
+            const gradient = this.ctx.createLinearGradient(x, y, x, y + this.floorHeight);
+            gradient.addColorStop(0, this.lightenColor(colors.bg, 10));
+            gradient.addColorStop(1, colors.bg);
 
-        // Floor background with gradient
-        this.ctx.fillStyle = gradient;
-        this.ctx.fillRect(x, y, this.floorWidth, this.floorHeight);
+            // Floor background with gradient
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(x, y, this.floorWidth, this.floorHeight);
 
-        // Top highlight for lighting effect
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        this.ctx.fillRect(x, y, this.floorWidth, 3);
+            // Top highlight for lighting effect
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            this.ctx.fillRect(x, y, this.floorWidth, 3);
+        }
 
         // Floor border
         this.ctx.strokeStyle = colors.border;
@@ -577,20 +624,6 @@ class TowerRenderer {
         this.ctx.textBaseline = 'top';
         this.ctx.fillText('🏛️ Lobby', x + 10, y + 12);
         this.ctx.restore();
-
-        // Draw welcome desk
-        const deskWidth = 60;
-        const deskHeight = 25;
-        const deskX = x + 20;
-        const deskY = y + this.floorHeight - deskHeight - 10;
-
-        // Desk body
-        this.ctx.fillStyle = '#8B4513';
-        this.ctx.fillRect(deskX, deskY, deskWidth, deskHeight);
-
-        // Desk top
-        this.ctx.fillStyle = '#A0522D';
-        this.ctx.fillRect(deskX - 2, deskY, deskWidth + 4, 5);
 
         // Draw lobby decorations
         this.drawLobbyDecorations(x, y);
