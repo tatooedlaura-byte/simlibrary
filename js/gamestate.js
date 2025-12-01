@@ -1118,6 +1118,90 @@ class GameState {
                     { name: 'Rare Maps', stockCost: 72, stockTime: 78, stockAmount: 100, earningRate: 14 }
                 ]
             },
+            {
+                id: 'genealogy',
+                name: 'Genealogy Room',
+                emoji: '🌳',
+                color: 'brown',
+                description: 'Discover your family history',
+                buildCost: 650,
+                buildTime: 120,
+                bookCategories: [
+                    { name: 'Family Records', stockCost: 45, stockTime: 50, stockAmount: 100, earningRate: 9 },
+                    { name: 'Census Archives', stockCost: 60, stockTime: 65, stockAmount: 100, earningRate: 12 },
+                    { name: 'DNA Research', stockCost: 80, stockTime: 85, stockAmount: 100, earningRate: 16 }
+                ]
+            },
+            {
+                id: 'language_lab',
+                name: 'Language Learning',
+                emoji: '🗣️',
+                color: 'orange',
+                description: 'Master new languages',
+                buildCost: 700,
+                buildTime: 130,
+                bookCategories: [
+                    { name: 'Phrasebooks', stockCost: 42, stockTime: 48, stockAmount: 100, earningRate: 8 },
+                    { name: 'Audio Courses', stockCost: 58, stockTime: 62, stockAmount: 100, earningRate: 12 },
+                    { name: 'Immersion Sets', stockCost: 78, stockTime: 82, stockAmount: 100, earningRate: 16 }
+                ]
+            },
+            {
+                id: 'podcast_studio',
+                name: 'Podcast Studio',
+                emoji: '🎙️',
+                color: 'red',
+                description: 'Record and create audio content',
+                buildCost: 850,
+                buildTime: 160,
+                bookCategories: [
+                    { name: 'Studio Time', stockCost: 50, stockTime: 55, stockAmount: 100, earningRate: 10 },
+                    { name: 'Equipment Rental', stockCost: 68, stockTime: 72, stockAmount: 100, earningRate: 14 },
+                    { name: 'Production Help', stockCost: 90, stockTime: 95, stockAmount: 100, earningRate: 18 }
+                ]
+            },
+            {
+                id: 'seed_library',
+                name: 'Seed Library',
+                emoji: '🌱',
+                color: 'green',
+                description: 'Borrow seeds, grow gardens',
+                buildCost: 450,
+                buildTime: 80,
+                bookCategories: [
+                    { name: 'Vegetable Seeds', stockCost: 35, stockTime: 40, stockAmount: 100, earningRate: 7 },
+                    { name: 'Flower Seeds', stockCost: 48, stockTime: 52, stockAmount: 100, earningRate: 10 },
+                    { name: 'Heirloom Seeds', stockCost: 65, stockTime: 70, stockAmount: 100, earningRate: 13 }
+                ]
+            },
+            {
+                id: 'tool_library',
+                name: 'Tool Library',
+                emoji: '🔨',
+                color: 'yellow',
+                description: 'Borrow tools for any project',
+                buildCost: 600,
+                buildTime: 110,
+                bookCategories: [
+                    { name: 'Hand Tools', stockCost: 40, stockTime: 45, stockAmount: 100, earningRate: 8 },
+                    { name: 'Power Tools', stockCost: 55, stockTime: 60, stockAmount: 100, earningRate: 11 },
+                    { name: 'Kitchen Gadgets', stockCost: 72, stockTime: 78, stockAmount: 100, earningRate: 14 }
+                ]
+            },
+            {
+                id: 'music_practice',
+                name: 'Music Practice Rooms',
+                emoji: '🎹',
+                color: 'purple',
+                description: 'Soundproof rooms with instruments',
+                buildCost: 750,
+                buildTime: 140,
+                bookCategories: [
+                    { name: 'Piano Room', stockCost: 48, stockTime: 52, stockAmount: 100, earningRate: 10 },
+                    { name: 'Guitar Room', stockCost: 62, stockTime: 68, stockAmount: 100, earningRate: 12 },
+                    { name: 'Recording Booth', stockCost: 85, stockTime: 90, stockAmount: 100, earningRate: 17 }
+                ]
+            },
 
             // Special Rooms (provide bonuses instead of books)
             {

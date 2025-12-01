@@ -334,15 +334,15 @@ class TowerRenderer {
         };
         musicBgImg.src = 'assets/floor-music.png';
 
-        // Load computer lab floor background
-        const computerLabBgImg = new Image();
-        computerLabBgImg.onload = () => {
-            this.sprites.floorBackgrounds['computer_lab'] = computerLabBgImg;
+        // Load technology floor background
+        const technologyBgImg = new Image();
+        technologyBgImg.onload = () => {
+            this.sprites.floorBackgrounds['technology'] = technologyBgImg;
         };
-        computerLabBgImg.onerror = () => {
-            console.error('Failed to load computer lab floor background');
+        technologyBgImg.onerror = () => {
+            console.error('Failed to load technology floor background');
         };
-        computerLabBgImg.src = 'assets/floor-computer-lab.png';
+        technologyBgImg.src = 'assets/floor-computer-lab.png';
 
         // Load science floor background
         const scienceBgImg = new Image();
