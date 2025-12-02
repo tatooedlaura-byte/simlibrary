@@ -209,12 +209,20 @@ function setupEventListeners() {
 
         if (confirm(`Are you sure you want to delete "${floor.name}"?\n\nYou will receive ${refundAmount} ⭐ as a refund (50% of build cost).`)) {
             haptic('heavy');
-            const result = game.deleteFloor(currentFloorId);
-            if (result.success) {
-                closeDetailModal();
-                showToast(`Deleted ${result.floorName}! Refunded ${result.refund} ⭐`);
-            } else {
-                showToast(result.error || 'Could not delete floor');
+            console.log('Deleting floor:', currentFloorId, 'game:', game);
+            console.log('game.deleteFloor exists:', typeof game.deleteFloor);
+            try {
+                const result = game.deleteFloor(currentFloorId);
+                console.log('Delete result:', result);
+                if (result && result.success) {
+                    closeDetailModal();
+                    showToast(`Deleted ${result.floorName}! Refunded ${result.refund} ⭐`);
+                } else {
+                    showToast((result && result.error) || 'Could not delete floor');
+                }
+            } catch (err) {
+                console.error('Delete floor error:', err);
+                showToast('Error deleting floor: ' + err.message);
             }
         }
     });

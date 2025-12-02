@@ -1413,7 +1413,7 @@ class GameState {
         const refundAmount = floorType ? Math.floor(floorType.buildCost * 0.5) : 0;
 
         // Remove any staff assigned to this floor back to available pool
-        if (floor.staff && floor.staff.length > 0) {
+        if (floor.staff && floor.staff.length > 0 && this.staff) {
             // Staff are already in the global staff array, just need to unassign
             floor.staff.forEach(staffId => {
                 const staffMember = this.staff.find(s => s.id === staffId);
