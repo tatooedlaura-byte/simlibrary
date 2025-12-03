@@ -1056,20 +1056,6 @@ class TowerRenderer {
             floor.bookStock.forEach((category, index) => {
                 let shelfX = x + 40 * scale + index * (shelfWidth + shelfSpacing); // Moved right from 30 to 40
 
-                // Custom positioning for board_books floor
-                if (floor.typeId === 'board_books') {
-                    if (index === 0) {
-                        // Move the first shelf on board books floor
-                        shelfX = x + 84 * scale; // 80 + 4 = 84
-                    } else if (index === 1) {
-                        // Move the second shelf on board books floor (back to original)
-                        shelfX = x + 64 * scale + (shelfWidth + shelfSpacing);
-                    } else if (index === 2) {
-                        // Move the third (rightmost) shelf on board books floor
-                        shelfX = x + 44 * scale + 2 * (shelfWidth + shelfSpacing); // +4 from default
-                    }
-                }
-
                 this.drawBookshelf(category, shelfX, shelfY, shelfWidth, shelfHeight, colors, floor.typeId, scale, index);
             });
         }
