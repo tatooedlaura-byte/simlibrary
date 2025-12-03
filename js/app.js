@@ -946,6 +946,40 @@ function openFloorDetail(floorId) {
         bonusEl.style.display = 'none';
     }
 
+    // Update floor preview image
+    const previewSection = document.getElementById('floor-preview-section');
+    const previewImg = document.getElementById('floor-preview-img');
+    const floorBgMap = {
+        'board_books': 'floor-boardbooks.png',
+        'picture_books': 'floor-picture-books.png',
+        'scifi': 'floor-scifi.png',
+        'music_audio': 'floor-music.png',
+        'technology': 'floor-technology.png',
+        'science': 'floor-science.png',
+        'juvenile_series': 'floor-juvenile_series.png',
+        'maps_travel': 'floor-maps_travel.png',
+        'teen': 'floor-teen.png',
+        'movies': 'floor-movies.png',
+        'cookbooks': 'floor-cookbooks.png',
+        'romance': 'floor-romance.png',
+        'true_crime': 'floor-true_crime.png',
+        'fantasy': 'floor-fantasy.png',
+        'early_readers': 'floor-early_readers.png',
+        'fiction': 'floor-fiction.png',
+        'mystery': 'floor-mystery.png',
+        'graphic_novels': 'floor-graphic_novels.png',
+        'biography': 'floor-biography.png',
+        'bathroom': 'floor-bathroom.png',
+        'lobby': 'floor-lobby.png'
+    };
+    const bgFilename = floorBgMap[floor.typeId];
+    if (bgFilename) {
+        previewImg.src = `assets/${bgFilename}`;
+        previewSection.style.display = 'block';
+    } else {
+        previewSection.style.display = 'none';
+    }
+
     // Update status
     const statusEl = document.getElementById('detail-status');
     if (floor.status === 'building') {
