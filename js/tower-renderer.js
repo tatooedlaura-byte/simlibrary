@@ -464,6 +464,16 @@ class TowerRenderer {
         };
         mysteryBgImg.src = 'assets/floor-mystery.png';
 
+        // Load graphic novels floor background
+        const graphicNovelsBgImg = new Image();
+        graphicNovelsBgImg.onload = () => {
+            this.sprites.floorBackgrounds['graphic_novels'] = graphicNovelsBgImg;
+        };
+        graphicNovelsBgImg.onerror = () => {
+            console.error('Failed to load graphic novels floor background');
+        };
+        graphicNovelsBgImg.src = 'assets/floor-graphic_novels.png';
+
         // Load lobby background
         const lobbyBgImg = new Image();
         lobbyBgImg.onload = () => {
