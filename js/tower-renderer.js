@@ -444,6 +444,16 @@ class TowerRenderer {
         };
         earlyReadersBgImg.src = 'assets/floor-early_readers.png';
 
+        // Load fiction floor background
+        const fictionBgImg = new Image();
+        fictionBgImg.onload = () => {
+            this.sprites.floorBackgrounds['fiction'] = fictionBgImg;
+        };
+        fictionBgImg.onerror = () => {
+            console.error('Failed to load fiction floor background');
+        };
+        fictionBgImg.src = 'assets/floor-fiction.png';
+
         // Load lobby background
         const lobbyBgImg = new Image();
         lobbyBgImg.onload = () => {
