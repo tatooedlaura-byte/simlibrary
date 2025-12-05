@@ -358,6 +358,46 @@ class TowerRenderer {
         };
         sportsBgImg.src = 'assets/floor-sports.png';
 
+        // Load makerspace floor background
+        const makerspaceBgImg = new Image();
+        makerspaceBgImg.onload = () => {
+            this.sprites.floorBackgrounds['makerspace'] = makerspaceBgImg;
+        };
+        makerspaceBgImg.onerror = () => {
+            console.error('Failed to load makerspace floor background');
+        };
+        makerspaceBgImg.src = 'assets/floor-makerspace.png';
+
+        // Load study room floor background
+        const studyRoomBgImg = new Image();
+        studyRoomBgImg.onload = () => {
+            this.sprites.floorBackgrounds['study_room'] = studyRoomBgImg;
+        };
+        studyRoomBgImg.onerror = () => {
+            console.error('Failed to load study room floor background');
+        };
+        studyRoomBgImg.src = 'assets/floor-study_room.png';
+
+        // Load coffee shop floor background
+        const coffeeShopBgImg = new Image();
+        coffeeShopBgImg.onload = () => {
+            this.sprites.floorBackgrounds['coffee_shop'] = coffeeShopBgImg;
+        };
+        coffeeShopBgImg.onerror = () => {
+            console.error('Failed to load coffee shop floor background');
+        };
+        coffeeShopBgImg.src = 'assets/floor-coffee_shop.png';
+
+        // Load computer lab floor background
+        const computerLabBgImg = new Image();
+        computerLabBgImg.onload = () => {
+            this.sprites.floorBackgrounds['computer_lab'] = computerLabBgImg;
+        };
+        computerLabBgImg.onerror = () => {
+            console.error('Failed to load computer lab floor background');
+        };
+        computerLabBgImg.src = 'assets/floor-computer_lab.png';
+
         // Load science floor background
         const scienceBgImg = new Image();
         scienceBgImg.onload = () => {
