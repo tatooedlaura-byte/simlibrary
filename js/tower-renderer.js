@@ -358,13 +358,13 @@ class TowerRenderer {
         };
         sportsBgImg.src = 'assets/floor-sports.png';
 
-        // Load makerspace floor background
+        // Load maker space floor background
         const makerspaceBgImg = new Image();
         makerspaceBgImg.onload = () => {
-            this.sprites.floorBackgrounds['makerspace'] = makerspaceBgImg;
+            this.sprites.floorBackgrounds['maker_space'] = makerspaceBgImg;
         };
         makerspaceBgImg.onerror = () => {
-            console.error('Failed to load makerspace floor background');
+            console.error('Failed to load maker space floor background');
         };
         makerspaceBgImg.src = 'assets/floor-makerspace.png';
 
@@ -3025,17 +3025,7 @@ class TowerRenderer {
                 break;
 
             case 'maker_space':
-                // Draw tools and equipment
-                this.ctx.fillStyle = '#78909C';
-                this.ctx.fillRect(x + 100, y + 50, 100, 60);
-                this.ctx.fillRect(x + 300, y + 50, 100, 60);
-
-                // 3D printer emoji
-                this.ctx.fillStyle = '#000';
-                this.ctx.font = `${this.getEmojiFontSize(40)}px Arial`;
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText('🖨️', x + 150, y + 90);
-                this.ctx.fillText('🔧', x + 350, y + 90);
+                // Background image only - no additional drawing needed
                 break;
 
             case 'event_hall':

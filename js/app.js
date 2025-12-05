@@ -972,7 +972,7 @@ function openFloorDetail(floorId) {
         'bathroom': 'floor-bathroom.png',
         'lobby': 'floor-lobby.png',
         'sports': 'floor-sports.png',
-        'makerspace': 'floor-makerspace.png',
+        'maker_space': 'floor-makerspace.png',
         'study_room': 'floor-study_room.png',
         'coffee_shop': 'floor-coffee_shop.png',
         'computer_lab': 'floor-computer_lab.png'
