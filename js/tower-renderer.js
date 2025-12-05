@@ -845,7 +845,14 @@ class TowerRenderer {
         this.ctx.fillRect(x, y, this.floorWidth, this.floorHeight);
 
         // Draw custom floor background sprite if available for this floor type
-        const floorBg = this.sprites.floorBackgrounds[floor.typeId];
+        let floorBg = this.sprites.floorBackgrounds[floor.typeId];
+
+        // For bathroom, pick a random variant based on floor ID
+        if (floor.typeId === 'bathroom' && this.sprites.bathroomVariants && this.sprites.bathroomVariants.length > 0) {
+            const variantIndex = floor.id % this.sprites.bathroomVariants.length;
+            floorBg = this.sprites.bathroomVariants[variantIndex];
+        }
+
         if (floorBg && floorBg.complete) {
             this.ctx.drawImage(floorBg, x, y, this.floorWidth, this.floorHeight);
         } else {
