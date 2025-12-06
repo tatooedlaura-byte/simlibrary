@@ -1853,8 +1853,8 @@ class GameState {
         }
 
         // Determine how many books to check out based on browse time
-        // Base: 1 book per 4 seconds of browsing, minimum 1 book
-        let booksToCheckout = Math.max(1, Math.floor(browseTime / 4000));
+        // Base: 1 book per 1.5 seconds of browsing, minimum 1 book
+        let booksToCheckout = Math.max(1, Math.floor(browseTime / 1500));
 
         // VIPs get a bonus book
         if (isVIP) {
