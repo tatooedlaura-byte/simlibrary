@@ -891,9 +891,15 @@ class TowerRenderer {
             this.ctx.strokeRect(this.floorX, gapY, this.floorWidth, this.floorHeight);
             this.ctx.restore();
 
-            // Draw floating dragged floor at cursor position
+            // Draw floating dragged floor at target position (or cursor if dragging)
             this.ctx.save();
-            const dragY = this._reorderCurrentY - this.floorHeight / 2;
+            // Use gapY for arrow button mode, or _reorderCurrentY for drag mode
+            let dragY;
+            if (this._reorderCurrentY && isFinite(this._reorderCurrentY)) {
+                dragY = this._reorderCurrentY - this.floorHeight / 2;
+            } else {
+                dragY = gapY; // Fallback to gap position
+            }
             this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
             this.ctx.shadowBlur = 25;
             this.ctx.shadowOffsetY = 15;
@@ -2437,10 +2443,6 @@ class TowerRenderer {
         if (this.isPointInCircle(clickX, clickY, this._reorderUpBounds)) {
             if (currentIndex < reorderableFloors.length - 1) {
                 this.reorderTargetIndex = currentIndex + 1;
-                // Update the Y position to match new target
-                const baseY = this.height - this.groundHeight;
-                const targetVisualIndex = reorderableFloors.length - 1 - this.reorderTargetIndex;
-                this._reorderCurrentY = baseY - (targetVisualIndex + 2) * this.floorHeight + this.floorHeight / 2;
                 if (navigator.vibrate) navigator.vibrate(30);
                 console.log('Move up to index:', this.reorderTargetIndex);
             }
@@ -2451,10 +2453,6 @@ class TowerRenderer {
         if (this.isPointInCircle(clickX, clickY, this._reorderDownBounds)) {
             if (currentIndex > 0) {
                 this.reorderTargetIndex = currentIndex - 1;
-                // Update the Y position to match new target
-                const baseY = this.height - this.groundHeight;
-                const targetVisualIndex = reorderableFloors.length - 1 - this.reorderTargetIndex;
-                this._reorderCurrentY = baseY - (targetVisualIndex + 2) * this.floorHeight + this.floorHeight / 2;
                 if (navigator.vibrate) navigator.vibrate(30);
                 console.log('Move down to index:', this.reorderTargetIndex);
             }
@@ -3113,6 +3111,7 @@ class TowerRenderer {
             // If reorder mode was just activated by long press, don't exit on this mouse up
             if (this._reorderJustActivated) {
                 this._reorderJustActivated = false;
+                this._reorderCurrentY = null; // Clear so it uses gap position for arrow buttons
                 this.isDragging = false;
                 this.canvas.style.cursor = 'pointer';
                 return;
@@ -3311,6 +3310,7 @@ class TowerRenderer {
             // If reorder mode was just activated by long press, don't exit on this touch end
             if (this._reorderJustActivated) {
                 this._reorderJustActivated = false;
+                this._reorderCurrentY = null; // Clear so it uses gap position for arrow buttons
                 this.isDragging = false;
                 return;
             }
