@@ -1154,11 +1154,7 @@ class GameState {
                 description: 'Record and create audio content',
                 buildCost: 850,
                 buildTime: 160,
-                bookCategories: [
-                    { name: 'Studio Time', stockCost: 50, stockTime: 55, stockAmount: 100, earningRate: 10 },
-                    { name: 'Equipment Rental', stockCost: 68, stockTime: 72, stockAmount: 100, earningRate: 14 },
-                    { name: 'Production Help', stockCost: 90, stockTime: 95, stockAmount: 100, earningRate: 18 }
-                ]
+                bookCategories: [] // No inventory needed
             },
             {
                 id: 'seed_library',
