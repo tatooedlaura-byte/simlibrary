@@ -548,6 +548,26 @@ class TowerRenderer {
         };
         musicPracticeBgImg.src = 'assets/floor-music_practice.png';
 
+        // Load podcast studio floor background
+        const podcastStudioBgImg = new Image();
+        podcastStudioBgImg.onload = () => {
+            this.sprites.floorBackgrounds['podcast_studio'] = podcastStudioBgImg;
+        };
+        podcastStudioBgImg.onerror = () => {
+            console.error('Failed to load podcast studio floor background');
+        };
+        podcastStudioBgImg.src = 'assets/floor-podcast_studio.png';
+
+        // Load art gallery floor background
+        const artGalleryBgImg = new Image();
+        artGalleryBgImg.onload = () => {
+            this.sprites.floorBackgrounds['art_gallery'] = artGalleryBgImg;
+        };
+        artGalleryBgImg.onerror = () => {
+            console.error('Failed to load art gallery floor background');
+        };
+        artGalleryBgImg.src = 'assets/floor-art_gallery.png';
+
         // Load science floor background
         const scienceBgImg = new Image();
         scienceBgImg.onload = () => {
