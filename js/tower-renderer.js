@@ -2509,11 +2509,10 @@ class TowerRenderer {
         const clickX = (e.clientX - rect.left) * scaleX;
         const clickY = ((e.clientY - rect.top) * scaleY) - this.scrollY;
 
-        // Handle reorder mode button clicks
+        // Handle reorder mode - only process button clicks, block everything else
         if (this.isReorderMode && this.reorderFloor) {
-            if (this.handleReorderButtonClick(clickX, clickY)) {
-                return;
-            }
+            this.handleReorderButtonClick(clickX, clickY);
+            return; // Don't process any other clicks while in reorder mode
         }
 
         console.log('Canvas clicked at:', clickX, clickY);
@@ -3114,8 +3113,17 @@ class TowerRenderer {
                 return;
             }
 
-            // Otherwise confirm the reorder
-            this.confirmReorder();
+            // If user dragged the floor, confirm the reorder on release
+            if (this._mouseMoved) {
+                this.confirmReorder();
+                this.isDragging = false;
+                this.canvas.style.cursor = 'grab';
+                return;
+            }
+
+            // If didn't drag, stay in reorder mode (let click handler deal with buttons)
+            this.isDragging = false;
+            return;
         }
 
         this.isDragging = false;
@@ -3302,23 +3310,22 @@ class TowerRenderer {
                 return;
             }
 
-            // If didn't move much, check if arrow buttons were tapped
-            if (!this._touchMoved) {
-                const rect = this._touchStartRect || this.canvas.getBoundingClientRect();
-                const scaleX = this.width / rect.width;
-                const scaleY = this.height / rect.height;
-                const touchX = (this.dragStartX - rect.left) * scaleX;
-                const touchY = ((this.dragStartY - rect.top) * scaleY) - this.scrollY;
-
-                // Check if arrow or done button was tapped
-                if (this.handleReorderButtonClick(touchX, touchY)) {
-                    this.isDragging = false;
-                    return;
-                }
+            // If user dragged the floor, confirm the reorder on release
+            if (this._touchMoved) {
+                this.confirmReorder();
+                this.isDragging = false;
+                return;
             }
 
-            // Otherwise, confirm the reorder (drop the floor)
-            this.confirmReorder();
+            // If didn't move, check if arrow/done buttons were tapped
+            const rect = this._touchStartRect || this.canvas.getBoundingClientRect();
+            const scaleX = this.width / rect.width;
+            const scaleY = this.height / rect.height;
+            const touchX = (this.dragStartX - rect.left) * scaleX;
+            const touchY = ((this.dragStartY - rect.top) * scaleY) - this.scrollY;
+
+            // Check buttons - don't exit if tapping elsewhere
+            this.handleReorderButtonClick(touchX, touchY);
             this.isDragging = false;
             return;
         }
