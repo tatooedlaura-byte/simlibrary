@@ -978,7 +978,10 @@ function openFloorDetail(floorId) {
         'computer_lab': 'floor-computer_lab.png',
         'history': 'floor-history.png',
         'newspapers': 'floor-newspapers.png',
-        'gaming_lounge': 'floor-gaming_lounge.png'
+        'gaming_lounge': 'floor-gaming_lounge.png',
+        'language_lab': 'floor-language_lab.png',
+        'tool_library': 'floor-tool_library.png',
+        'seed_library': 'floor-seed_library.png'
     };
     const bgFilename = floorBgMap[floor.typeId];
     if (bgFilename) {

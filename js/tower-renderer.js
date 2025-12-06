@@ -428,6 +428,36 @@ class TowerRenderer {
         };
         gamingLoungeBgImg.src = 'assets/floor-gaming_lounge.png';
 
+        // Load language lab floor background
+        const languageLabBgImg = new Image();
+        languageLabBgImg.onload = () => {
+            this.sprites.floorBackgrounds['language_lab'] = languageLabBgImg;
+        };
+        languageLabBgImg.onerror = () => {
+            console.error('Failed to load language lab floor background');
+        };
+        languageLabBgImg.src = 'assets/floor-language_lab.png';
+
+        // Load tool library floor background
+        const toolLibraryBgImg = new Image();
+        toolLibraryBgImg.onload = () => {
+            this.sprites.floorBackgrounds['tool_library'] = toolLibraryBgImg;
+        };
+        toolLibraryBgImg.onerror = () => {
+            console.error('Failed to load tool library floor background');
+        };
+        toolLibraryBgImg.src = 'assets/floor-tool_library.png';
+
+        // Load seed library floor background
+        const seedLibraryBgImg = new Image();
+        seedLibraryBgImg.onload = () => {
+            this.sprites.floorBackgrounds['seed_library'] = seedLibraryBgImg;
+        };
+        seedLibraryBgImg.onerror = () => {
+            console.error('Failed to load seed library floor background');
+        };
+        seedLibraryBgImg.src = 'assets/floor-seed_library.png';
+
         // Load science floor background
         const scienceBgImg = new Image();
         scienceBgImg.onload = () => {
