@@ -398,6 +398,36 @@ class TowerRenderer {
         };
         computerLabBgImg.src = 'assets/floor-computer_lab.png';
 
+        // Load history floor background
+        const historyBgImg = new Image();
+        historyBgImg.onload = () => {
+            this.sprites.floorBackgrounds['history'] = historyBgImg;
+        };
+        historyBgImg.onerror = () => {
+            console.error('Failed to load history floor background');
+        };
+        historyBgImg.src = 'assets/floor-history.png';
+
+        // Load newspapers floor background
+        const newspapersBgImg = new Image();
+        newspapersBgImg.onload = () => {
+            this.sprites.floorBackgrounds['newspapers'] = newspapersBgImg;
+        };
+        newspapersBgImg.onerror = () => {
+            console.error('Failed to load newspapers floor background');
+        };
+        newspapersBgImg.src = 'assets/floor-newspapers.png';
+
+        // Load gaming lounge floor background
+        const gamingLoungeBgImg = new Image();
+        gamingLoungeBgImg.onload = () => {
+            this.sprites.floorBackgrounds['gaming_lounge'] = gamingLoungeBgImg;
+        };
+        gamingLoungeBgImg.onerror = () => {
+            console.error('Failed to load gaming lounge floor background');
+        };
+        gamingLoungeBgImg.src = 'assets/floor-gaming_lounge.png';
+
         // Load science floor background
         const scienceBgImg = new Image();
         scienceBgImg.onload = () => {
