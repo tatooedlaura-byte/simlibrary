@@ -860,13 +860,46 @@ class TowerRenderer {
         this.ctx.lineWidth = 3;
         this.ctx.strokeRect(x, y, this.floorWidth, this.floorHeight);
 
-        // Draw "LOBBY" text
+        // Draw "Lobby" title with gold banner
         this.ctx.save();
-        this.ctx.fillStyle = '#8B4513';
-        this.ctx.font = 'bold 14px Arial';
+        const titleText = 'Lobby';
+        this.ctx.font = 'bold 13px Georgia, serif';
+        const textMetrics = this.ctx.measureText(titleText);
+        const textWidth = textMetrics.width;
+        const padding = 8;
+        const bannerHeight = 20;
+        const bannerX = x + 6;
+        const bannerY = y + 8;
+
+        // Gold gradient background
+        const gradient = this.ctx.createLinearGradient(bannerX, bannerY, bannerX, bannerY + bannerHeight);
+        gradient.addColorStop(0, '#F4D03F');
+        gradient.addColorStop(0.5, '#D4AC0D');
+        gradient.addColorStop(1, '#B7950B');
+        this.ctx.fillStyle = gradient;
+
+        // Rounded rectangle banner
+        const radius = 4;
+        this.ctx.beginPath();
+        this.ctx.roundRect(bannerX, bannerY, textWidth + padding * 2, bannerHeight, radius);
+        this.ctx.fill();
+
+        // Subtle border
+        this.ctx.strokeStyle = '#8B7355';
+        this.ctx.lineWidth = 1;
+        this.ctx.stroke();
+
+        // Text
         this.ctx.textAlign = 'left';
-        this.ctx.textBaseline = 'top';
-        this.ctx.fillText('🏛️ Lobby', x + 10, y + 12);
+        this.ctx.textBaseline = 'middle';
+
+        // Text shadow
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        this.ctx.fillText(titleText, bannerX + padding + 1, bannerY + bannerHeight / 2 + 1);
+
+        // Main text in dark brown
+        this.ctx.fillStyle = '#3D2817';
+        this.ctx.fillText(titleText, bannerX + padding, bannerY + bannerHeight / 2);
         this.ctx.restore();
 
         // Draw lobby decorations
@@ -3160,7 +3193,47 @@ class TowerRenderer {
 
         switch(floorType.id) {
             case 'bathroom':
-                // Background image only - no additional drawing needed
+                // Draw "Restroom" title with gold banner
+                this.ctx.save();
+                const restroomTitle = 'Restroom';
+                this.ctx.font = 'bold 13px Georgia, serif';
+                const restroomMetrics = this.ctx.measureText(restroomTitle);
+                const restroomWidth = restroomMetrics.width;
+                const restroomPadding = 8;
+                const restroomBannerHeight = 20;
+                const restroomBannerX = x + 6;
+                const restroomBannerY = y + 8;
+
+                // Gold gradient background
+                const restroomGradient = this.ctx.createLinearGradient(restroomBannerX, restroomBannerY, restroomBannerX, restroomBannerY + restroomBannerHeight);
+                restroomGradient.addColorStop(0, '#F4D03F');
+                restroomGradient.addColorStop(0.5, '#D4AC0D');
+                restroomGradient.addColorStop(1, '#B7950B');
+                this.ctx.fillStyle = restroomGradient;
+
+                // Rounded rectangle banner
+                const restroomRadius = 4;
+                this.ctx.beginPath();
+                this.ctx.roundRect(restroomBannerX, restroomBannerY, restroomWidth + restroomPadding * 2, restroomBannerHeight, restroomRadius);
+                this.ctx.fill();
+
+                // Subtle border
+                this.ctx.strokeStyle = '#8B7355';
+                this.ctx.lineWidth = 1;
+                this.ctx.stroke();
+
+                // Text
+                this.ctx.textAlign = 'left';
+                this.ctx.textBaseline = 'middle';
+
+                // Text shadow
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                this.ctx.fillText(restroomTitle, restroomBannerX + restroomPadding + 1, restroomBannerY + restroomBannerHeight / 2 + 1);
+
+                // Main text in dark brown
+                this.ctx.fillStyle = '#3D2817';
+                this.ctx.fillText(restroomTitle, restroomBannerX + restroomPadding, restroomBannerY + restroomBannerHeight / 2);
+                this.ctx.restore();
                 break;
 
             case 'basement':
