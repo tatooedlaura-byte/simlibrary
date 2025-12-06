@@ -517,8 +517,21 @@ function showWeatherForecast() {
 function showMoodBreakdown() {
     const problems = game.getMoodProblems();
     const moodDesc = game.getMoodDescription();
+    const breakdown = game.getMoodBreakdown();
 
-    let problemsHtml = problems.map(item => {
+    // Build breakdown HTML
+    let breakdownHtml = breakdown.factors.map(factor => {
+        const valueColor = factor.value > 0 ? '#2e7d32' : factor.value < 0 ? '#c62828' : '#666';
+        const valueText = factor.value > 0 ? `+${factor.value}` : factor.value.toString();
+        return `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0;">
+                <span>${factor.emoji} ${factor.name}</span>
+                <span style="color: ${valueColor}; font-weight: bold;">${valueText}</span>
+            </div>
+        `;
+    }).join('');
+
+    let problemsHtml = problems.length > 0 ? problems.map(item => {
         return `
             <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
                 <span style="font-size: 20px;">${item.emoji}</span>
@@ -528,7 +541,7 @@ function showMoodBreakdown() {
                 </div>
             </div>
         `;
-    }).join('');
+    }).join('') : '<div style="color: #666; text-align: center; padding: 10px;">No major issues!</div>';
 
     // Create popup
     const popup = document.createElement('div');
@@ -552,6 +565,14 @@ function showMoodBreakdown() {
     popup.innerHTML = `
         <h3 style="margin: 0 0 5px 0; text-align: center;">${moodDesc.emoji} Mood: ${Math.floor(game.mood)}</h3>
         <div style="text-align: center; margin-bottom: 15px; color: #666;">${moodDesc.text}</div>
+        <div style="font-weight: bold; margin-bottom: 8px; color: #333;">Mood Factors:</div>
+        <div style="background: #f5f5f5; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;">
+            ${breakdownHtml}
+            <div style="border-top: 2px solid #ddd; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: bold;">
+                <span>Target Mood</span>
+                <span>${breakdown.total}</span>
+            </div>
+        </div>
         <div style="font-weight: bold; margin-bottom: 8px; color: #333;">Issues:</div>
         ${problemsHtml}
         <button onclick="this.parentElement.remove()" style="

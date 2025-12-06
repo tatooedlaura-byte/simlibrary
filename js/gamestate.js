@@ -2441,6 +2441,96 @@ class GameState {
     }
 
     /**
+     * Get detailed breakdown of mood factors
+     */
+    getMoodBreakdown() {
+        const factors = [];
+
+        // Base mood
+        factors.push({ name: 'Base', value: 50, emoji: '📊' });
+
+        // Readers present
+        const readerBonus = this.readers.length * 2;
+        factors.push({ name: `Visitors (${this.readers.length})`, value: readerBonus, emoji: '👥' });
+
+        // Special visitors
+        const specialBonus = this.specialVisitors.length * 10;
+        if (this.specialVisitors.length > 0) {
+            factors.push({ name: `Special Visitors (${this.specialVisitors.length})`, value: specialBonus, emoji: '⭐' });
+        }
+
+        // Empty stock penalty
+        let emptyCategories = 0;
+        this.floors.forEach(floor => {
+            if (floor.status === 'ready') {
+                floor.bookStock.forEach(cat => {
+                    if (cat.currentStock === 0) emptyCategories++;
+                });
+            }
+        });
+        if (emptyCategories > 0) {
+            factors.push({ name: `Empty Stock (${emptyCategories})`, value: -emptyCategories * 2, emoji: '📚' });
+        }
+
+        // Trash penalty
+        let totalTrash = 0;
+        let floorCount = 0;
+        this.floors.forEach(floor => {
+            if (floor.status === 'ready' && floor.trash !== undefined) {
+                totalTrash += floor.trash;
+                floorCount++;
+            }
+        });
+        if (floorCount > 0) {
+            const avgTrash = totalTrash / floorCount;
+            const trashPenalty = Math.floor(avgTrash / 5);
+            if (trashPenalty > 0) {
+                factors.push({ name: `Trash (${Math.round(avgTrash)}% avg)`, value: -trashPenalty, emoji: '🗑️' });
+            }
+        }
+
+        // Bathroom boost
+        const bathroomCount = this.floors.filter(f =>
+            f.typeId === 'bathroom' && f.status === 'ready'
+        ).length;
+        if (bathroomCount > 0) {
+            factors.push({ name: `Bathrooms (${bathroomCount})`, value: bathroomCount * 5, emoji: '🚻' });
+        }
+
+        // Event boost
+        if (this.currentEvent) {
+            factors.push({ name: 'Active Event', value: 15, emoji: '🎉' });
+        }
+
+        // Hall event boost
+        if (this.currentHallEvent && this.currentHallEvent.effect.type === 'mood_boost') {
+            factors.push({ name: this.currentHallEvent.name, value: this.currentHallEvent.effect.value, emoji: '🎭' });
+        }
+
+        // Weather effect
+        const weather = this.getCurrentWeather();
+        if (weather && weather.moodEffect !== 0) {
+            factors.push({ name: `${weather.name} Weather`, value: weather.moodEffect, emoji: weather.emoji });
+        }
+
+        // Holiday bonus
+        const holidayBonus = this.getHolidayMoodBonus();
+        if (holidayBonus > 0) {
+            factors.push({ name: 'Holiday', value: holidayBonus, emoji: '🎊' });
+        }
+
+        // Rush hour boost
+        if (this.transitSchedule && this.transitSchedule.isRushHour) {
+            factors.push({ name: 'Rush Hour', value: 10, emoji: '🚇' });
+        }
+
+        // Calculate total
+        const total = factors.reduce((sum, f) => sum + f.value, 0);
+
+        return { factors, total: Math.max(0, Math.min(100, total)) };
+    }
+
+    /**
      * Get list of problems affecting mood
      */
     getMoodProblems() {
