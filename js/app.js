@@ -412,11 +412,14 @@ function setupEventListeners() {
         }
     });
 
-    // Upgrades button - opens upgrades modal
-    document.getElementById('open-upgrades-btn').addEventListener('click', () => {
-        haptic('medium');
-        openUpgradesModal();
-    });
+    // Upgrades button - opens upgrades modal (if button exists)
+    const upgradesBtn = document.getElementById('open-upgrades-btn');
+    if (upgradesBtn) {
+        upgradesBtn.addEventListener('click', () => {
+            haptic('medium');
+            openUpgradesModal();
+        });
+    }
 
     // Upgrades modal close button
     document.getElementById('close-upgrades-modal').addEventListener('click', () => {
@@ -445,7 +448,7 @@ function setupEventListeners() {
 
     // Restock All button
     const restockBtn = document.getElementById('restock-all-btn');
-    restockBtn.addEventListener('click', () => {
+    const handleRestockAll = () => {
         haptic('medium');
         const neededCount = game.getRestockNeededCount();
         if (neededCount === 0) {
@@ -473,6 +476,11 @@ function setupEventListeners() {
             'Restock',
             'Cancel'
         );
+    };
+    restockBtn.addEventListener('click', handleRestockAll);
+    restockBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleRestockAll();
     });
 
     // Help button - opens help modal
@@ -2684,13 +2692,6 @@ const onboardingSteps = [
         title: '📊 Library Stats',
         text: 'Tap here to see your collection, achievements, and detailed statistics.',
         target: '#open-stats-btn',
-        position: 'bottom'
-    },
-    {
-        id: 'upgrades',
-        title: '🏛️ Upgrades & Perks',
-        text: 'Tap here to buy decorations, unlock perks, and train your staff.',
-        target: '#open-upgrades-btn',
         position: 'bottom'
     },
     {

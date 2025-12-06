@@ -901,6 +901,9 @@ class TowerRenderer {
             this.drawFloor(this.reorderFloor, this.floorX, dragY, draggedVisualIndex);
             this.ctx.restore();
 
+            // Draw reorder arrow buttons on the sides of the floating floor
+            this.drawReorderArrowButtons(gapY, targetIndex, reorderableFloors.length);
+
         } else {
             // Normal mode - draw floors in their actual positions
             floorsReversed.forEach((floor, index) => {
@@ -2323,6 +2326,177 @@ class TowerRenderer {
     }
 
     /**
+     * Draw arrow buttons for reordering floors
+     */
+    drawReorderArrowButtons(gapY, targetIndex, totalFloors) {
+        const buttonSize = 60;
+        const buttonPadding = 15;
+        const centerY = gapY + this.floorHeight / 2;
+
+        // Clear button bounds
+        this._reorderUpBounds = null;
+        this._reorderDownBounds = null;
+        this._reorderDoneBounds = null;
+
+        // Up arrow (left side) - only if not at top
+        if (targetIndex < totalFloors - 1) {
+            const upX = this.floorX - buttonSize - buttonPadding;
+            const upY = centerY - buttonSize / 2;
+
+            this.ctx.save();
+            this.ctx.fillStyle = 'rgba(76, 175, 80, 0.9)';
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.shadowBlur = 8;
+            this.ctx.shadowOffsetY = 3;
+            this.ctx.beginPath();
+            this.ctx.arc(upX + buttonSize / 2, upY + buttonSize / 2, buttonSize / 2, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Arrow icon
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = 'bold 32px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText('▲', upX + buttonSize / 2, upY + buttonSize / 2);
+            this.ctx.restore();
+
+            this._reorderUpBounds = { x: upX, y: upY, width: buttonSize, height: buttonSize };
+        }
+
+        // Down arrow (left side, below up) - only if not at bottom
+        if (targetIndex > 0) {
+            const downX = this.floorX - buttonSize - buttonPadding;
+            const downY = centerY + buttonSize / 2 + 10;
+
+            this.ctx.save();
+            this.ctx.fillStyle = 'rgba(76, 175, 80, 0.9)';
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.shadowBlur = 8;
+            this.ctx.shadowOffsetY = 3;
+            this.ctx.beginPath();
+            this.ctx.arc(downX + buttonSize / 2, downY + buttonSize / 2, buttonSize / 2, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Arrow icon
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = 'bold 32px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText('▼', downX + buttonSize / 2, downY + buttonSize / 2);
+            this.ctx.restore();
+
+            this._reorderDownBounds = { x: downX, y: downY, width: buttonSize, height: buttonSize };
+        }
+
+        // Done button (right side)
+        const doneX = this.floorX + this.floorWidth + buttonPadding;
+        const doneY = centerY - buttonSize / 2;
+
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(33, 150, 243, 0.9)';
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.shadowBlur = 8;
+        this.ctx.shadowOffsetY = 3;
+        this.ctx.beginPath();
+        this.ctx.arc(doneX + buttonSize / 2, doneY + buttonSize / 2, buttonSize / 2, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Checkmark icon
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = 'bold 32px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('✓', doneX + buttonSize / 2, doneY + buttonSize / 2);
+        this.ctx.restore();
+
+        this._reorderDoneBounds = { x: doneX, y: doneY, width: buttonSize, height: buttonSize };
+    }
+
+    /**
+     * Check if a point is inside circular button bounds
+     */
+    isPointInCircle(x, y, bounds) {
+        if (!bounds) return false;
+        const centerX = bounds.x + bounds.width / 2;
+        const centerY = bounds.y + bounds.height / 2;
+        const radius = bounds.width / 2;
+        const dx = x - centerX;
+        const dy = y - centerY;
+        return (dx * dx + dy * dy) <= (radius * radius);
+    }
+
+    /**
+     * Handle clicks on reorder mode buttons
+     * Returns true if a button was clicked
+     */
+    handleReorderButtonClick(clickX, clickY) {
+        const reorderableFloors = this.game.floors.filter(f => f.typeId !== 'basement');
+        const currentIndex = this.reorderTargetIndex;
+
+        // Check up arrow
+        if (this.isPointInCircle(clickX, clickY, this._reorderUpBounds)) {
+            if (currentIndex < reorderableFloors.length - 1) {
+                this.reorderTargetIndex = currentIndex + 1;
+                // Update the Y position to match new target
+                const baseY = this.height - this.groundHeight;
+                const targetVisualIndex = reorderableFloors.length - 1 - this.reorderTargetIndex;
+                this._reorderCurrentY = baseY - (targetVisualIndex + 2) * this.floorHeight + this.floorHeight / 2;
+                if (navigator.vibrate) navigator.vibrate(30);
+                console.log('Move up to index:', this.reorderTargetIndex);
+            }
+            return true;
+        }
+
+        // Check down arrow
+        if (this.isPointInCircle(clickX, clickY, this._reorderDownBounds)) {
+            if (currentIndex > 0) {
+                this.reorderTargetIndex = currentIndex - 1;
+                // Update the Y position to match new target
+                const baseY = this.height - this.groundHeight;
+                const targetVisualIndex = reorderableFloors.length - 1 - this.reorderTargetIndex;
+                this._reorderCurrentY = baseY - (targetVisualIndex + 2) * this.floorHeight + this.floorHeight / 2;
+                if (navigator.vibrate) navigator.vibrate(30);
+                console.log('Move down to index:', this.reorderTargetIndex);
+            }
+            return true;
+        }
+
+        // Check done button
+        if (this.isPointInCircle(clickX, clickY, this._reorderDoneBounds)) {
+            this.confirmReorder();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Confirm the reorder and exit reorder mode
+     */
+    confirmReorder() {
+        if (!this.reorderFloor) return;
+
+        const currentIndex = this.game.floors.findIndex(f => f.id === this.reorderFloor.id);
+        const targetIndex = this.reorderTargetIndex;
+
+        if (targetIndex !== -1 && targetIndex !== currentIndex) {
+            this.game.reorderFloor(this.reorderFloor.id, targetIndex);
+            console.log(`Moved ${this.reorderFloor.name} from index ${currentIndex} to ${targetIndex}`);
+        }
+
+        // Exit reorder mode
+        this.isReorderMode = false;
+        this.reorderFloor = null;
+        this.reorderTargetIndex = -1;
+        this._reorderUpBounds = null;
+        this._reorderDownBounds = null;
+        this._reorderDoneBounds = null;
+        this.canvas.style.cursor = 'grab';
+
+        if (navigator.vibrate) navigator.vibrate(50);
+    }
+
+    /**
      * Handle canvas clicks
      */
     handleClick(e) {
@@ -2330,8 +2504,17 @@ class TowerRenderer {
         if (this.isDragging) return;
 
         const rect = this.canvas.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = (e.clientY - rect.top) - this.scrollY; // Account for scroll offset
+        const scaleX = this.width / rect.width;
+        const scaleY = this.height / rect.height;
+        const clickX = (e.clientX - rect.left) * scaleX;
+        const clickY = ((e.clientY - rect.top) * scaleY) - this.scrollY;
+
+        // Handle reorder mode button clicks
+        if (this.isReorderMode && this.reorderFloor) {
+            if (this.handleReorderButtonClick(clickX, clickY)) {
+                return;
+            }
+        }
 
         console.log('Canvas clicked at:', clickX, clickY);
 
@@ -3107,21 +3290,25 @@ class TowerRenderer {
         }
         this._potentialReorderFloor = null;
 
-        // Handle reorder mode drop
+        // Handle reorder mode
         if (this.isReorderMode && this.reorderFloor) {
-            const currentIndex = this.game.floors.findIndex(f => f.id === this.reorderFloor.id);
-            const targetIndex = this.reorderTargetIndex;
+            // If didn't move much, check if arrow buttons were tapped
+            if (!this._touchMoved) {
+                const rect = this._touchStartRect || this.canvas.getBoundingClientRect();
+                const scaleX = this.width / rect.width;
+                const scaleY = this.height / rect.height;
+                const touchX = (this.dragStartX - rect.left) * scaleX;
+                const touchY = ((this.dragStartY - rect.top) * scaleY) - this.scrollY;
 
-            if (targetIndex !== -1 && targetIndex !== currentIndex) {
-                // Perform the reorder
-                this.game.reorderFloor(this.reorderFloor.id, targetIndex);
-                console.log(`Moved ${this.reorderFloor.name} from index ${currentIndex} to ${targetIndex}`);
+                // Check if arrow or done button was tapped
+                if (this.handleReorderButtonClick(touchX, touchY)) {
+                    this.isDragging = false;
+                    return;
+                }
             }
 
-            // Exit reorder mode
-            this.isReorderMode = false;
-            this.reorderFloor = null;
-            this.reorderTargetIndex = -1;
+            // Otherwise, confirm the reorder (drop the floor)
+            this.confirmReorder();
             this.isDragging = false;
             return;
         }
