@@ -265,6 +265,16 @@ class TowerRenderer {
         };
         bookshelfImg.src = 'assets/bookshelf-main.png';
 
+        // Load bookspines sprite
+        const bookspinesImg = new Image();
+        bookspinesImg.onload = () => {
+            this.sprites.bookspines = bookspinesImg;
+        };
+        bookspinesImg.onerror = () => {
+            console.error('Failed to load bookspines sprite');
+        };
+        bookspinesImg.src = 'assets/bookspines.png';
+
         // Load book sprites (12 variations)
         const bookSprites = ['book-1.png', 'book-2.png', 'book-3.png', 'book-4.png', 'book-5.png', 'book-6.png', 'book-7.png', 'book-8.png', 'book-9.png', 'book-10.png', 'book-11.png', 'book-12.png'];
         let loadedBooks = 0;
@@ -1609,47 +1619,45 @@ class TowerRenderer {
             // Draw bookshelf sprite
             this.ctx.drawImage(this.sprites.bookshelf, x, y, width, height);
 
-            // Draw books based on stock level
+            // Draw books using bookspines sprite based on stock level
             const stockPercent = category.currentStock / category.maxStock;
-            const bookCount = Math.ceil(stockPercent * 20); // 2 rows x 10 books = 20 max
 
-            const bookWidth = 10 * scale;
-            const bookHeight = 22 * scale;
-            const bookSpacingX = 11 * scale;
-            const booksPerRow = 10;
-            const bookStartX = x + 5 * scale;
-            const bookStartY = y + 10 * scale;
-            const rowSpacing = 24 * scale;
+            if (this.sprites.bookspines && this.sprites.bookspines.complete && stockPercent > 0) {
+                const spineImg = this.sprites.bookspines;
 
-            // Only draw books if we have sprites loaded
-            if (this.sprites.books.length === 0) return;
+                // Calculate dimensions for drawing bookspines in 2 rows
+                const rowHeight = 24 * scale;
+                const bookStartX = x + 5 * scale;
+                const bookStartY = y + 8 * scale;
+                const rowSpacing = 26 * scale;
+                const rowWidth = width - 10 * scale;
 
-            // Pick 2 book colors based on floor position
-            // Use absolute value since y is negative for floors above ground
-            const floorIndex = Math.abs(Math.floor(y / 110)); // 110 is floor height
+                // Draw 2 rows of books, with stock percentage determining how much to show
+                for (let row = 0; row < 2; row++) {
+                    // Calculate what portion of stock this row represents
+                    const rowStockStart = row * 0.5; // Row 0: 0-50%, Row 1: 50-100%
+                    const rowStockEnd = (row + 1) * 0.5;
 
-            // Each floor gets 2 consecutive colors, wrapping around
-            const numBooks = this.sprites.books.length;
-            const startColor = (floorIndex * 2) % numBooks;
-            const shelfColors = [
-                this.sprites.books[startColor % numBooks],
-                this.sprites.books[(startColor + 1) % numBooks]
-            ];
+                    // How much of this row should be filled
+                    let rowFillPercent = 0;
+                    if (stockPercent > rowStockStart) {
+                        rowFillPercent = Math.min(1, (stockPercent - rowStockStart) / 0.5);
+                    }
 
-            // Draw book sprites in multiple rows
-            for (let i = 0; i < bookCount; i++) {
-                const row = Math.floor(i / booksPerRow);
-                const col = i % booksPerRow;
+                    if (rowFillPercent > 0) {
+                        const drawWidth = rowWidth * rowFillPercent;
+                        const sourceWidth = spineImg.width * rowFillPercent;
 
-                const bookX = bookStartX + col * bookSpacingX;
-                const bookY = bookStartY + row * rowSpacing;
+                        // Use different starting offsets for each row and shelf for variety
+                        const offsetSeed = (shelfIndex * 137 + row * 73) % spineImg.width;
+                        const sourceX = offsetSeed % (spineImg.width - sourceWidth);
 
-                // Rotate through the 3 colors
-                const bookSprite = shelfColors[i % shelfColors.length];
-
-                // Draw the book sprite (only if it's loaded and valid)
-                if (bookSprite && bookSprite.complete) {
-                    this.ctx.drawImage(bookSprite, bookX, bookY, bookWidth, bookHeight);
+                        this.ctx.drawImage(
+                            spineImg,
+                            sourceX, 0, sourceWidth, spineImg.height, // Source rectangle
+                            bookStartX, bookStartY + row * rowSpacing, drawWidth, rowHeight // Destination rectangle
+                        );
+                    }
                 }
             }
         } else {
