@@ -458,6 +458,16 @@ class TowerRenderer {
         };
         seedLibraryBgImg.src = 'assets/floor-seed_library.png';
 
+        // Load basement floor background
+        const basementBgImg = new Image();
+        basementBgImg.onload = () => {
+            this.sprites.floorBackgrounds['basement'] = basementBgImg;
+        };
+        basementBgImg.onerror = () => {
+            console.error('Failed to load basement floor background');
+        };
+        basementBgImg.src = 'assets/floor-basement.png';
+
         // Load science floor background
         const scienceBgImg = new Image();
         scienceBgImg.onload = () => {
@@ -3237,54 +3247,47 @@ class TowerRenderer {
                 break;
 
             case 'basement':
-                // Draw storage shelves (responsive to floor width)
-                const shelfWidth = this.floorWidth * 0.22;
-                const shelfSpacing = this.floorWidth * 0.35;
-                const shelfStartX = x + this.floorWidth * 0.15;
+                // Draw "Basement" title with gold banner
+                this.ctx.save();
+                const basementTitle = 'Basement';
+                this.ctx.font = 'bold 13px Georgia, serif';
+                const basementMetrics = this.ctx.measureText(basementTitle);
+                const basementWidth = basementMetrics.width;
+                const basementPadding = 8;
+                const basementBannerHeight = 20;
+                const basementBannerX = x + 6;
+                const basementBannerY = y + 8;
 
-                for (let i = 0; i < 2; i++) {
-                    const shelfX = shelfStartX + i * shelfSpacing;
-                    const shelfY = y + 35; // Shifted up from 45
+                // Gold gradient background
+                const basementGradient = this.ctx.createLinearGradient(basementBannerX, basementBannerY, basementBannerX, basementBannerY + basementBannerHeight);
+                basementGradient.addColorStop(0, '#F4D03F');
+                basementGradient.addColorStop(0.5, '#D4AC0D');
+                basementGradient.addColorStop(1, '#B7950B');
+                this.ctx.fillStyle = basementGradient;
 
-                    // Shelf unit
-                    this.ctx.fillStyle = '#8D6E63';
-                    this.ctx.fillRect(shelfX, shelfY, shelfWidth, 50); // Reduced height from 55
+                // Rounded rectangle banner
+                const basementRadius = 4;
+                this.ctx.beginPath();
+                this.ctx.roundRect(basementBannerX, basementBannerY, basementWidth + basementPadding * 2, basementBannerHeight, basementRadius);
+                this.ctx.fill();
 
-                    // Shelf dividers
-                    this.ctx.fillStyle = '#6D4C41';
-                    this.ctx.fillRect(shelfX, shelfY + 16, shelfWidth, 3);
-                    this.ctx.fillRect(shelfX, shelfY + 33, shelfWidth, 3);
-
-                    // Cleaning supplies on shelves
-                    const fontSize = this.getEmojiFontSize(Math.max(10, Math.round(14 * this.getScale())));
-                    this.ctx.font = `${fontSize}px Arial`;
-                    this.ctx.fillText('🧹', shelfX + shelfWidth * 0.17, shelfY + 13);
-                    this.ctx.fillText('🧴', shelfX + shelfWidth * 0.42, shelfY + 13);
-                    this.ctx.fillText('🪣', shelfX + shelfWidth * 0.67, shelfY + 13);
-                    this.ctx.fillText('🧽', shelfX + shelfWidth * 0.25, shelfY + 30);
-                    this.ctx.fillText('🧤', shelfX + shelfWidth * 0.58, shelfY + 30);
-                }
-
-                // Mop and bucket
-                const bucketSize = this.getEmojiFontSize(Math.max(20, Math.round(30 * this.getScale())));
-                this.ctx.font = `${bucketSize}px Arial`;
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText('🪣', x + this.floorWidth * 0.88, y + 65); // Shifted up from 80
-
-                // Draw concrete floor at bottom of basement
-                this.ctx.fillStyle = '#5D4E37';
-                this.ctx.fillRect(x, y + this.floorHeight - 8, this.floorWidth, 8);
-
-                // Floor texture lines
-                this.ctx.strokeStyle = '#4A3F2F';
+                // Subtle border
+                this.ctx.strokeStyle = '#8B7355';
                 this.ctx.lineWidth = 1;
-                for (let i = 0; i < 5; i++) {
-                    const lineX = x + (this.floorWidth / 5) * i + (this.floorWidth / 10);
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(lineX, y + this.floorHeight - 8);
-                    this.ctx.lineTo(lineX, y + this.floorHeight);
-                    this.ctx.stroke();
-                }
+                this.ctx.stroke();
+
+                // Text
+                this.ctx.textAlign = 'left';
+                this.ctx.textBaseline = 'middle';
+
+                // Text shadow
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                this.ctx.fillText(basementTitle, basementBannerX + basementPadding + 1, basementBannerY + basementBannerHeight / 2 + 1);
+
+                // Main text in dark brown
+                this.ctx.fillStyle = '#3D2817';
+                this.ctx.fillText(basementTitle, basementBannerX + basementPadding, basementBannerY + basementBannerHeight / 2);
+                this.ctx.restore();
                 break;
         }
     }
