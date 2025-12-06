@@ -468,6 +468,46 @@ class TowerRenderer {
         };
         basementBgImg.src = 'assets/floor-basement.png';
 
+        // Load snack bar floor background
+        const snackBarBgImg = new Image();
+        snackBarBgImg.onload = () => {
+            this.sprites.floorBackgrounds['snack_bar'] = snackBarBgImg;
+        };
+        snackBarBgImg.onerror = () => {
+            console.error('Failed to load snack bar floor background');
+        };
+        snackBarBgImg.src = 'assets/floor-snack_bar.png';
+
+        // Load event hall floor background
+        const eventHallBgImg = new Image();
+        eventHallBgImg.onload = () => {
+            this.sprites.floorBackgrounds['event_hall'] = eventHallBgImg;
+        };
+        eventHallBgImg.onerror = () => {
+            console.error('Failed to load event hall floor background');
+        };
+        eventHallBgImg.src = 'assets/floor-event_hall.png';
+
+        // Load library of things floor background
+        const libraryOfThingsBgImg = new Image();
+        libraryOfThingsBgImg.onload = () => {
+            this.sprites.floorBackgrounds['library_of_things'] = libraryOfThingsBgImg;
+        };
+        libraryOfThingsBgImg.onerror = () => {
+            console.error('Failed to load library of things floor background');
+        };
+        libraryOfThingsBgImg.src = 'assets/floor-library_of_things.png';
+
+        // Load bakery floor background
+        const bakeryBgImg = new Image();
+        bakeryBgImg.onload = () => {
+            this.sprites.floorBackgrounds['bakery'] = bakeryBgImg;
+        };
+        bakeryBgImg.onerror = () => {
+            console.error('Failed to load bakery floor background');
+        };
+        bakeryBgImg.src = 'assets/floor-bakery.png';
+
         // Load science floor background
         const scienceBgImg = new Image();
         scienceBgImg.onload = () => {
@@ -3143,7 +3183,7 @@ class TowerRenderer {
         const centerY = y + this.floorHeight / 2;
 
         // Rooms with custom background images - don't draw text overlay
-        const roomsWithBackgrounds = ['study_room', 'maker_space'];
+        const roomsWithBackgrounds = ['study_room', 'maker_space', 'event_hall'];
 
         // Draw bonus description only for rooms without custom backgrounds
         if (!roomsWithBackgrounds.includes(floorType.id)) {
@@ -3164,18 +3204,7 @@ class TowerRenderer {
                 break;
 
             case 'event_hall':
-                // Draw stage
-                this.ctx.fillStyle = '#D32F2F';
-                this.ctx.fillRect(x + 150, y + 40, 200, 60);
-
-                // Curtains
-                this.ctx.fillStyle = 'rgba(139, 0, 0, 0.7)';
-                this.ctx.fillRect(x + 140, y + 35, 15, 70);
-                this.ctx.fillRect(x + 345, y + 35, 15, 70);
-
-                // Podium
-                this.ctx.fillStyle = '#6D4C41';
-                this.ctx.fillRect(x + 235, y + 60, 30, 40);
+                // Background image only - no additional drawing needed
                 break;
         }
 
