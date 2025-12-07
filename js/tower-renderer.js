@@ -2503,6 +2503,11 @@ class TowerRenderer {
         if (this._reorderExitTime && Date.now() - this._reorderExitTime < 300) {
             return;
         }
+        // Block click if touch handler already processed this interaction
+        if (this._blockNextClick) {
+            this._blockNextClick = false;
+            return;
+        }
         // Don't process clicks if we were dragging
         if (this.isDragging) return;
 
@@ -3389,6 +3394,8 @@ class TowerRenderer {
                                 this.game.completeFindMission();
                             }
 
+                            // Block click event from also firing
+                            this._blockNextClick = true;
                             this.isDragging = false;
                             return;
                         }
@@ -3411,6 +3418,8 @@ class TowerRenderer {
                     // Complete quest
                     this.game.completeMiniQuest();
 
+                    // Block click event from also firing
+                    this._blockNextClick = true;
                     this.isDragging = false;
                     return;
                 }
