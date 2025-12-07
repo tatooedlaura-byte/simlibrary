@@ -807,7 +807,7 @@ class TowerRenderer {
         const regularFloors = floors.filter(f => f.typeId !== 'basement');
 
         // Calculate base Y offset - shift everything up if basement exists
-        const baseY = hasBasement ? this.height - 40 - this.floorHeight : this.height - 40;
+        const baseY = hasBasement ? this.height - 10 - this.floorHeight : this.height - 10;
 
         // Store for use in other methods
         this._currentBaseY = baseY;
@@ -815,12 +815,12 @@ class TowerRenderer {
 
         // Draw ground
         this.ctx.fillStyle = '#8BC34A';
-        this.ctx.fillRect(0, baseY, this.width, 40);
+        this.ctx.fillRect(0, baseY, this.width, 10);
 
         // Draw underground area for basement
         if (hasBasement) {
             this.ctx.fillStyle = '#5D4037'; // Dark brown underground
-            this.ctx.fillRect(0, baseY + 40, this.width, this.floorHeight);
+            this.ctx.fillRect(0, baseY + 10, this.width, this.floorHeight);
         }
 
         // Update characters first (cleanup and animate)
@@ -831,7 +831,7 @@ class TowerRenderer {
 
         // Draw basement below lobby if it exists
         if (basement) {
-            const basementY = baseY + 40; // Below ground level
+            const basementY = baseY + 10; // Below ground level
             this.drawFloor(basement, this.floorX, basementY, -1);
         }
 
@@ -1158,7 +1158,7 @@ class TowerRenderer {
      */
     drawElevatorShaft() {
         const numFloors = this.game.floors.filter(f => f.typeId !== 'basement').length;
-        const baseY = this._currentBaseY || this.height - 40;
+        const baseY = this._currentBaseY || this.height - 10;
 
         // Shaft always extends from ground to at least the lobby
         // If there are floors, it extends to the top floor
@@ -1227,7 +1227,7 @@ class TowerRenderer {
             const visualIndex = floors.findIndex(f => f.id === floor.id);
             if (visualIndex === -1) return;
 
-            const baseY = this._currentBaseY || this.height - 40;
+            const baseY = this._currentBaseY || this.height - 10;
 
             // Use EXACT same calculation as floor drawing to ensure alignment (+2 for lobby)
             const destFloorY = baseY - (visualIndex + 2) * this.floorHeight;
@@ -3270,7 +3270,7 @@ class TowerRenderer {
         // We iterate from bottom floor (index 0) to top floor
         // and find which slot the drag Y position falls into
 
-        const baseY = this._currentBaseY || this.height - 40;
+        const baseY = this._currentBaseY || this.height - 10;
 
         for (let i = 0; i < numFloors; i++) {
             // Visual index for this array index
