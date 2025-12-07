@@ -1730,7 +1730,7 @@ button:active,
 /* Safe area padding for notched devices */
 @supports (padding: max(0px)) {
     .app-header {
-        padding-top: max(24px, env(safe-area-inset-top));
+        padding-top: calc(env(safe-area-inset-top) + 16px);
         padding-left: max(20px, env(safe-area-inset-left));
         padding-right: max(20px, env(safe-area-inset-right));
     }
