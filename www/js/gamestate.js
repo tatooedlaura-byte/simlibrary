@@ -1786,9 +1786,10 @@ class GameState {
      * Spawn a reader to visit a random ready floor
      */
     spawnReader() {
-        // Filter out floors with max trash (100) or active incidents - readers won't visit
+        // Filter out floors with max trash (100), active incidents, or basement - readers won't visit
         const readyFloors = this.floors.filter(f =>
             f.status === 'ready' &&
+            f.typeId !== 'basement' &&
             (f.trash === undefined || f.trash < 100) &&
             (!f.incidents || Object.keys(f.incidents).length === 0)
         );
