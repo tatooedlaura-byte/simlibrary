@@ -1636,10 +1636,11 @@ class GameState {
     }
 
     /**
-     * Get count of categories that need restocking
+     * Get count of categories that need restocking and total star cost
      */
     getRestockNeededCount() {
         let count = 0;
+        let starCost = 0;
         this.floors.forEach(floor => {
             if (floor.status !== 'ready') return;
             floor.bookStock.forEach((category, idx) => {
@@ -1648,29 +1649,39 @@ class GameState {
                 // Check if needs restocking (not full, not already restocking)
                 if (category.currentStock < category.maxStock && !category.restocking) {
                     count++;
+                    // Calculate star cost for this category
+                    const booksNeeded = category.maxStock - category.currentStock;
+                    const costPerBook = category.stockCost / category.maxStock;
+                    starCost += Math.ceil(booksNeeded * costPerBook);
                 }
             });
         });
-        return count;
+        return { count, starCost };
     }
 
     /**
-     * Restock all floors instantly with Tower Bucks
-     * Cost: 1 Tower Buck per 3 categories (minimum 1)
+     * Restock all floors instantly
+     * Cost: 1 Tower Buck convenience fee + stars for all restocking
      */
     restockAll() {
-        const neededCount = this.getRestockNeededCount();
+        const { count: neededCount, starCost } = this.getRestockNeededCount();
         if (neededCount === 0) {
             return { success: false, error: 'Nothing needs restocking' };
         }
 
-        const cost = Math.max(1, Math.ceil(neededCount / 3));
-        if (this.towerBucks < cost) {
-            return { success: false, error: `Need ${cost} 💎 (you have ${this.towerBucks})` };
+        // Check if player has 1 Tower Buck for convenience fee
+        if (this.towerBucks < 1) {
+            return { success: false, error: `Need 1 💎 to use instant restock (you have ${this.towerBucks})` };
         }
 
-        // Deduct cost
-        this.towerBucks -= cost;
+        // Check if player has enough stars
+        if (this.stars < starCost) {
+            return { success: false, error: `Need ${starCost} ⭐ (you have ${Math.floor(this.stars)})` };
+        }
+
+        // Deduct costs
+        this.towerBucks -= 1;
+        this.stars -= starCost;
 
         // Restock all eligible categories instantly
         let restocked = 0;
@@ -1692,7 +1703,7 @@ class GameState {
         });
 
         this.save();
-        return { success: true, restocked, cost };
+        return { success: true, restocked, starCost };
     }
 
     /**

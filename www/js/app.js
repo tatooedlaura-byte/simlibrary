@@ -448,38 +448,33 @@ function setupEventListeners() {
 
     // Restock All button
     const restockBtn = document.getElementById('restock-all-btn');
-    const handleRestockAll = () => {
+    const handleRestockAll = async () => {
         haptic('medium');
-        const neededCount = game.getRestockNeededCount();
+        const { count: neededCount, starCost } = game.getRestockNeededCount();
         if (neededCount === 0) {
             SoundManager.error();
-            showPopup('Restock All', 'All categories are fully stocked!', null, null, null, 'OK');
+            alert('All categories are fully stocked!');
             return;
         }
-        const cost = Math.max(1, Math.ceil(neededCount / 3));
-        showPopup(
+        const confirmed = await showConfirm(
             'Restock All',
-            `Instantly restock ${neededCount} ${neededCount === 1 ? 'category' : 'categories'}?\n\nCost: ${cost} 💎`,
-            () => {
-                const result = game.restockAll();
-                if (result.success) {
-                    SoundManager.restock();
-                    updateDisplay();
-                    showPopup('Restocked!', `${result.count} ${result.count === 1 ? 'category' : 'categories'} restocked instantly!`, null, null, null, 'OK');
-                } else {
-                    SoundManager.error();
-                    showPopup('Cannot Restock', result.error, null, null, null, 'OK');
-                }
-            },
-            null,
-            null,
-            'Restock',
-            'Cancel'
+            `Instantly restock ${neededCount} ${neededCount === 1 ? 'category' : 'categories'}?\n\nCost: ${starCost} ⭐ + 1 💎`
         );
+        if (confirmed) {
+            const result = game.restockAll();
+            if (result.success) {
+                SoundManager.restock();
+                updateDisplay();
+                alert(`${result.restocked} ${result.restocked === 1 ? 'category' : 'categories'} restocked!`);
+            } else {
+                SoundManager.error();
+                alert(result.error || 'Cannot restock');
+            }
+        }
     };
-    restockBtn.addEventListener('click', handleRestockAll);
-    restockBtn.addEventListener('touchend', (e) => {
+    restockBtn.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         handleRestockAll();
     });
 
