@@ -98,6 +98,12 @@
             </div>
         </div>
 
+        <!-- Floating Balance Indicator -->
+        <div id="floating-balance" class="floating-balance">
+            <span>⭐ <span id="floating-stars">0</span></span>
+            <span>💎 <span id="floating-bucks">0</span></span>
+        </div>
+
         <!-- Floor Detail Modal -->
         <div id="detail-modal" class="modal">
             <div class="modal-content large">
@@ -109,6 +115,10 @@
                             <div class="floor-status" id="detail-status">Ready</div>
                             <div class="floor-bonus" id="detail-bonus" style="font-size: 12px; color: #666; margin-top: 4px;"></div>
                         </div>
+                    </div>
+                    <div class="modal-balance">
+                        <span>⭐ <span id="modal-stars">0</span></span>
+                        <span>💎 <span id="modal-bucks">0</span></span>
                     </div>
                     <button class="close-btn" id="close-detail-modal">✕</button>
                 </div>
@@ -163,6 +173,10 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h3>Build New Floor</h3>
+                    <div class="modal-balance">
+                        <span>⭐ <span id="build-modal-stars">0</span></span>
+                        <span>💎 <span id="build-modal-bucks">0</span></span>
+                    </div>
                     <button class="close-btn" id="close-build-modal">✕</button>
                 </div>
                 <div class="modal-body">

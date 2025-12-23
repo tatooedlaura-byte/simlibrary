@@ -448,34 +448,30 @@ function setupEventListeners() {
 
     // Restock All button
     const restockBtn = document.getElementById('restock-all-btn');
-    const handleRestockAll = () => {
+    const handleRestockAll = async () => {
         haptic('medium');
         const neededCount = game.getRestockNeededCount();
         if (neededCount === 0) {
             SoundManager.error();
-            showPopup('Restock All', 'All categories are fully stocked!', null, null, null, 'OK');
+            showToast('All categories are fully stocked!');
             return;
         }
         const cost = Math.max(1, Math.ceil(neededCount / 3));
-        showPopup(
+        const confirmed = await showConfirm(
             'Restock All',
-            `Instantly restock ${neededCount} ${neededCount === 1 ? 'category' : 'categories'}?\n\nCost: ${cost} 💎`,
-            () => {
-                const result = game.restockAll();
-                if (result.success) {
-                    SoundManager.restock();
-                    updateDisplay();
-                    showPopup('Restocked!', `${result.count} ${result.count === 1 ? 'category' : 'categories'} restocked instantly!`, null, null, null, 'OK');
-                } else {
-                    SoundManager.error();
-                    showPopup('Cannot Restock', result.error, null, null, null, 'OK');
-                }
-            },
-            null,
-            null,
-            'Restock',
-            'Cancel'
+            `Instantly restock ${neededCount} ${neededCount === 1 ? 'category' : 'categories'}?\n\nCost: ${cost} 💎`
         );
+        if (confirmed) {
+            const result = game.restockAll();
+            if (result.success) {
+                SoundManager.restock();
+                updateDisplay();
+                showToast(`📦 ${result.count} ${result.count === 1 ? 'category' : 'categories'} restocked!`);
+            } else {
+                SoundManager.error();
+                showToast(result.error || 'Cannot restock');
+            }
+        }
     };
     restockBtn.addEventListener('click', handleRestockAll);
     restockBtn.addEventListener('touchend', (e) => {
@@ -756,12 +752,41 @@ function showMoodBreakdown() {
 }
 
 /**
+ * Update modal balance display (stars and bucks shown in modal headers and floating indicator)
+ */
+function updateModalBalance() {
+    const stars = Math.floor(game.stars);
+    const bucks = game.towerBucks;
+
+    // Update floor detail modal balance
+    const modalStars = document.getElementById('modal-stars');
+    const modalBucks = document.getElementById('modal-bucks');
+    if (modalStars) modalStars.textContent = stars;
+    if (modalBucks) modalBucks.textContent = bucks;
+
+    // Update build modal balance
+    const buildModalStars = document.getElementById('build-modal-stars');
+    const buildModalBucks = document.getElementById('build-modal-bucks');
+    if (buildModalStars) buildModalStars.textContent = stars;
+    if (buildModalBucks) buildModalBucks.textContent = bucks;
+
+    // Update floating balance indicator
+    const floatingStars = document.getElementById('floating-stars');
+    const floatingBucks = document.getElementById('floating-bucks');
+    if (floatingStars) floatingStars.textContent = stars;
+    if (floatingBucks) floatingBucks.textContent = bucks;
+}
+
+/**
  * Update global stats display (stars, bucks, level, mood)
  */
 function updateGlobalStats() {
     document.getElementById('total-stars').textContent = Math.floor(game.stars);
     document.getElementById('total-bucks').textContent = game.towerBucks;
     document.getElementById('player-level').textContent = game.level;
+
+    // Also update modal balance if visible
+    updateModalBalance();
 
     // Update mood meter
     if (game.mood !== undefined) {
@@ -1115,6 +1140,9 @@ function openFloorDetail(floorId) {
     // Update header
     document.getElementById('detail-emoji').textContent = floor.emoji;
     document.getElementById('detail-name').textContent = floor.name;
+
+    // Update modal balance display
+    updateModalBalance();
 
     // Update bonus description for utility rooms
     const bonusEl = document.getElementById('detail-bonus');
@@ -1678,6 +1706,9 @@ function closeDetailModal() {
  * Open build floor modal
  */
 function openBuildModal() {
+    // Update modal balance display
+    updateModalBalance();
+
     const availableTypes = game.getAvailableFloorTypes();
     const container = document.getElementById('floor-types-list');
     container.innerHTML = '';
