@@ -54,11 +54,8 @@ class TowerRenderer {
         this.sprites = {
             bookshelf: null,
             books: [],
-            floorBackgrounds: {},
-            characters: [] // Character sprites (80 variations)
+            floorBackgrounds: {}
         };
-        this.characterSpritesLoaded = false;
-        this.totalCharacterSprites = 80;
         this.spritesLoaded = false;
         this.loadSprites();
 
@@ -748,52 +745,6 @@ class TowerRenderer {
             console.error('Failed to load lobby background');
         };
         lobbyBgImg.src = this.getFloorAssetPath('floor-lobby.png');
-
-        // Load character sprites (80 variations)
-        this.loadCharacterSprites();
-    }
-
-    /**
-     * Load character sprite images
-     */
-    loadCharacterSprites() {
-        let loadedCount = 0;
-        for (let i = 1; i <= this.totalCharacterSprites; i++) {
-            const charImg = new Image();
-            charImg.onload = () => {
-                loadedCount++;
-                if (loadedCount === this.totalCharacterSprites) {
-                    this.characterSpritesLoaded = true;
-                    console.log('Character sprites loaded successfully!');
-                }
-            };
-            charImg.onerror = () => {
-                console.error(`Failed to load character sprite ${i}`);
-            };
-            charImg.src = `assets/characters/char_${i}.png`;
-            this.sprites.characters[i - 1] = charImg;
-        }
-    }
-
-    /**
-     * Get a random character sprite index for a visitor
-     */
-    getRandomCharacterSprite() {
-        return Math.floor(Math.random() * this.totalCharacterSprites);
-    }
-
-    /**
-     * Draw a character sprite at the given position
-     */
-    drawCharacterSprite(spriteIndex, x, y, scale = 1) {
-        const sprite = this.sprites.characters[spriteIndex];
-        if (sprite && sprite.complete) {
-            const width = 32 * scale;  // Scale down from 128px
-            const height = 45 * scale; // Scale down from 179px
-            this.ctx.drawImage(sprite, x - width / 2, y - height, width, height);
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -1321,24 +1272,13 @@ class TowerRenderer {
 
             // Draw reader inside elevator
             const readerX = this.elevatorX + this.elevatorWidth / 2;
-            const readerY = elevatorY + this.elevatorCarHeight - 5;
+            const readerY = elevatorY + this.elevatorCarHeight / 2;
 
-            // Use character sprite if available
-            if (this.characterSpritesLoaded && reader.spriteIndex !== undefined) {
-                const sprite = this.sprites.characters[reader.spriteIndex];
-                if (sprite && sprite.complete) {
-                    const scale = 0.28; // Smaller scale for elevator
-                    const width = 128 * scale;
-                    const height = 179 * scale;
-                    this.ctx.drawImage(sprite, readerX - width / 2, readerY - height, width, height);
-                }
-            } else {
-                // Fallback to emoji
-                this.ctx.font = `${this.getEmojiFontSize(24)}px Arial`;
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                this.ctx.fillText(reader.emoji, readerX, elevatorY + this.elevatorCarHeight / 2);
-            }
+            // Reader emoji
+            this.ctx.font = `${this.getEmojiFontSize(24)}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(reader.emoji, readerX, readerY);
         });
     }
 
@@ -1890,47 +1830,142 @@ class TowerRenderer {
      */
     drawCharacter(char, floorY, reader) {
         const baseY = floorY + this.floorHeight - 10; // Bottom of floor (with small padding)
+        const charHeight = 40;
+
+        // Use stored style (generated once at creation to prevent flickering)
         const style = char.style;
 
-        // Animation bobbing
+        // Different animations based on state and reader type
+        let legOffset = 0;
+        let armSwing = 0;
         let bobbing = 0;
+        let extraBounce = 0;
+
         if (char.state === 'walking') {
-            bobbing = Math.abs(Math.sin(char.animationFrame * 0.2)) * 2;
+            // Walking animation
+            legOffset = Math.sin(char.animationFrame * 0.2) * 2;
+            armSwing = Math.sin(char.animationFrame * 0.2) * 4;
+            bobbing = Math.abs(Math.sin(char.animationFrame * 0.2)) * 1;
         } else if (char.state === 'reading') {
+            // Idle/reading animations based on reader type
             if (reader.type === 'kid') {
-                bobbing = Math.abs(Math.sin(char.animationFrame * 0.15)) * 3;
+                // Kids bounce excitedly
+                extraBounce = Math.abs(Math.sin(char.animationFrame * 0.15)) * 3;
+            } else if (reader.type === 'teen') {
+                // Teens sway slightly
+                armSwing = Math.sin(char.animationFrame * 0.05) * 2;
             } else {
-                bobbing = Math.sin(char.animationFrame * 0.03) * 1;
+                // Adults/seniors gentle breathing sway
+                bobbing = Math.sin(char.animationFrame * 0.03) * 0.5;
             }
         }
 
-        // Draw shadow
+        const headY = baseY - charHeight + 8 - bobbing - extraBounce;
+        const bodyY = baseY - charHeight + 16 - bobbing - extraBounce;
+        const legY = baseY - 6 - bobbing;
+
+        // Shadow
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
         this.ctx.beginPath();
-        this.ctx.ellipse(char.x, baseY, 12, 4, 0, 0, Math.PI * 2);
+        this.ctx.ellipse(char.x, baseY, 8, 3, 0, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Draw character sprite if available
-        if (this.characterSpritesLoaded && style && style.spriteIndex !== undefined) {
-            const sprite = this.sprites.characters[style.spriteIndex];
-            if (sprite && sprite.complete) {
-                const scale = 0.35; // Scale down from 128x179 to ~45x63
-                const width = 128 * scale;
-                const height = 179 * scale;
-                const spriteY = baseY - height - bobbing;
-                this.ctx.drawImage(sprite, char.x - width / 2, spriteY, width, height);
-            }
+        // Legs (animated walking)
+        this.ctx.fillStyle = style.pantsColor;
+        // Left leg
+        this.ctx.fillRect(char.x - 5, legY - legOffset, 4, 8 + legOffset);
+        // Right leg
+        this.ctx.fillRect(char.x + 1, legY + legOffset, 4, 8 - legOffset);
+
+        // Body/Torso
+        this.ctx.fillStyle = style.shirtColor;
+        this.ctx.fillRect(char.x - 7, bodyY, 14, 20);
+
+        // Add body details/pattern based on type
+        if (style.hasPattern) {
+            this.ctx.fillStyle = style.patternColor;
+            // Simple stripe or dot pattern
+            this.ctx.fillRect(char.x - 5, bodyY + 5, 10, 2);
+            this.ctx.fillRect(char.x - 5, bodyY + 10, 10, 2);
         }
 
-        // Head position for indicators
-        const headY = baseY - 55 - bobbing;
+        // Arms (animated swinging)
+        this.ctx.strokeStyle = style.skinColor;
+        this.ctx.lineWidth = 3;
+        this.ctx.lineCap = 'round';
+
+        // Left arm
+        this.ctx.beginPath();
+        this.ctx.moveTo(char.x - 7, bodyY + 2);
+        this.ctx.lineTo(char.x - 10, bodyY + 10 - armSwing);
+        this.ctx.stroke();
+
+        // Right arm
+        this.ctx.beginPath();
+        this.ctx.moveTo(char.x + 7, bodyY + 2);
+        this.ctx.lineTo(char.x + 10, bodyY + 10 + armSwing);
+        this.ctx.stroke();
+
+        // Neck
+        this.ctx.fillStyle = style.skinColor;
+        this.ctx.fillRect(char.x - 2, bodyY - 2, 4, 4);
+
+        // Head
+        this.ctx.fillStyle = style.skinColor;
+        this.ctx.beginPath();
+        this.ctx.arc(char.x, headY, 9, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Hair
+        this.ctx.fillStyle = style.hairColor;
+        if (style.hairStyle === 'short') {
+            this.ctx.beginPath();
+            this.ctx.arc(char.x, headY - 2, 9, Math.PI, Math.PI * 2);
+            this.ctx.fill();
+        } else if (style.hairStyle === 'long') {
+            this.ctx.beginPath();
+            this.ctx.arc(char.x, headY - 2, 9, Math.PI, Math.PI * 2);
+            this.ctx.fill();
+            // Long hair sides
+            this.ctx.fillRect(char.x - 9, headY - 2, 3, 10);
+            this.ctx.fillRect(char.x + 6, headY - 2, 3, 10);
+        } else if (style.hairStyle === 'curly') {
+            // Curly/puffy hair
+            this.ctx.beginPath();
+            this.ctx.arc(char.x - 5, headY - 4, 5, 0, Math.PI * 2);
+            this.ctx.arc(char.x, headY - 6, 6, 0, Math.PI * 2);
+            this.ctx.arc(char.x + 5, headY - 4, 5, 0, Math.PI * 2);
+            this.ctx.fill();
+        } else if (style.hairStyle === 'bald') {
+            // Just the top of head, no extra hair
+        }
+
+        // Facial features
+        // Eyes
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(char.x - 3, headY - 1, 2, 2);
+        this.ctx.fillRect(char.x + 1, headY - 1, 2, 2);
+
+        // Accessories
+        if (style.hasGlasses) {
+            this.ctx.strokeStyle = '#333';
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath();
+            this.ctx.arc(char.x - 3, headY, 3, 0, Math.PI * 2);
+            this.ctx.arc(char.x + 3, headY, 3, 0, Math.PI * 2);
+            this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.moveTo(char.x - 0, headY);
+            this.ctx.lineTo(char.x + 0, headY);
+            this.ctx.stroke();
+        }
 
         // VIP indicator (sparkle effect)
         if (reader.type === 'vip') {
             this.ctx.fillStyle = '#FFD700';
             this.ctx.font = '12px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('✨', char.x - 18, headY - 5);
+            this.ctx.fillText('✨', char.x - 12, headY - 8);
         }
 
         // Regular customer indicator (heart)
@@ -1938,12 +1973,12 @@ class TowerRenderer {
             this.ctx.fillStyle = '#FF69B4';
             this.ctx.font = '10px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('💖', char.x + 18, headY - 5);
+            this.ctx.fillText('💖', char.x + 12, headY - 8);
         }
 
         // Thought bubble (appears occasionally when reading)
         if (char.state === 'reading' && char.animationFrame % 180 < 120) {
-            this.drawThoughtBubble(char.x, headY - 15, reader);
+            this.drawThoughtBubble(char.x, headY - 25, reader);
         }
     }
 
@@ -2032,28 +2067,17 @@ class TowerRenderer {
             const glowSize = 30 * scale;
 
             // Glow effect
-            const gradient = this.ctx.createRadialGradient(x, y - 30, 0, x, y - 30, glowSize);
+            const gradient = this.ctx.createRadialGradient(x, y - 15, 0, x, y - 15, glowSize);
             gradient.addColorStop(0, 'rgba(255, 215, 0, 0.4)');
             gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
             this.ctx.fillStyle = gradient;
-            this.ctx.fillRect(x - glowSize, y - 30 - glowSize, glowSize * 2, glowSize * 2);
+            this.ctx.fillRect(x - glowSize, y - 15 - glowSize, glowSize * 2, glowSize * 2);
 
-            // Draw character sprite if available
-            if (this.characterSpritesLoaded && visitor.spriteIndex !== undefined) {
-                const sprite = this.sprites.characters[visitor.spriteIndex];
-                if (sprite && sprite.complete) {
-                    const spriteScale = 0.4 * scale;
-                    const width = 128 * spriteScale;
-                    const height = 179 * spriteScale;
-                    this.ctx.drawImage(sprite, x - width / 2, y - height, width, height);
-                }
-            } else {
-                // Fallback to emoji
-                this.ctx.font = `${this.getEmojiFontSize(20 * scale)}px Arial`;
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'bottom';
-                this.ctx.fillText(visitor.emoji, x, y);
-            }
+            // Draw large emoji
+            this.ctx.font = `${this.getEmojiFontSize(20 * scale)}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'bottom';
+            this.ctx.fillText(visitor.emoji, x, y);
 
             // Draw name label
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -2110,13 +2134,8 @@ class TowerRenderer {
      * Called once at character creation to prevent flickering from random values
      */
     generateCharacterStyle(reader) {
-        // Use sprite-based characters - assign random sprite index
-        const spriteIndex = this.getRandomCharacterSprite();
-
-        // Keep legacy style data as fallback
         const styles = {
             kid: {
-                spriteIndex: spriteIndex,
                 skinColor: '#FDBCB4',
                 hairColor: '#8B4513',
                 hairStyle: 'short',
@@ -2127,7 +2146,6 @@ class TowerRenderer {
                 hasGlasses: false
             },
             teen: {
-                spriteIndex: spriteIndex,
                 skinColor: '#F4C2A6',
                 hairColor: '#2C1810',
                 hairStyle: 'long',
@@ -2138,7 +2156,6 @@ class TowerRenderer {
                 hasGlasses: false
             },
             adult: {
-                spriteIndex: spriteIndex,
                 skinColor: '#E8B89A',
                 hairColor: '#4A3728',
                 hairStyle: 'short',
@@ -2149,7 +2166,6 @@ class TowerRenderer {
                 hasGlasses: Math.random() > 0.5
             },
             senior: {
-                spriteIndex: spriteIndex,
                 skinColor: '#F5D5C3',
                 hairColor: '#CCCCCC',
                 hairStyle: Math.random() > 0.5 ? 'short' : 'bald',
@@ -2160,7 +2176,6 @@ class TowerRenderer {
                 hasGlasses: true
             },
             student: {
-                spriteIndex: spriteIndex,
                 skinColor: '#F4C2A6',
                 hairColor: '#654321',
                 hairStyle: 'curly',
@@ -2175,7 +2190,6 @@ class TowerRenderer {
         // VIP readers get special fancy clothes
         if (reader.type === 'vip') {
             return {
-                spriteIndex: spriteIndex,
                 skinColor: '#F4C2A6',
                 hairColor: '#FFD700',
                 hairStyle: 'curly',
@@ -2187,9 +2201,7 @@ class TowerRenderer {
             };
         }
 
-        const baseStyle = styles[reader.type] || styles.adult;
-        baseStyle.spriteIndex = spriteIndex;
-        return baseStyle;
+        return styles[reader.type] || styles.adult;
     }
 
     /**

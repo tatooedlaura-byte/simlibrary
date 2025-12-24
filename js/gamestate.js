@@ -1970,7 +1970,6 @@ class GameState {
             categoryIndex: idx,
             name: fullName,
             emoji: isVIP ? vipType.emoji : readerType.emoji,
-            spriteIndex: Math.floor(Math.random() * 80), // Random character sprite (0-79)
             type: isVIP ? 'vip' : readerType.id,
             vipType: vipType ? vipType.id : null,
             vipAbility: vipType ? vipType.ability : null,
@@ -2390,7 +2389,6 @@ class GameState {
             type: visitorType.id,
             name: visitorType.name,
             emoji: visitorType.emoji,
-            spriteIndex: Math.floor(Math.random() * 80), // Random character sprite
             description: visitorType.description,
             effect: visitorType.effect,
             thoughts: visitorType.thoughts,
