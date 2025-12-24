@@ -1978,19 +1978,20 @@ class TowerRenderer {
 
         // Thought bubble (appears occasionally when reading)
         if (char.state === 'reading' && char.animationFrame % 180 < 120) {
-            this.drawThoughtBubble(char.x, headY - 25, reader);
+            this.drawThoughtBubble(char.x, headY - 25, reader, char.x);
         }
     }
 
     /**
      * Draw thought bubble above character
      */
-    drawThoughtBubble(x, y, reader) {
+    drawThoughtBubble(x, y, reader, seed = 0) {
         // Get thought based on reader type and state
         const thoughts = this.getThoughtForReader(reader);
         if (!thoughts) return;
 
-        const thought = thoughts[Math.floor(Date.now() / 5000) % thoughts.length];
+        // Use seed + time to make each character have different thoughts
+        const thought = thoughts[Math.floor((Date.now() + seed * 1000) / 5000) % thoughts.length];
 
         // Bubble background
         const bubbleWidth = 50;
