@@ -39,11 +39,11 @@ class GameState {
             current: 'rainy',
             nextChange: Date.now() + (5 * 60 * 1000), // Change every 5 minutes
             types: [
-                { id: 'sunny', name: 'Sunny', emoji: '☀️', moodEffect: 10, spawnEffect: 0.7 },
+                { id: 'sunny', name: 'Sunny', emoji: '☀️', moodEffect: 0, spawnEffect: 0.7 },
                 { id: 'cloudy', name: 'Cloudy', emoji: '☁️', moodEffect: 0, spawnEffect: 1.0 },
-                { id: 'rainy', name: 'Rainy', emoji: '🌧️', moodEffect: -5, spawnEffect: 1.3 },
-                { id: 'stormy', name: 'Stormy', emoji: '⛈️', moodEffect: -15, spawnEffect: 1.5 },
-                { id: 'snowy', name: 'Snowy', emoji: '❄️', moodEffect: 5, spawnEffect: 1.2 }
+                { id: 'rainy', name: 'Rainy', emoji: '🌧️', moodEffect: 0, spawnEffect: 1.3 },
+                { id: 'stormy', name: 'Stormy', emoji: '⛈️', moodEffect: 0, spawnEffect: 1.5 },
+                { id: 'snowy', name: 'Snowy', emoji: '❄️', moodEffect: 0, spawnEffect: 1.2 }
             ]
         };
 

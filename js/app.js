@@ -1205,7 +1205,8 @@ function openFloorDetail(floorId) {
     };
     const bgFilename = floorBgMap[floor.typeId];
     if (bgFilename) {
-        previewImg.src = `assets/${bgFilename}`;
+        const themePath = `assets/themes/${game.activeTheme || 'classic'}`;
+        previewImg.src = `${themePath}/${bgFilename}`;
         previewSection.style.display = 'block';
     } else {
         previewSection.style.display = 'none';

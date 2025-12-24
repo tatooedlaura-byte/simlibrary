@@ -24,14 +24,6 @@
                                 <rect key="frame" x="0" y="0" width="375" height="667"/>
                                 <color key="backgroundColor" red="0" green="0" blue="0" alpha="0.25" colorSpace="custom" customColorSpace="sRGB"/>
                             </view>
-                            <!-- App Icon -->
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="AppIcon" translatesAutoresizingMaskIntoConstraints="NO" id="splash-icon">
-                                <rect key="frame" x="112.5" y="200" width="150" height="150"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="120" id="icon-width"/>
-                                    <constraint firstAttribute="height" constant="120" id="icon-height"/>
-                                </constraints>
-                            </imageView>
                             <!-- Main Title -->
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="SimLibrary" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="splash-title">
                                 <rect key="frame" x="37.5" y="340" width="300" height="45"/>
@@ -57,12 +49,9 @@
                             <constraint firstItem="overlay" firstAttribute="leading" secondItem="snD-IY-ifK" secondAttribute="leading" id="ov-leading"/>
                             <constraint firstItem="overlay" firstAttribute="trailing" secondItem="snD-IY-ifK" secondAttribute="trailing" id="ov-trailing"/>
                             <constraint firstItem="overlay" firstAttribute="bottom" secondItem="snD-IY-ifK" secondAttribute="bottom" id="ov-bottom"/>
-                            <!-- Icon constraints -->
-                            <constraint firstItem="splash-icon" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="icon-centerX"/>
-                            <constraint firstItem="splash-icon" firstAttribute="centerY" secondItem="snD-IY-ifK" secondAttribute="centerY" constant="-100" id="icon-centerY"/>
-                            <!-- Title constraints -->
+                            <!-- Title constraints - centered on screen -->
                             <constraint firstItem="splash-title" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="title-centerX"/>
-                            <constraint firstItem="splash-title" firstAttribute="top" secondItem="splash-icon" secondAttribute="bottom" constant="25" id="title-top"/>
+                            <constraint firstItem="splash-title" firstAttribute="centerY" secondItem="snD-IY-ifK" secondAttribute="centerY" id="title-centerY"/>
                             <!-- Subtitle constraints -->
                             <constraint firstItem="splash-subtitle" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="subtitle-centerX"/>
                             <constraint firstItem="splash-subtitle" firstAttribute="top" secondItem="splash-title" secondAttribute="bottom" constant="8" id="subtitle-top"/>
@@ -75,7 +64,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="AppIcon" width="1024" height="1024"/>
         <image name="Splash" width="1561" height="2732"/>
     </resources>
 </document>

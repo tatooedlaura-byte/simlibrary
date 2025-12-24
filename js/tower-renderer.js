@@ -9,6 +9,9 @@ class TowerRenderer {
         this.ctx = this.canvas.getContext('2d');
         this.game = game;
 
+        // Theme support - get active theme from game state
+        this.currentTheme = game.activeTheme || 'classic';
+
         // Canvas dimensions
         this.width = 600;
         this.height = 800;
@@ -92,6 +95,21 @@ class TowerRenderer {
         };
 
         this.init();
+    }
+
+    /**
+     * Get the asset path for floor backgrounds based on current theme
+     */
+    getFloorAssetPath(filename) {
+        return `assets/themes/${this.currentTheme}/${filename}`;
+    }
+
+    /**
+     * Switch to a different theme and reload floor backgrounds
+     */
+    setTheme(themeId) {
+        this.currentTheme = themeId;
+        this.loadFloorBackgrounds();
     }
 
     init() {
@@ -302,7 +320,7 @@ class TowerRenderer {
         floorBgImg.onerror = () => {
             console.error('Failed to load board books floor background');
         };
-        floorBgImg.src = 'assets/floor-boardbooks.png';
+        floorBgImg.src = this.getFloorAssetPath('floor-boardbooks.png');
 
         // Load bathroom floor backgrounds (3 variants)
         this.sprites.bathroomVariants = [];
@@ -315,7 +333,7 @@ class TowerRenderer {
             bathroomBgImg.onerror = () => {
                 console.error(`Failed to load bathroom floor background ${i}`);
             };
-            bathroomBgImg.src = `assets/floor-bathroom-${i}.png`;
+            bathroomBgImg.src = this.getFloorAssetPath(`floor-bathroom-${i}.png`);
         }
 
         // Load picture books floor background
@@ -326,7 +344,7 @@ class TowerRenderer {
         pictureBooksBgImg.onerror = () => {
             console.error('Failed to load picture books floor background');
         };
-        pictureBooksBgImg.src = 'assets/floor-picture-books.png';
+        pictureBooksBgImg.src = this.getFloorAssetPath('floor-picture-books.png');
 
         // Load scifi floor background
         const scifiBgImg = new Image();
@@ -336,7 +354,7 @@ class TowerRenderer {
         scifiBgImg.onerror = () => {
             console.error('Failed to load scifi floor background');
         };
-        scifiBgImg.src = 'assets/floor-scifi.png';
+        scifiBgImg.src = this.getFloorAssetPath('floor-scifi.png');
 
         // Load music floor background
         const musicBgImg = new Image();
@@ -346,7 +364,7 @@ class TowerRenderer {
         musicBgImg.onerror = () => {
             console.error('Failed to load music floor background');
         };
-        musicBgImg.src = 'assets/floor-music.png';
+        musicBgImg.src = this.getFloorAssetPath('floor-music.png');
 
         // Load technology floor background
         const technologyBgImg = new Image();
@@ -356,7 +374,7 @@ class TowerRenderer {
         technologyBgImg.onerror = () => {
             console.error('Failed to load technology floor background');
         };
-        technologyBgImg.src = 'assets/floor-technology.png';
+        technologyBgImg.src = this.getFloorAssetPath('floor-technology.png');
 
         // Load sports floor background
         const sportsBgImg = new Image();
@@ -366,7 +384,7 @@ class TowerRenderer {
         sportsBgImg.onerror = () => {
             console.error('Failed to load sports floor background');
         };
-        sportsBgImg.src = 'assets/floor-sports.png';
+        sportsBgImg.src = this.getFloorAssetPath('floor-sports.png');
 
         // Load maker space floor background
         const makerspaceBgImg = new Image();
@@ -376,7 +394,7 @@ class TowerRenderer {
         makerspaceBgImg.onerror = () => {
             console.error('Failed to load maker space floor background');
         };
-        makerspaceBgImg.src = 'assets/floor-makerspace.png';
+        makerspaceBgImg.src = this.getFloorAssetPath('floor-makerspace.png');
 
         // Load study room floor background
         const studyRoomBgImg = new Image();
@@ -386,7 +404,7 @@ class TowerRenderer {
         studyRoomBgImg.onerror = () => {
             console.error('Failed to load study room floor background');
         };
-        studyRoomBgImg.src = 'assets/floor-study_room.png';
+        studyRoomBgImg.src = this.getFloorAssetPath('floor-study_room.png');
 
         // Load coffee shop floor background
         const coffeeShopBgImg = new Image();
@@ -396,7 +414,7 @@ class TowerRenderer {
         coffeeShopBgImg.onerror = () => {
             console.error('Failed to load coffee shop floor background');
         };
-        coffeeShopBgImg.src = 'assets/floor-coffee_shop.png';
+        coffeeShopBgImg.src = this.getFloorAssetPath('floor-coffee_shop.png');
 
         // Load computer lab floor background
         const computerLabBgImg = new Image();
@@ -406,7 +424,7 @@ class TowerRenderer {
         computerLabBgImg.onerror = () => {
             console.error('Failed to load computer lab floor background');
         };
-        computerLabBgImg.src = 'assets/floor-computer_lab.png';
+        computerLabBgImg.src = this.getFloorAssetPath('floor-computer_lab.png');
 
         // Load history floor background
         const historyBgImg = new Image();
@@ -416,7 +434,7 @@ class TowerRenderer {
         historyBgImg.onerror = () => {
             console.error('Failed to load history floor background');
         };
-        historyBgImg.src = 'assets/floor-history.png';
+        historyBgImg.src = this.getFloorAssetPath('floor-history.png');
 
         // Load newspapers floor background
         const newspapersBgImg = new Image();
@@ -426,7 +444,7 @@ class TowerRenderer {
         newspapersBgImg.onerror = () => {
             console.error('Failed to load newspapers floor background');
         };
-        newspapersBgImg.src = 'assets/floor-newspapers.png';
+        newspapersBgImg.src = this.getFloorAssetPath('floor-newspapers.png');
 
         // Load gaming lounge floor background
         const gamingLoungeBgImg = new Image();
@@ -436,7 +454,7 @@ class TowerRenderer {
         gamingLoungeBgImg.onerror = () => {
             console.error('Failed to load gaming lounge floor background');
         };
-        gamingLoungeBgImg.src = 'assets/floor-gaming_lounge.png';
+        gamingLoungeBgImg.src = this.getFloorAssetPath('floor-gaming_lounge.png');
 
         // Load language lab floor background
         const languageLabBgImg = new Image();
@@ -446,7 +464,7 @@ class TowerRenderer {
         languageLabBgImg.onerror = () => {
             console.error('Failed to load language lab floor background');
         };
-        languageLabBgImg.src = 'assets/floor-language_lab.png';
+        languageLabBgImg.src = this.getFloorAssetPath('floor-language_lab.png');
 
         // Load tool library floor background
         const toolLibraryBgImg = new Image();
@@ -456,7 +474,7 @@ class TowerRenderer {
         toolLibraryBgImg.onerror = () => {
             console.error('Failed to load tool library floor background');
         };
-        toolLibraryBgImg.src = 'assets/floor-tool_library.png';
+        toolLibraryBgImg.src = this.getFloorAssetPath('floor-tool_library.png');
 
         // Load seed library floor background
         const seedLibraryBgImg = new Image();
@@ -466,7 +484,7 @@ class TowerRenderer {
         seedLibraryBgImg.onerror = () => {
             console.error('Failed to load seed library floor background');
         };
-        seedLibraryBgImg.src = 'assets/floor-seed_library.png';
+        seedLibraryBgImg.src = this.getFloorAssetPath('floor-seed_library.png');
 
         // Load basement floor background
         const basementBgImg = new Image();
@@ -476,7 +494,7 @@ class TowerRenderer {
         basementBgImg.onerror = () => {
             console.error('Failed to load basement floor background');
         };
-        basementBgImg.src = 'assets/floor-basement.png';
+        basementBgImg.src = this.getFloorAssetPath('floor-basement.png');
 
         // Load snack bar floor background
         const snackBarBgImg = new Image();
@@ -486,7 +504,7 @@ class TowerRenderer {
         snackBarBgImg.onerror = () => {
             console.error('Failed to load snack bar floor background');
         };
-        snackBarBgImg.src = 'assets/floor-snack_bar.png';
+        snackBarBgImg.src = this.getFloorAssetPath('floor-snack_bar.png');
 
         // Load event hall floor background
         const eventHallBgImg = new Image();
@@ -496,7 +514,7 @@ class TowerRenderer {
         eventHallBgImg.onerror = () => {
             console.error('Failed to load event hall floor background');
         };
-        eventHallBgImg.src = 'assets/floor-event_hall.png';
+        eventHallBgImg.src = this.getFloorAssetPath('floor-event_hall.png');
 
         // Load library of things floor background
         const libraryOfThingsBgImg = new Image();
@@ -506,7 +524,7 @@ class TowerRenderer {
         libraryOfThingsBgImg.onerror = () => {
             console.error('Failed to load library of things floor background');
         };
-        libraryOfThingsBgImg.src = 'assets/floor-library_of_things.png';
+        libraryOfThingsBgImg.src = this.getFloorAssetPath('floor-library_of_things.png');
 
         // Load bakery floor background
         const bakeryBgImg = new Image();
@@ -516,7 +534,7 @@ class TowerRenderer {
         bakeryBgImg.onerror = () => {
             console.error('Failed to load bakery floor background');
         };
-        bakeryBgImg.src = 'assets/floor-bakery.png';
+        bakeryBgImg.src = this.getFloorAssetPath('floor-bakery.png');
 
         // Load hot drinks cafe floor background
         const hotDrinksCafeBgImg = new Image();
@@ -526,7 +544,7 @@ class TowerRenderer {
         hotDrinksCafeBgImg.onerror = () => {
             console.error('Failed to load hot drinks cafe floor background');
         };
-        hotDrinksCafeBgImg.src = 'assets/floor-hot_drinks_cafe.png';
+        hotDrinksCafeBgImg.src = this.getFloorAssetPath('floor-hot_drinks_cafe.png');
 
         // Load genealogy floor background
         const genealogyBgImg = new Image();
@@ -536,7 +554,7 @@ class TowerRenderer {
         genealogyBgImg.onerror = () => {
             console.error('Failed to load genealogy floor background');
         };
-        genealogyBgImg.src = 'assets/floor-genealogy.png';
+        genealogyBgImg.src = this.getFloorAssetPath('floor-genealogy.png');
 
         // Load local history floor background
         const localHistoryBgImg = new Image();
@@ -546,7 +564,7 @@ class TowerRenderer {
         localHistoryBgImg.onerror = () => {
             console.error('Failed to load local history floor background');
         };
-        localHistoryBgImg.src = 'assets/floor-local_history.png';
+        localHistoryBgImg.src = this.getFloorAssetPath('floor-local_history.png');
 
         // Load music practice rooms floor background
         const musicPracticeBgImg = new Image();
@@ -556,7 +574,7 @@ class TowerRenderer {
         musicPracticeBgImg.onerror = () => {
             console.error('Failed to load music practice floor background');
         };
-        musicPracticeBgImg.src = 'assets/floor-music_practice.png';
+        musicPracticeBgImg.src = this.getFloorAssetPath('floor-music_practice.png');
 
         // Load podcast studio floor background
         const podcastStudioBgImg = new Image();
@@ -566,7 +584,7 @@ class TowerRenderer {
         podcastStudioBgImg.onerror = () => {
             console.error('Failed to load podcast studio floor background');
         };
-        podcastStudioBgImg.src = 'assets/floor-podcast_studio.png';
+        podcastStudioBgImg.src = this.getFloorAssetPath('floor-podcast_studio.png');
 
         // Load art gallery floor background
         const artGalleryBgImg = new Image();
@@ -576,7 +594,7 @@ class TowerRenderer {
         artGalleryBgImg.onerror = () => {
             console.error('Failed to load art gallery floor background');
         };
-        artGalleryBgImg.src = 'assets/floor-art_gallery.png';
+        artGalleryBgImg.src = this.getFloorAssetPath('floor-art_gallery.png');
 
         // Load science floor background
         const scienceBgImg = new Image();
@@ -586,7 +604,7 @@ class TowerRenderer {
         scienceBgImg.onerror = () => {
             console.error('Failed to load science floor background');
         };
-        scienceBgImg.src = 'assets/floor-science.png';
+        scienceBgImg.src = this.getFloorAssetPath('floor-science.png');
 
         // Load juvenile series floor background
         const juvenileBgImg = new Image();
@@ -596,7 +614,7 @@ class TowerRenderer {
         juvenileBgImg.onerror = () => {
             console.error('Failed to load juvenile series floor background');
         };
-        juvenileBgImg.src = 'assets/floor-juvenile_series.png';
+        juvenileBgImg.src = this.getFloorAssetPath('floor-juvenile_series.png');
 
         // Load maps & travel floor background
         const mapsTravelBgImg = new Image();
@@ -606,7 +624,7 @@ class TowerRenderer {
         mapsTravelBgImg.onerror = () => {
             console.error('Failed to load maps & travel floor background');
         };
-        mapsTravelBgImg.src = 'assets/floor-maps_travel.png';
+        mapsTravelBgImg.src = this.getFloorAssetPath('floor-maps_travel.png');
 
         // Load teen floor background
         const teenBgImg = new Image();
@@ -616,7 +634,7 @@ class TowerRenderer {
         teenBgImg.onerror = () => {
             console.error('Failed to load teen floor background');
         };
-        teenBgImg.src = 'assets/floor-teen.png';
+        teenBgImg.src = this.getFloorAssetPath('floor-teen.png');
 
         // Load movies floor background
         const moviesBgImg = new Image();
@@ -626,7 +644,7 @@ class TowerRenderer {
         moviesBgImg.onerror = () => {
             console.error('Failed to load movies floor background');
         };
-        moviesBgImg.src = 'assets/floor-movies.png';
+        moviesBgImg.src = this.getFloorAssetPath('floor-movies.png');
 
         // Load cookbooks floor background
         const cookbooksBgImg = new Image();
@@ -636,7 +654,7 @@ class TowerRenderer {
         cookbooksBgImg.onerror = () => {
             console.error('Failed to load cookbooks floor background');
         };
-        cookbooksBgImg.src = 'assets/floor-cookbooks.png';
+        cookbooksBgImg.src = this.getFloorAssetPath('floor-cookbooks.png');
 
         // Load romance floor background
         const romanceBgImg = new Image();
@@ -646,7 +664,7 @@ class TowerRenderer {
         romanceBgImg.onerror = () => {
             console.error('Failed to load romance floor background');
         };
-        romanceBgImg.src = 'assets/floor-romance.png';
+        romanceBgImg.src = this.getFloorAssetPath('floor-romance.png');
 
         // Load true crime floor background
         const trueCrimeBgImg = new Image();
@@ -656,7 +674,7 @@ class TowerRenderer {
         trueCrimeBgImg.onerror = () => {
             console.error('Failed to load true crime floor background');
         };
-        trueCrimeBgImg.src = 'assets/floor-true_crime.png';
+        trueCrimeBgImg.src = this.getFloorAssetPath('floor-true_crime.png');
 
         // Load fantasy floor background
         const fantasyBgImg = new Image();
@@ -666,7 +684,7 @@ class TowerRenderer {
         fantasyBgImg.onerror = () => {
             console.error('Failed to load fantasy floor background');
         };
-        fantasyBgImg.src = 'assets/floor-fantasy.png';
+        fantasyBgImg.src = this.getFloorAssetPath('floor-fantasy.png');
 
         // Load early readers floor background
         const earlyReadersBgImg = new Image();
@@ -676,7 +694,7 @@ class TowerRenderer {
         earlyReadersBgImg.onerror = () => {
             console.error('Failed to load early readers floor background');
         };
-        earlyReadersBgImg.src = 'assets/floor-early_readers.png';
+        earlyReadersBgImg.src = this.getFloorAssetPath('floor-early_readers.png');
 
         // Load fiction floor background
         const fictionBgImg = new Image();
@@ -686,7 +704,7 @@ class TowerRenderer {
         fictionBgImg.onerror = () => {
             console.error('Failed to load fiction floor background');
         };
-        fictionBgImg.src = 'assets/floor-fiction.png';
+        fictionBgImg.src = this.getFloorAssetPath('floor-fiction.png');
 
         // Load mystery floor background
         const mysteryBgImg = new Image();
@@ -696,7 +714,7 @@ class TowerRenderer {
         mysteryBgImg.onerror = () => {
             console.error('Failed to load mystery floor background');
         };
-        mysteryBgImg.src = 'assets/floor-mystery.png';
+        mysteryBgImg.src = this.getFloorAssetPath('floor-mystery.png');
 
         // Load graphic novels floor background
         const graphicNovelsBgImg = new Image();
@@ -706,7 +724,7 @@ class TowerRenderer {
         graphicNovelsBgImg.onerror = () => {
             console.error('Failed to load graphic novels floor background');
         };
-        graphicNovelsBgImg.src = 'assets/floor-graphic_novels.png';
+        graphicNovelsBgImg.src = this.getFloorAssetPath('floor-graphic_novels.png');
 
         // Load biography floor background
         const biographyBgImg = new Image();
@@ -716,7 +734,7 @@ class TowerRenderer {
         biographyBgImg.onerror = () => {
             console.error('Failed to load biography floor background');
         };
-        biographyBgImg.src = 'assets/floor-biography.png';
+        biographyBgImg.src = this.getFloorAssetPath('floor-biography.png');
 
         // Load lobby background
         const lobbyBgImg = new Image();
@@ -726,7 +744,7 @@ class TowerRenderer {
         lobbyBgImg.onerror = () => {
             console.error('Failed to load lobby background');
         };
-        lobbyBgImg.src = 'assets/floor-lobby.png';
+        lobbyBgImg.src = this.getFloorAssetPath('floor-lobby.png');
     }
 
     /**
