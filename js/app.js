@@ -1178,7 +1178,7 @@ function openFloorDetail(floorId) {
         'mystery': 'floor-mystery.png',
         'graphic_novels': 'floor-graphic_novels.png',
         'biography': 'floor-biography.png',
-        'bathroom': 'floor-bathroom.png',
+        'bathroom': 'floor-bathroom-1.png',
         'lobby': 'floor-lobby.png',
         'sports': 'floor-sports.png',
         'maker_space': 'floor-makerspace.png',
