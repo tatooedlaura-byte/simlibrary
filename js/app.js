@@ -1203,7 +1203,12 @@ function openFloorDetail(floorId) {
         'podcast_studio': 'floor-podcast_studio.png',
         'art_gallery': 'floor-art_gallery.png'
     };
-    const bgFilename = floorBgMap[floor.typeId];
+    let bgFilename = floorBgMap[floor.typeId];
+    // Bathroom has 3 variants based on floor number
+    if (floor.typeId === 'bathroom') {
+        const variantIndex = (floor.floorNumber % 3) + 1;
+        bgFilename = `floor-bathroom-${variantIndex}.png`;
+    }
     if (bgFilename) {
         const themePath = `assets/themes/${game.activeTheme || 'classic'}`;
         previewImg.src = `${themePath}/${bgFilename}`;
