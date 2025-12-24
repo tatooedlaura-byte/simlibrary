@@ -15,47 +15,57 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <!-- App Icon - larger and with shadow effect -->
+                            <!-- Background Image -->
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Splash" translatesAutoresizingMaskIntoConstraints="NO" id="bg-image">
+                                <rect key="frame" x="0" y="0" width="375" height="667"/>
+                            </imageView>
+                            <!-- Semi-transparent overlay for text readability -->
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="overlay">
+                                <rect key="frame" x="0" y="0" width="375" height="667"/>
+                                <color key="backgroundColor" red="0" green="0" blue="0" alpha="0.25" colorSpace="custom" customColorSpace="sRGB"/>
+                            </view>
+                            <!-- App Icon -->
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="AppIcon" translatesAutoresizingMaskIntoConstraints="NO" id="splash-icon">
-                                <rect key="frame" x="112.5" y="220" width="150" height="150"/>
+                                <rect key="frame" x="112.5" y="200" width="150" height="150"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="150" id="icon-width"/>
-                                    <constraint firstAttribute="height" constant="150" id="icon-height"/>
+                                    <constraint firstAttribute="width" constant="120" id="icon-width"/>
+                                    <constraint firstAttribute="height" constant="120" id="icon-height"/>
                                 </constraints>
                             </imageView>
                             <!-- Main Title -->
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="SimLibrary" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="splash-title">
-                                <rect key="frame" x="37.5" y="390" width="300" height="40"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="32"/>
-                                <color key="textColor" red="0.4" green="0.2" blue="0.05" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <rect key="frame" x="37.5" y="340" width="300" height="45"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="36"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </label>
                             <!-- Subtitle -->
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Build Your Dream Library" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="splash-subtitle">
-                                <rect key="frame" x="37.5" y="435" width="300" height="25"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                <color key="textColor" red="0.55" green="0.35" blue="0.15" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                            </label>
-                            <!-- Decorative books emoji at bottom -->
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="📚" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="splash-emoji">
-                                <rect key="frame" x="162.5" y="580" width="50" height="50"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="36"/>
+                                <rect key="frame" x="37.5" y="390" width="300" height="25"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                <color key="textColor" white="1" alpha="0.9" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </label>
                         </subviews>
-                        <!-- Gradient-like background using peachy color -->
-                        <color key="backgroundColor" red="1" green="0.88" blue="0.78" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" red="0.4" green="0.3" blue="0.2" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
+                            <!-- Background image fills entire view -->
+                            <constraint firstItem="bg-image" firstAttribute="top" secondItem="snD-IY-ifK" secondAttribute="top" id="bg-top"/>
+                            <constraint firstItem="bg-image" firstAttribute="leading" secondItem="snD-IY-ifK" secondAttribute="leading" id="bg-leading"/>
+                            <constraint firstItem="bg-image" firstAttribute="trailing" secondItem="snD-IY-ifK" secondAttribute="trailing" id="bg-trailing"/>
+                            <constraint firstItem="bg-image" firstAttribute="bottom" secondItem="snD-IY-ifK" secondAttribute="bottom" id="bg-bottom"/>
+                            <!-- Overlay fills entire view -->
+                            <constraint firstItem="overlay" firstAttribute="top" secondItem="snD-IY-ifK" secondAttribute="top" id="ov-top"/>
+                            <constraint firstItem="overlay" firstAttribute="leading" secondItem="snD-IY-ifK" secondAttribute="leading" id="ov-leading"/>
+                            <constraint firstItem="overlay" firstAttribute="trailing" secondItem="snD-IY-ifK" secondAttribute="trailing" id="ov-trailing"/>
+                            <constraint firstItem="overlay" firstAttribute="bottom" secondItem="snD-IY-ifK" secondAttribute="bottom" id="ov-bottom"/>
                             <!-- Icon constraints -->
                             <constraint firstItem="splash-icon" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="icon-centerX"/>
-                            <constraint firstItem="splash-icon" firstAttribute="centerY" secondItem="snD-IY-ifK" secondAttribute="centerY" constant="-80" id="icon-centerY"/>
+                            <constraint firstItem="splash-icon" firstAttribute="centerY" secondItem="snD-IY-ifK" secondAttribute="centerY" constant="-100" id="icon-centerY"/>
                             <!-- Title constraints -->
                             <constraint firstItem="splash-title" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="title-centerX"/>
-                            <constraint firstItem="splash-title" firstAttribute="top" secondItem="splash-icon" secondAttribute="bottom" constant="20" id="title-top"/>
+                            <constraint firstItem="splash-title" firstAttribute="top" secondItem="splash-icon" secondAttribute="bottom" constant="25" id="title-top"/>
                             <!-- Subtitle constraints -->
                             <constraint firstItem="splash-subtitle" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="subtitle-centerX"/>
                             <constraint firstItem="splash-subtitle" firstAttribute="top" secondItem="splash-title" secondAttribute="bottom" constant="8" id="subtitle-top"/>
-                            <!-- Emoji constraints -->
-                            <constraint firstItem="splash-emoji" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="emoji-centerX"/>
-                            <constraint firstItem="splash-emoji" firstAttribute="bottom" secondItem="snD-IY-ifK" secondAttribute="bottom" constant="-60" id="emoji-bottom"/>
                         </constraints>
                     </view>
                 </viewController>
@@ -66,5 +76,6 @@
     </scenes>
     <resources>
         <image name="AppIcon" width="1024" height="1024"/>
+        <image name="Splash" width="1561" height="2732"/>
     </resources>
 </document>
