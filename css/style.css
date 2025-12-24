@@ -655,8 +655,8 @@ body {
 
 .floating-balance {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    right: calc(20px + env(safe-area-inset-right, 0px));
     display: flex;
     gap: 12px;
     font-size: 14px;
@@ -675,10 +675,13 @@ body {
     font-size: 24px;
     cursor: pointer;
     color: var(--text-secondary);
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     border-radius: 50%;
     transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .close-btn:hover {
@@ -868,16 +871,18 @@ body {
 }
 
 .hire-staff-btn {
-    padding: 12px 16px;
+    padding: 14px 18px;
+    min-height: 48px;
     background: var(--gradient-peach);
     border: none;
     border-radius: var(--radius-sm);
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     color: var(--text-primary);
     white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .hire-staff-btn:hover:not(.disabled) {
@@ -990,13 +995,15 @@ body {
 .restock-btn,
 .rush-restock-btn {
     flex: 1;
-    padding: 6px 10px;
+    padding: 12px 14px;
+    min-height: 44px;
     border: none;
     border-radius: var(--radius-sm);
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .restock-btn {
@@ -1225,12 +1232,15 @@ body {
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-left: 10px;
+    margin-left: 8px;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .stats-btn:hover {
@@ -1697,11 +1707,13 @@ body {
     background: #4CAF50;
     color: white;
     border: none;
-    padding: 12px 24px;
+    padding: 14px 24px;
+    min-height: 48px;
     border-radius: var(--radius-sm);
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .action-btn:hover {

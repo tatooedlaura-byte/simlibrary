@@ -1,0 +1,25 @@
+{
+  "name": "simlibrary",
+  "version": "1.0.0",
+  "description": "A cozy, kid-friendly library-builder game where you create and manage your dream library!",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lstrandt-hamburglibrary/simlibrary.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lstrandt-hamburglibrary/simlibrary/issues"
+  },
+  "homepage": "https://github.com/lstrandt-hamburglibrary/simlibrary#readme",
+  "dependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0"
+  }
+}
