@@ -1716,8 +1716,11 @@ class GameState {
             return { success: false, error: 'Floor not ready' };
         }
 
-        // Check if floor already has 3 staff
-        if (floor.staff.length >= 3) {
+        // Check if floor already has 3 staff (count non-null slots)
+        const filledSlots = floor.staff.filter(s => s !== null && s !== undefined).length;
+        const emptySlotIndex = floor.staff.findIndex(s => s === null || s === undefined);
+
+        if (filledSlots >= 3) {
             return { success: false, error: 'Floor is fully staffed' };
         }
 
@@ -1746,7 +1749,12 @@ class GameState {
             hiredAt: Date.now()
         };
 
-        floor.staff.push(newStaff);
+        // Fill empty slot or push to end
+        if (emptySlotIndex !== -1) {
+            floor.staff[emptySlotIndex] = newStaff;
+        } else {
+            floor.staff.push(newStaff);
+        }
 
         // Remove from lobby
         this.lobbyApplicants.splice(applicantIndex, 1);

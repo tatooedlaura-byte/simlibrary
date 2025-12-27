@@ -3055,12 +3055,14 @@ function showFloorPickerForApplicant(applicantId) {
     const applicant = game.lobbyApplicants.find(a => a.id === applicantId);
     if (!applicant) return;
 
-    // Get floors that can accept staff
-    const availableFloors = game.floors.filter(f =>
-        f.status === 'ready' &&
-        f.staff.length < 3 &&
-        !game.floorTypes.find(ft => ft.id === f.typeId)?.staffSlots // Not utility rooms
-    );
+    // Get floors that can accept staff (count non-null slots, not array length)
+    const availableFloors = game.floors.filter(f => {
+        if (f.status !== 'ready') return false;
+        const floorType = game.floorTypes.find(ft => ft.id === f.typeId);
+        if (floorType?.staffSlots) return false; // Skip utility rooms
+        const filledSlots = f.staff.filter(s => s !== null && s !== undefined).length;
+        return filledSlots < 3;
+    });
 
     if (availableFloors.length === 0) {
         alert('No floors available to hire staff! Build more floors or make room on existing ones.');
@@ -3074,7 +3076,7 @@ function showFloorPickerForApplicant(applicantId) {
     availableFloors.forEach(floor => {
         const floorType = game.floorTypes.find(ft => ft.id === floor.typeId);
         const isDreamMatch = floor.typeId === applicant.dreamGenre;
-        const staffCount = floor.staff.length;
+        const staffCount = floor.staff.filter(s => s !== null && s !== undefined).length;
 
         const card = document.createElement('div');
         card.className = `floor-type-card ${floorType.color} ${isDreamMatch ? 'dream-match' : ''}`;
