@@ -120,6 +120,9 @@ function showConfirm(title, message) {
     return new Promise((resolve) => {
         document.getElementById('confirm-title').textContent = title;
         document.getElementById('confirm-message').textContent = message;
+        // Reset button text (may have been changed by other modals)
+        document.getElementById('confirm-ok').textContent = 'Confirm';
+        document.getElementById('confirm-cancel').textContent = 'Cancel';
         document.getElementById('confirm-modal').classList.add('active');
 
         confirmCallback = resolve;
@@ -1713,20 +1716,36 @@ function renderBookCategories(floor) {
 
     // Add event listeners for restock buttons
     container.querySelectorAll('.restock-btn:not(.disabled)').forEach(btn => {
-        btn.addEventListener('click', () => {
+        let handled = false;
+        const doRestock = (e) => {
+            if (handled) return;
+            handled = true;
+            e.preventDefault();
+            e.stopPropagation();
             const floorId = btn.dataset.floorId;
             const categoryIndex = parseInt(btn.dataset.category);
             handleRestock(floorId, categoryIndex);
-        });
+            setTimeout(() => { handled = false; }, 300);
+        };
+        btn.addEventListener('click', doRestock);
+        btn.addEventListener('touchend', doRestock);
     });
 
     // Add event listeners for rush buttons
     container.querySelectorAll('.rush-restock-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+        let handled = false;
+        const doRush = (e) => {
+            if (handled) return;
+            handled = true;
+            e.preventDefault();
+            e.stopPropagation();
             const floorId = btn.dataset.floorId;
             const categoryIndex = parseInt(btn.dataset.category);
             handleRushRestock(floorId, categoryIndex);
-        });
+            setTimeout(() => { handled = false; }, 300);
+        };
+        btn.addEventListener('click', doRush);
+        btn.addEventListener('touchend', doRush);
     });
 }
 
