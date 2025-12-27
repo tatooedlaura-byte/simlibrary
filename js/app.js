@@ -1291,8 +1291,10 @@ function updateFloorDetail(floor) {
     // Update upgrade section
     renderUpgradeSection(floor);
 
-    // Update staff slots
-    renderStaffSlots(floor);
+    // Update staff slots (skip if reassign modal is open to avoid event listener conflicts)
+    if (!document.getElementById('reassign-modal')) {
+        renderStaffSlots(floor);
+    }
 
     // Update book categories
     renderBookCategories(floor);
@@ -1454,7 +1456,7 @@ function renderStaffSlots(floor) {
                         <div class="staff-unlock">✅ "${categoryName}" unlocked</div>
                         ${isDreamMatch ? '<div class="dream-match-badge">💫 Dream Job!</div>' : `<div class="dream-hint">Dreams of: ${dreamFloorName}</div>`}
                     </div>
-                    <button class="reassign-staff-btn" ontouchend="event.preventDefault(); showReassignStaffModal('${floor.id}', '${staff.id}')" onclick="showReassignStaffModal('${floor.id}', '${staff.id}')">
+                    <button class="reassign-staff-btn" data-floor-id="${floor.id}" data-staff-id="${staff.id}">
                         Move
                     </button>
                 `;
@@ -1486,16 +1488,19 @@ function renderStaffSlots(floor) {
 
     // Add event listeners for reassign buttons
     container.querySelectorAll('.reassign-staff-btn').forEach(btn => {
-        const handleReassign = () => {
+        let handled = false;
+        const handleReassign = (e) => {
+            if (handled) return;
+            handled = true;
+            e.preventDefault();
+            e.stopPropagation();
             const floorId = btn.dataset.floorId;
             const staffId = btn.dataset.staffId;
             showReassignStaffModal(floorId, staffId);
+            setTimeout(() => { handled = false; }, 500);
         };
         btn.addEventListener('click', handleReassign);
-        btn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            handleReassign();
-        });
+        btn.addEventListener('touchend', handleReassign);
     });
 }
 
@@ -1571,7 +1576,7 @@ function showReassignStaffModal(fromFloorId, staffId) {
         const isDreamFloor = floor.typeId === staff.dreamGenre;
         return `
             <button class="floor-option ${isDreamFloor ? 'dream-floor' : ''}" data-floor-id="${floor.id}">
-                <span class="floor-name">${floorType ? floorType.name : 'Floor'} (Floor ${floor.level})</span>
+                <span class="floor-name">${floorType ? floorType.name : 'Floor'} (Floor ${floor.floorNumber})</span>
                 ${isDreamFloor ? '<span class="dream-indicator">💫 Dream Job!</span>' : ''}
             </button>
         `;
