@@ -149,6 +149,10 @@ function init() {
     // Expose functions for tower renderer to call BEFORE creating renderer
     window.openFloorDetail = openFloorDetail;
     window.openBuildModal = openBuildModal;
+    window.showApplicantModal = showApplicantModal;
+    window.showVIPEscortUI = showVIPEscortUI;
+    window.hideVIPEscortUI = hideVIPEscortUI;
+    window.showReassignStaffModal = showReassignStaffModal;
 
     // Initialize tower renderer
     towerRenderer = new TowerRenderer('tower-canvas', game);
@@ -257,8 +261,6 @@ function init() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
             .then((registration) => {
-                console.log('[PWA] Service worker registered:', registration.scope);
-
                 // Force update check
                 registration.update();
 
@@ -271,7 +273,6 @@ function init() {
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                             // New version available - notify and reload
-                            console.log('[PWA] New version available! Reloading...');
                             newWorker.postMessage({ type: 'SKIP_WAITING' });
 
                             // Show brief notification then reload
@@ -281,12 +282,11 @@ function init() {
                     });
                 });
             })
-            .catch((error) => {
-                console.log('[PWA] Service worker registration failed:', error);
+            .catch(() => {
+                // Service worker registration failed silently
             });
     }
 
-    console.log('SimLibrary v2.2 (PWA Support!) initialized!');
 }
 
 /**
@@ -317,11 +317,8 @@ function setupEventListeners() {
 
         if (confirm(`Are you sure you want to delete "${floor.name}"?\n\nYou will receive ${refundAmount} ⭐ as a refund (50% of build cost).`)) {
             haptic('heavy');
-            console.log('Deleting floor:', currentFloorId, 'game:', game);
-            console.log('game.deleteFloor exists:', typeof game.deleteFloor);
             try {
                 const result = game.deleteFloor(currentFloorId);
-                console.log('Delete result:', result);
                 if (result && result.success) {
                     closeDetailModal();
                     showToast(`Deleted ${result.floorName}! Refunded ${result.refund} ⭐`);
@@ -1442,33 +1439,35 @@ function renderStaffSlots(floor) {
                 `;
             }
         } else {
-            // Standard staff for regular floors
+            // Standard staff for regular floors - must hire from lobby applicants
             const staffType = game.staffTypes[i];
 
             if (staff) {
-                // Filled slot
+                // Filled slot - show dream match indicator if applicable
+                const isDreamMatch = staff.dreamGenre === floor.typeId;
+                const dreamFloorType = game.floorTypes.find(ft => ft.id === staff.dreamGenre);
+                const dreamFloorName = dreamFloorType ? dreamFloorType.name : 'Unknown';
                 slot.innerHTML = `
                     <div class="staff-icon" style="background-color: ${staff.color}">${staff.emoji}</div>
                     <div class="staff-info">
                         <div class="staff-name">${staff.name}</div>
                         <div class="staff-unlock">✅ "${categoryName}" unlocked</div>
+                        ${isDreamMatch ? '<div class="dream-match-badge">💫 Dream Job!</div>' : `<div class="dream-hint">Dreams of: ${dreamFloorName}</div>`}
                     </div>
+                    <button class="reassign-staff-btn" ontouchend="event.preventDefault(); showReassignStaffModal('${floor.id}', '${staff.id}')" onclick="showReassignStaffModal('${floor.id}', '${staff.id}')">
+                        Move
+                    </button>
                 `;
             } else {
-                // Empty slot with hire button
-                const canAfford = game.stars >= staffType.hireCost;
+                // Empty slot - prompt to visit lobby
+                const applicantCount = game.lobbyApplicants ? game.lobbyApplicants.length : 0;
                 slot.innerHTML = `
                     <div class="staff-icon empty">?</div>
                     <div class="staff-info">
                         <div class="staff-name">Empty Slot ${i + 1}</div>
                         <div class="staff-description">${staffType.description}</div>
+                        <div class="lobby-hint">${applicantCount > 0 ? `${applicantCount} applicant${applicantCount > 1 ? 's' : ''} waiting in lobby!` : 'Check lobby for applicants'}</div>
                     </div>
-                    <button class="hire-staff-btn ${!canAfford ? 'disabled' : ''}"
-                            data-floor-id="${floor.id}"
-                            data-staff-index="${i}"
-                            ${!canAfford ? 'disabled' : ''}>
-                        Hire ${staffType.name} (${staffType.hireCost} ⭐)
-                    </button>
                 `;
             }
         }
@@ -1482,6 +1481,20 @@ function renderStaffSlots(floor) {
             const floorId = btn.dataset.floorId;
             const staffIndex = parseInt(btn.dataset.staffIndex);
             handleHireStaff(floorId, staffIndex);
+        });
+    });
+
+    // Add event listeners for reassign buttons
+    container.querySelectorAll('.reassign-staff-btn').forEach(btn => {
+        const handleReassign = () => {
+            const floorId = btn.dataset.floorId;
+            const staffId = btn.dataset.staffId;
+            showReassignStaffModal(floorId, staffId);
+        };
+        btn.addEventListener('click', handleReassign);
+        btn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            handleReassign();
         });
     });
 }
@@ -1529,6 +1542,93 @@ async function handleHireStaff(floorId, staffIndex) {
         SoundManager.error();
         alert(result.error || 'Cannot hire staff');
     }
+}
+
+/**
+ * Show modal to reassign staff to a different floor
+ */
+function showReassignStaffModal(fromFloorId, staffId) {
+    const fromFloor = game.getFloor(fromFloorId);
+    if (!fromFloor) return;
+
+    const staff = fromFloor.staff.find(s => s && s.id === staffId);
+    if (!staff) return;
+
+    // Get floors with empty slots (excluding current floor)
+    const availableFloors = game.getFloorsWithEmptySlots().filter(f => f.id !== fromFloorId);
+
+    if (availableFloors.length === 0) {
+        alert('No other floors have empty staff slots!');
+        return;
+    }
+
+    // Build floor options
+    const dreamFloorType = game.floorTypes.find(ft => ft.id === staff.dreamGenre);
+    const dreamFloorName = dreamFloorType ? dreamFloorType.name : 'Unknown';
+
+    let floorOptions = availableFloors.map(floor => {
+        const floorType = game.floorTypes.find(ft => ft.id === floor.typeId);
+        const isDreamFloor = floor.typeId === staff.dreamGenre;
+        return `
+            <button class="floor-option ${isDreamFloor ? 'dream-floor' : ''}" data-floor-id="${floor.id}">
+                <span class="floor-name">${floorType ? floorType.name : 'Floor'} (Floor ${floor.level})</span>
+                ${isDreamFloor ? '<span class="dream-indicator">💫 Dream Job!</span>' : ''}
+            </button>
+        `;
+    }).join('');
+
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'reassign-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>Move ${staff.name}</h3>
+            <p>Current dream: <strong>${dreamFloorName}</strong></p>
+            <p>Select new floor:</p>
+            <div class="floor-options">
+                ${floorOptions}
+            </div>
+            <button class="btn-secondary" onclick="document.getElementById('reassign-modal').remove()">Cancel</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Add click/touch handlers for floor options
+    modal.querySelectorAll('.floor-option').forEach(btn => {
+        const handleFloorSelect = async () => {
+            const toFloorId = btn.dataset.floorId;
+            const result = game.reassignStaff(staffId, fromFloorId, toFloorId);
+
+            if (result.success) {
+                haptic('heavy');
+                SoundManager.purchase();
+
+                if (result.isDreamMatch) {
+                    alert(`${staff.name} is now working their dream job! 💫`);
+                }
+
+                modal.remove();
+
+                // Refresh the floor modal
+                const currentFloor = game.getFloor(fromFloorId);
+                if (currentFloor) {
+                    renderStaffSlots(currentFloor);
+                    renderBookCategories(currentFloor);
+                }
+                updateGlobalStats();
+            } else {
+                haptic('error');
+                alert(result.error || 'Cannot move staff');
+            }
+        };
+        btn.addEventListener('click', handleFloorSelect);
+        btn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            handleFloorSelect();
+        });
+    });
 }
 
 /**
@@ -2869,6 +2969,213 @@ function endOnboarding() {
 
     // Also mark old tutorial as seen for backwards compat
     localStorage.setItem('simlibrary_tutorial_seen', 'true');
+}
+
+// ========== STAFF APPLICANT MODAL ==========
+
+/**
+ * Show applicant detail modal - REBUILT
+ * @param {string|object} applicantOrId - Either applicant ID or applicant object
+ */
+function showApplicantModal(applicantOrId) {
+    // Accept either ID or object
+    const applicant = typeof applicantOrId === 'string'
+        ? game.lobbyApplicants.find(a => a.id === applicantOrId)
+        : applicantOrId;
+    if (!applicant) return;
+
+    const applicantId = applicant.id;
+
+    // Create modal content dynamically
+    const modal = document.getElementById('confirm-modal');
+    const title = document.getElementById('confirm-title');
+    const message = document.getElementById('confirm-message');
+    const confirmBtn = document.getElementById('confirm-ok');
+    const cancelBtn = document.getElementById('confirm-cancel');
+
+    // Show skill stars
+    const skillStars = '⭐'.repeat(applicant.skill) + '☆'.repeat(5 - applicant.skill);
+
+    title.textContent = `${applicant.name}`;
+    message.innerHTML = `
+        <div style="text-align: center; margin-bottom: 15px;">
+            <div style="font-size: 48px; margin-bottom: 10px;">${applicant.emoji}</div>
+            <div style="font-size: 18px; font-weight: bold; color: ${applicant.color};">${applicant.typeName}</div>
+        </div>
+        <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+            <div style="margin-bottom: 8px;">
+                <strong>Dream Floor:</strong> <span style="color: #4A0080; font-weight: bold;">${applicant.dreamGenreName}</span>
+            </div>
+            <div style="margin-bottom: 8px;">
+                <strong>Skill:</strong> ${skillStars}
+            </div>
+            <div>
+                <strong>Hire Cost:</strong> ${applicant.hireCost} stars
+            </div>
+        </div>
+        <div style="font-size: 12px; color: #666; text-align: center;">
+            <em>Place on ${applicant.dreamGenreName} floor for 2x restock speed!</em>
+        </div>
+    `;
+
+    confirmBtn.textContent = `Hire (${applicant.hireCost} ⭐)`;
+    cancelBtn.textContent = 'Dismiss';
+
+    // Store applicant ID for handlers
+    modal.dataset.applicantId = applicantId;
+
+    // Set up handlers
+    confirmBtn.onclick = () => {
+        modal.classList.remove('active');
+        showFloorPickerForApplicant(applicantId);
+    };
+
+    cancelBtn.onclick = () => {
+        haptic('light');
+        game.dismissApplicant(applicantId);
+        modal.classList.remove('active');
+    };
+
+    document.getElementById('close-confirm-modal').onclick = () => {
+        modal.classList.remove('active');
+    };
+
+    modal.classList.add('active');
+}
+
+/**
+ * Show floor picker to assign applicant
+ */
+function showFloorPickerForApplicant(applicantId) {
+    const applicant = game.lobbyApplicants.find(a => a.id === applicantId);
+    if (!applicant) return;
+
+    // Get floors that can accept staff
+    const availableFloors = game.floors.filter(f =>
+        f.status === 'ready' &&
+        f.staff.length < 3 &&
+        !game.floorTypes.find(ft => ft.id === f.typeId)?.staffSlots // Not utility rooms
+    );
+
+    if (availableFloors.length === 0) {
+        alert('No floors available to hire staff! Build more floors or make room on existing ones.');
+        return;
+    }
+
+    // Use build modal for floor selection
+    const container = document.getElementById('floor-types-list');
+    container.innerHTML = '<h4 style="text-align: center; margin-bottom: 15px;">Choose a floor for ' + applicant.name + '</h4>';
+
+    availableFloors.forEach(floor => {
+        const floorType = game.floorTypes.find(ft => ft.id === floor.typeId);
+        const isDreamMatch = floor.typeId === applicant.dreamGenre;
+        const staffCount = floor.staff.length;
+
+        const card = document.createElement('div');
+        card.className = `floor-type-card ${floorType.color} ${isDreamMatch ? 'dream-match' : ''}`;
+        card.style.cursor = 'pointer';
+        card.innerHTML = `
+            <div class="floor-type-icon">${floorType.emoji}</div>
+            <div class="floor-type-info">
+                <h5>${floorType.name} ${isDreamMatch ? '💫 DREAM JOB!' : ''}</h5>
+                <p>Staff: ${staffCount}/3</p>
+                ${isDreamMatch ? '<p style="color: green; font-weight: bold;">2x Speed Bonus!</p>' : ''}
+            </div>
+        `;
+
+        card.addEventListener('click', () => {
+            haptic('medium');
+            handleHireApplicant(applicantId, floor.id);
+            closeBuildModal();
+        });
+
+        container.appendChild(card);
+    });
+
+    document.getElementById('build-modal').classList.add('active');
+}
+
+/**
+ * Handle hiring an applicant to a floor
+ */
+function handleHireApplicant(applicantId, floorId) {
+    const result = game.hireApplicant(applicantId, floorId);
+
+    if (result.success) {
+        haptic('success');
+        SoundManager.purchase();
+
+        if (result.isDreamMatch) {
+            alert(`🎉 Perfect match! ${result.staff.name} is thrilled to work on their dream floor! 2x speed bonus activated!`);
+        } else {
+            alert(`${result.staff.name} has been hired! They unlock book category ${result.categoryUnlocked + 1}.`);
+        }
+
+        updateGlobalStats();
+    } else {
+        haptic('error');
+        SoundManager.error();
+        alert(result.error || 'Cannot hire staff');
+    }
+}
+
+// ========== VIP ESCORT UI ==========
+
+let vipEscortBanner = null;
+
+/**
+ * Show VIP escort UI
+ */
+function showVIPEscortUI(vip) {
+    // Create or show escort banner
+    if (!vipEscortBanner) {
+        vipEscortBanner = document.createElement('div');
+        vipEscortBanner.id = 'vip-escort-banner';
+        vipEscortBanner.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #333;
+            padding: 15px;
+            padding-top: 55px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-weight: bold;
+        `;
+        document.body.appendChild(vipEscortBanner);
+    }
+
+    // Get floor NAME instead of emoji
+    const targetText = vip.targetGenres
+        ? `Take them to: ${vip.targetGenres.map(g => game.floorTypes.find(ft => ft.id === g)?.name || 'Unknown').join(' or ')}`
+        : 'Drop them at any floor!';
+
+    vipEscortBanner.innerHTML = `
+        <div style="font-size: 20px; margin-bottom: 5px;">Escorting: ${vip.name}</div>
+        <div style="font-size: 16px; font-weight: bold; color: #4A0080;">${targetText}</div>
+        <div style="font-size: 12px; margin-top: 5px;">Tap a floor to drop them off!</div>
+        <button id="cancel-escort-btn" style="margin-top: 10px; padding: 8px 16px; border: none; border-radius: 5px; background: #fff; cursor: pointer;">Cancel</button>
+    `;
+
+    vipEscortBanner.style.display = 'block';
+
+    document.getElementById('cancel-escort-btn').onclick = () => {
+        game.cancelElevatorRide();
+        hideVIPEscortUI();
+        if (towerRenderer) towerRenderer.isVIPEscortMode = false;
+    };
+}
+
+/**
+ * Hide VIP escort UI
+ */
+function hideVIPEscortUI() {
+    if (vipEscortBanner) {
+        vipEscortBanner.style.display = 'none';
+    }
 }
 
 // Set up onboarding event listeners

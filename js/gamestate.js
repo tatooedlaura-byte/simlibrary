@@ -712,6 +712,63 @@ class GameState {
             }
         ];
 
+        // ========== STAFF LOBBY SYSTEM ==========
+        // Staff applicants waiting in lobby to be hired
+        this.lobbyApplicants = [];
+        this.maxLobbyApplicants = 2; // Max applicants (shared lobby limit of 3 total)
+        this.applicantExpiryTime = 5 * 60 * 1000; // 5 minutes
+
+        // Staff first names for random generation
+        this.staffFirstNames = [
+            'Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Quinn', 'Avery',
+            'Parker', 'Sage', 'River', 'Skyler', 'Jamie', 'Drew', 'Charlie', 'Sam',
+            'Pat', 'Chris', 'Lee', 'Kim', 'Robin', 'Dana', 'Terry', 'Jesse',
+            'Frankie', 'Bobbie', 'Jackie', 'Jessie', 'Billie', 'Stevie', 'Rory', 'Shawn'
+        ];
+
+        // ========== VIP ELEVATOR SYSTEM ==========
+        // VIPs waiting in lobby
+        this.arrivingVIPs = [];
+        this.maxArrivingVIPs = 1; // Max VIPs (shared lobby limit of 3 total)
+        this.vipExpiryTime = 2 * 60 * 1000; // 2 minutes
+
+        // Currently escorting a VIP
+        this.activeElevatorRide = null;
+
+        // Floor bonuses from VIP drops (temporary boosts)
+        this.floorBonuses = {}; // { floorId: { type, multiplier, expiresAt } }
+
+        // Famous authors (punny names) with their preferred genres
+        this.famousAuthors = [
+            { name: 'Stephen Kong', emoji: '👑', genres: ['mystery', 'true_crime'], quote: "I want to visit the spooky section!" },
+            { name: 'J.K. Rolling', emoji: '⚡', genres: ['fantasy', 'juvenile_series'], quote: "Magic awaits!" },
+            { name: 'Agatha Crispy', emoji: '🔍', genres: ['mystery'], quote: "Where are the whodunits?" },
+            { name: 'Dr. Seuss Jr.', emoji: '🎩', genres: ['board_books', 'picture_books'], quote: "I like books with fun looks!" },
+            { name: 'Dan Brownie', emoji: '🔐', genres: ['mystery', 'fiction'], quote: "Take me to the thrillers!" },
+            { name: 'James Pattinson', emoji: '📖', genres: ['fiction', 'mystery'], quote: "Time for a page-turner!" },
+            { name: 'R.L. Spine', emoji: '👻', genres: ['teen', 'juvenile_series'], quote: "Goosebumps, anyone?" },
+            { name: 'Roald Doll', emoji: '🍫', genres: ['picture_books', 'early_readers'], quote: "Wonderfully weird books!" },
+            { name: 'Suzanne Collisions', emoji: '🏹', genres: ['teen'], quote: "May the odds be ever in your favor!" },
+            { name: 'Rick Riordone', emoji: '⚔️', genres: ['juvenile_series', 'fantasy'], quote: "Greek mythology rocks!" },
+            { name: 'Lemony Snickerdoodle', emoji: '🍪', genres: ['juvenile_series', 'early_readers'], quote: "A series of fortunate events!" },
+            { name: 'Judy Bloome', emoji: '🌸', genres: ['teen', 'juvenile_series'], quote: "Growing up is hard!" },
+            { name: 'Eric Crawl', emoji: '🐛', genres: ['board_books', 'picture_books'], quote: "Very hungry for books!" },
+            { name: 'Mo Willemes', emoji: '🐘', genres: ['picture_books', 'early_readers'], quote: "Piggie and Gerald say hi!" },
+            { name: 'Dav Pillkey', emoji: '🦸', genres: ['juvenile_series', 'early_readers'], quote: "Captain Underpants reporting!" }
+        ];
+
+        // Other VIP types (non-author)
+        this.vipTypes = [
+            { type: 'blogger', name: 'BookTok Star', emoji: '📱', bonus: { type: 'restock', description: 'Instant full restock!' } },
+            { type: 'blogger', name: 'Bookstagram Queen', emoji: '📸', bonus: { type: 'restock', description: 'Instant full restock!' } },
+            { type: 'critic', name: 'NY Times Reviewer', emoji: '📰', bonus: { type: 'stars', amount: 500, description: '+500 stars!' } },
+            { type: 'critic', name: 'Kirkus Critic', emoji: '⭐', bonus: { type: 'stars', amount: 300, description: '+300 stars!' } },
+            { type: 'celebrity', name: 'Movie Star', emoji: '🎬', bonus: { type: 'readers', count: 5, description: 'Attracts 5 VIP readers!' } },
+            { type: 'celebrity', name: 'Pop Singer', emoji: '🎤', bonus: { type: 'readers', count: 5, description: 'Attracts 5 VIP readers!' } },
+            { type: 'handyman', name: 'Master Plumber', emoji: '🔧', bonus: { type: 'repair', description: 'Fixes all incidents!' } },
+            { type: 'handyman', name: 'Super Electrician', emoji: '⚡', bonus: { type: 'repair', description: 'Fixes all incidents!' } }
+        ];
+
         // Floor type catalog - ALL 20 LIBRARY FLOOR TYPES!
         this.floorTypes = [
             // Children's Section
@@ -1567,6 +1624,471 @@ class GameState {
         return { success: true, staff: newStaff, categoryUnlocked: floor.staff.length - 1 };
     }
 
+    // ========== STAFF LOBBY SYSTEM FUNCTIONS ==========
+
+    /**
+     * Spawn a new staff applicant in the lobby
+     */
+    spawnApplicant() {
+        if (this.lobbyApplicants.length >= this.maxLobbyApplicants) {
+            return null;
+        }
+
+        // Pick random staff type (weighted by player level)
+        const typeWeights = [
+            { type: 'page', weight: 50 },
+            { type: 'clerk', weight: Math.min(30, this.level * 5) },
+            { type: 'librarian', weight: Math.min(20, this.level * 3) }
+        ];
+        const totalWeight = typeWeights.reduce((sum, t) => sum + t.weight, 0);
+        let rand = Math.random() * totalWeight;
+        let selectedType = 'page';
+        for (const t of typeWeights) {
+            rand -= t.weight;
+            if (rand <= 0) {
+                selectedType = t.type;
+                break;
+            }
+        }
+
+        const staffType = this.staffTypes.find(s => s.id === selectedType);
+
+        // Pick random dream genre from available floor types
+        const regularFloorTypes = this.floorTypes.filter(ft => !ft.staffSlots && ft.id !== 'lobby');
+        const dreamGenre = regularFloorTypes[Math.floor(Math.random() * regularFloorTypes.length)];
+
+        // Generate random name
+        const name = this.staffFirstNames[Math.floor(Math.random() * this.staffFirstNames.length)];
+
+        // Random skill level 1-5
+        const skill = Math.floor(Math.random() * 5) + 1;
+
+        // Cost based on type and skill
+        const baseCost = staffType.hireCost;
+        const hireCost = Math.floor(baseCost * (0.8 + skill * 0.2));
+
+        // Random appearance
+        const shirtColors = ['#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#795548', '#607D8B', '#E91E63', '#00BCD4', '#FF9800', '#8BC34A'];
+        const pantsColors = ['#37474F', '#1A237E', '#4E342E', '#263238', '#3E2723', '#212121'];
+        const skinColors = ['#FFDAB9', '#E8BEAC', '#D4A574', '#C68642', '#8D5524', '#F5DEB3'];
+        const hairColors = ['#4A3728', '#1C1C1C', '#8B4513', '#D4A574', '#A0522D', '#2F1B0C', '#696969'];
+
+        const applicant = {
+            id: this.generateId(),
+            name: name,
+            emoji: staffType.emoji,
+            type: selectedType,
+            typeName: staffType.name,
+            color: staffType.color,
+            dreamGenre: dreamGenre.id,
+            dreamGenreName: dreamGenre.name,
+            dreamGenreEmoji: dreamGenre.emoji,
+            skill: skill,
+            hireCost: hireCost,
+            spawnTime: Date.now(),
+            expiresAt: Date.now() + this.applicantExpiryTime,
+            // Appearance
+            shirtColor: shirtColors[Math.floor(Math.random() * shirtColors.length)],
+            pantsColor: pantsColors[Math.floor(Math.random() * pantsColors.length)],
+            skinColor: skinColors[Math.floor(Math.random() * skinColors.length)],
+            hairColor: hairColors[Math.floor(Math.random() * hairColors.length)]
+        };
+
+        this.lobbyApplicants.push(applicant);
+        this.save();
+
+        return applicant;
+    }
+
+    /**
+     * Hire an applicant from the lobby to a specific floor
+     */
+    hireApplicant(applicantId, floorId) {
+        const applicantIndex = this.lobbyApplicants.findIndex(a => a.id === applicantId);
+        if (applicantIndex === -1) {
+            return { success: false, error: 'Applicant not found' };
+        }
+
+        const applicant = this.lobbyApplicants[applicantIndex];
+        const floor = this.getFloor(floorId);
+
+        if (!floor || floor.status !== 'ready') {
+            return { success: false, error: 'Floor not ready' };
+        }
+
+        // Check if floor already has 3 staff
+        if (floor.staff.length >= 3) {
+            return { success: false, error: 'Floor is fully staffed' };
+        }
+
+        // Check cost
+        if (this.stars < applicant.hireCost) {
+            return { success: false, error: 'Not enough stars' };
+        }
+
+        // Deduct cost
+        this.stars -= applicant.hireCost;
+
+        // Check if dream genre matches
+        const isDreamMatch = floor.typeId === applicant.dreamGenre;
+
+        // Create staff member with dream genre info
+        const newStaff = {
+            id: applicant.id,
+            typeId: applicant.type,
+            name: applicant.name,
+            typeName: applicant.typeName,
+            emoji: applicant.emoji,
+            color: applicant.color,
+            skill: applicant.skill,
+            dreamGenre: applicant.dreamGenre,
+            isDreamMatch: isDreamMatch,
+            hiredAt: Date.now()
+        };
+
+        floor.staff.push(newStaff);
+
+        // Remove from lobby
+        this.lobbyApplicants.splice(applicantIndex, 1);
+
+        // Update stats
+        this.stats.totalStaffHired += 1;
+
+        this.save();
+
+        return {
+            success: true,
+            staff: newStaff,
+            categoryUnlocked: floor.staff.length - 1,
+            isDreamMatch: isDreamMatch
+        };
+    }
+
+    /**
+     * Dismiss an applicant from the lobby
+     */
+    dismissApplicant(applicantId) {
+        const index = this.lobbyApplicants.findIndex(a => a.id === applicantId);
+        if (index === -1) {
+            return { success: false, error: 'Applicant not found' };
+        }
+
+        this.lobbyApplicants.splice(index, 1);
+        this.save();
+
+        return { success: true };
+    }
+
+    /**
+     * Reassign a staff member from one floor to another
+     */
+    reassignStaff(staffId, fromFloorId, toFloorId) {
+        const fromFloor = this.getFloor(fromFloorId);
+        const toFloor = this.getFloor(toFloorId);
+
+        if (!fromFloor || !toFloor) {
+            return { success: false, error: 'Floor not found' };
+        }
+
+        // Find staff in source floor
+        const staffIndex = fromFloor.staff.findIndex(s => s && s.id === staffId);
+        if (staffIndex === -1) {
+            return { success: false, error: 'Staff not found on this floor' };
+        }
+
+        // Check if destination floor has room
+        const emptySlotIndex = toFloor.staff.findIndex(s => s === null || s === undefined);
+        if (emptySlotIndex === -1 && toFloor.staff.length >= 3) {
+            return { success: false, error: 'No empty slots on destination floor' };
+        }
+
+        // Move staff
+        const staff = fromFloor.staff[staffIndex];
+        fromFloor.staff[staffIndex] = null;
+
+        // Add to destination floor
+        if (emptySlotIndex !== -1) {
+            toFloor.staff[emptySlotIndex] = staff;
+        } else {
+            toFloor.staff.push(staff);
+        }
+
+        this.save();
+
+        return {
+            success: true,
+            isDreamMatch: staff.dreamGenre === toFloor.typeId,
+            staff: staff
+        };
+    }
+
+    /**
+     * Get all floors that have empty staff slots
+     */
+    getFloorsWithEmptySlots() {
+        return this.floors.filter(floor => {
+            if (floor.status !== 'ready') return false;
+            const floorType = this.floorTypes.find(ft => ft.id === floor.typeId);
+            if (floorType && floorType.staffSlots) return false; // Skip utility floors
+            const filledSlots = floor.staff.filter(s => s !== null && s !== undefined).length;
+            return filledSlots < 3;
+        });
+    }
+
+    /**
+     * Update lobby applicants - expire old ones
+     */
+    updateLobbyApplicants() {
+        const now = Date.now();
+        const expired = this.lobbyApplicants.filter(a => now >= a.expiresAt);
+
+        if (expired.length > 0) {
+            this.lobbyApplicants = this.lobbyApplicants.filter(a => now < a.expiresAt);
+            this.save();
+        }
+
+        return expired;
+    }
+
+    // ========== VIP ELEVATOR SYSTEM FUNCTIONS ==========
+
+    /**
+     * Spawn a new VIP in the lobby
+     */
+    spawnVIP() {
+        if (this.arrivingVIPs.length >= this.maxArrivingVIPs) {
+            return null;
+        }
+
+        // 60% chance of famous author, 40% chance of other VIP type
+        const isAuthor = Math.random() < 0.6;
+
+        let vip;
+        if (isAuthor) {
+            // Pick random famous author
+            const author = this.famousAuthors[Math.floor(Math.random() * this.famousAuthors.length)];
+
+            // Find a matching floor if player has one
+            const matchingFloor = this.floors.find(f =>
+                f.status === 'ready' && author.genres.includes(f.typeId)
+            );
+
+            // VIP appearance - fancy colors
+            const vipShirtColors = ['#4A0080', '#1A237E', '#B71C1C', '#004D40', '#311B92'];
+            const vipPantsColors = ['#2D004D', '#0D1137', '#7F0000', '#002D1F', '#1A0D47'];
+            const skinColors = ['#FFDAB9', '#E8BEAC', '#D4A574', '#C68642', '#8D5524', '#F5DEB3'];
+            const hairColors = ['#4A3728', '#1C1C1C', '#8B4513', '#D4A574', '#A0522D', '#2F1B0C', '#696969'];
+
+            vip = {
+                id: this.generateId(),
+                type: 'author',
+                name: author.name,
+                emoji: author.emoji,
+                quote: author.quote,
+                targetGenres: author.genres,
+                targetFloorId: matchingFloor ? matchingFloor.id : null,
+                bonus: {
+                    type: 'readers',
+                    multiplier: 2,
+                    duration: 5 * 60 * 1000, // 5 minutes
+                    description: '2x readers for 5 min!'
+                },
+                spawnTime: Date.now(),
+                expiresAt: Date.now() + this.vipExpiryTime,
+                // Fancy VIP appearance
+                shirtColor: vipShirtColors[Math.floor(Math.random() * vipShirtColors.length)],
+                pantsColor: vipPantsColors[Math.floor(Math.random() * vipPantsColors.length)],
+                skinColor: skinColors[Math.floor(Math.random() * skinColors.length)],
+                hairColor: hairColors[Math.floor(Math.random() * hairColors.length)]
+            };
+        } else {
+            // Pick random other VIP type
+            const vipType = this.vipTypes[Math.floor(Math.random() * this.vipTypes.length)];
+
+            // VIP appearance - fancy colors
+            const vipShirtColors = ['#4A0080', '#1A237E', '#B71C1C', '#004D40', '#311B92'];
+            const vipPantsColors = ['#2D004D', '#0D1137', '#7F0000', '#002D1F', '#1A0D47'];
+            const skinColors = ['#FFDAB9', '#E8BEAC', '#D4A574', '#C68642', '#8D5524', '#F5DEB3'];
+            const hairColors = ['#4A3728', '#1C1C1C', '#8B4513', '#D4A574', '#A0522D', '#2F1B0C', '#696969'];
+
+            vip = {
+                id: this.generateId(),
+                type: vipType.type,
+                name: vipType.name,
+                emoji: vipType.emoji,
+                quote: vipType.bonus.description,
+                targetGenres: null, // Any floor
+                targetFloorId: null,
+                bonus: { ...vipType.bonus },
+                spawnTime: Date.now(),
+                expiresAt: Date.now() + this.vipExpiryTime,
+                // Fancy VIP appearance
+                shirtColor: vipShirtColors[Math.floor(Math.random() * vipShirtColors.length)],
+                pantsColor: vipPantsColors[Math.floor(Math.random() * vipPantsColors.length)],
+                skinColor: skinColors[Math.floor(Math.random() * skinColors.length)],
+                hairColor: hairColors[Math.floor(Math.random() * hairColors.length)]
+            };
+        }
+
+        this.arrivingVIPs.push(vip);
+        this.save();
+
+        return vip;
+    }
+
+    /**
+     * Pick up a VIP from the lobby to escort them
+     */
+    pickUpVIP(vipId) {
+        if (this.activeElevatorRide) {
+            return { success: false, error: 'Already escorting a VIP' };
+        }
+
+        const vipIndex = this.arrivingVIPs.findIndex(v => v.id === vipId);
+        if (vipIndex === -1) {
+            return { success: false, error: 'VIP not found' };
+        }
+
+        const vip = this.arrivingVIPs[vipIndex];
+
+        // Remove from lobby
+        this.arrivingVIPs.splice(vipIndex, 1);
+
+        // Start elevator ride
+        this.activeElevatorRide = {
+            vip: vip,
+            pickedUpAt: Date.now(),
+            status: 'riding'
+        };
+
+        this.save();
+
+        return { success: true, vip: vip };
+    }
+
+    /**
+     * Drop off the VIP at a floor
+     */
+    dropOffVIP(floorId) {
+        if (!this.activeElevatorRide) {
+            return { success: false, error: 'Not escorting a VIP' };
+        }
+
+        const floor = this.getFloor(floorId);
+        if (!floor || floor.status !== 'ready') {
+            return { success: false, error: 'Floor not ready' };
+        }
+
+        const vip = this.activeElevatorRide.vip;
+        const bonus = vip.bonus;
+
+        // Check if this is the right floor for authors
+        let isMatch = true;
+        if (vip.targetGenres) {
+            isMatch = vip.targetGenres.includes(floor.typeId);
+        }
+
+        // Apply bonus based on type
+        let result = { success: true, vip: vip, floor: floor, isMatch: isMatch };
+
+        if (bonus.type === 'readers') {
+            // Add temporary reader multiplier to floor
+            this.floorBonuses[floorId] = {
+                type: 'readers',
+                multiplier: isMatch ? bonus.multiplier : 1.5, // Less bonus if wrong floor
+                expiresAt: Date.now() + bonus.duration,
+                vipName: vip.name
+            };
+            result.bonusApplied = `${isMatch ? '2x' : '1.5x'} readers for ${Math.floor(bonus.duration / 60000)} min!`;
+        } else if (bonus.type === 'restock') {
+            // Instant restock all categories on this floor
+            floor.bookStock.forEach(cat => {
+                cat.currentStock = cat.maxStock;
+                cat.restocking = false;
+            });
+            result.bonusApplied = 'All books restocked!';
+        } else if (bonus.type === 'stars') {
+            // Instant star bonus
+            const starAmount = bonus.amount || 500;
+            this.stars += starAmount;
+            result.bonusApplied = `+${starAmount} stars!`;
+        } else if (bonus.type === 'repair') {
+            // Fix all incidents on all floors
+            this.floors.forEach(f => {
+                if (f.incident) {
+                    f.incident = null;
+                }
+            });
+            result.bonusApplied = 'All incidents fixed!';
+        }
+
+        // Clear elevator ride
+        this.activeElevatorRide = null;
+
+        this.save();
+
+        return result;
+    }
+
+    /**
+     * Cancel the elevator ride - VIP leaves
+     */
+    cancelElevatorRide() {
+        if (!this.activeElevatorRide) {
+            return { success: false };
+        }
+
+        this.activeElevatorRide = null;
+        this.save();
+
+        return { success: true };
+    }
+
+    /**
+     * Update arriving VIPs - expire old ones
+     */
+    updateArrivingVIPs() {
+        const now = Date.now();
+        const expired = this.arrivingVIPs.filter(v => now >= v.expiresAt);
+
+        if (expired.length > 0) {
+            this.arrivingVIPs = this.arrivingVIPs.filter(v => now < v.expiresAt);
+            this.save();
+        }
+
+        return expired;
+    }
+
+    /**
+     * Update floor bonuses - expire old ones
+     */
+    updateFloorBonuses() {
+        const now = Date.now();
+        let changed = false;
+
+        for (const floorId in this.floorBonuses) {
+            if (now >= this.floorBonuses[floorId].expiresAt) {
+                delete this.floorBonuses[floorId];
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            this.save();
+        }
+    }
+
+    /**
+     * Get active bonus for a floor
+     */
+    getFloorBonus(floorId) {
+        const bonus = this.floorBonuses[floorId];
+        if (bonus && Date.now() < bonus.expiresAt) {
+            return bonus;
+        }
+        return null;
+    }
+
     /**
      * Start restocking a book category
      * Requires staff to unlock categories:
@@ -1609,10 +2131,35 @@ class GameState {
         // Start restocking
         category.restocking = true;
         category.restockStartTime = Date.now();
-        category.restockEndTime = Date.now() + (category.stockTime * 1000);
+
+        // Calculate restock time - apply dream match bonus if applicable
+        let restockTime = category.stockTime * 1000;
+        const dreamMatchBonus = this.getFloorDreamMatchBonus(floor);
+        if (dreamMatchBonus > 0) {
+            restockTime = restockTime / 2; // 2x speed = half time
+        }
+
+        category.restockEndTime = Date.now() + restockTime;
 
         this.save();
-        return { success: true };
+        return { success: true, dreamMatchBonus: dreamMatchBonus > 0 };
+    }
+
+    /**
+     * Check if floor has any staff working their dream job
+     * Returns the number of dream-matched staff
+     */
+    getFloorDreamMatchBonus(floor) {
+        if (!floor || !floor.staff) return 0;
+
+        let dreamMatchCount = 0;
+        floor.staff.forEach(staff => {
+            if (staff.isDreamMatch) {
+                dreamMatchCount++;
+            }
+        });
+
+        return dreamMatchCount;
     }
 
     /**
@@ -2107,8 +2654,6 @@ class GameState {
             message: `${this.transitSchedule.currentTransit} arrived! Rush hour started!`,
             timestamp: Date.now()
         };
-
-        console.log('Rush hour started!', this.transitSchedule.currentTransit);
     }
 
     /**
@@ -2118,8 +2663,6 @@ class GameState {
         this.transitSchedule.isRushHour = false;
         this.transitSchedule.nextRushHour = this.calculateNextRushHour();
         this.transitSchedule.currentTransit = null;
-
-        console.log('Rush hour ended. Next in', Math.round((this.transitSchedule.nextRushHour - Date.now()) / 60000), 'minutes');
     }
 
     /**
@@ -2303,8 +2846,6 @@ class GameState {
                 y: 0.3 + Math.random() * 0.4  // 30-70% down floor
             });
         }
-
-        console.log('Generated find mission:', count, itemType.name, 'on floors:', items.map(i => i.floorId));
 
         // Calculate reward
         const reward = count * 10;
@@ -4178,6 +4719,12 @@ class GameState {
                     const synergyBonus = this.getSynergyBonus(floor.type);
                     finalEarnings = Math.floor(finalEarnings * synergyBonus);
 
+                    // Apply VIP floor bonus (from dropping VIPs at floors)
+                    const floorBonus = this.getFloorBonus(floor.id);
+                    if (floorBonus && floorBonus.type === 'readers') {
+                        finalEarnings = Math.floor(finalEarnings * floorBonus.multiplier);
+                    }
+
                     // Apply mood bonus (high mood = bonus stars)
                     if (this.mood >= 70) {
                         const moodBonus = Math.floor(finalEarnings * 0.25); // 25% bonus
@@ -4344,6 +4891,35 @@ class GameState {
         if (Math.random() < spawnChance) {
             this.spawnReader();
         }
+
+        // ========== LOBBY SYSTEMS - REBUILT ==========
+        // Combined lobby limit of 3 total characters
+        const totalLobbyChars = this.lobbyApplicants.length + this.arrivingVIPs.length;
+        const maxTotalLobby = 3;
+
+        // Spawn applicants (5% chance per tick, if under limits)
+        if (totalLobbyChars < maxTotalLobby &&
+            this.lobbyApplicants.length < this.maxLobbyApplicants &&
+            Math.random() < 0.05) {
+            this.spawnApplicant();
+        }
+
+        // Update/expire old applicants
+        this.updateLobbyApplicants();
+
+        // Spawn VIPs (2% chance per tick, if under limits, need at least 1 floor)
+        const updatedTotal = this.lobbyApplicants.length + this.arrivingVIPs.length;
+        if (updatedTotal < maxTotalLobby &&
+            this.floors.length >= 1 &&
+            this.arrivingVIPs.length < this.maxArrivingVIPs &&
+            Math.random() < 0.02) {
+            this.spawnVIP();
+        }
+
+        // Update/expire old VIPs
+        this.updateArrivingVIPs();
+
+        this.updateFloorBonuses();
 
         // Generate new mission if it's time and no active mission
         if (!this.currentMission && now >= this.nextMissionTime) {
@@ -4525,6 +5101,12 @@ class GameState {
             weather: this.weather,
             nextDonationTime: this.nextDonationTime,
             libraryCards: this.libraryCards,
+            // Staff Lobby System
+            lobbyApplicants: this.lobbyApplicants,
+            // VIP Elevator System
+            arrivingVIPs: this.arrivingVIPs,
+            activeElevatorRide: this.activeElevatorRide,
+            floorBonuses: this.floorBonuses,
             timestamp: Date.now()
         };
         localStorage.setItem('simlibrary_save_v2', JSON.stringify(saveData));
@@ -4621,6 +5203,14 @@ class GameState {
 
                 // Load library cards
                 this.libraryCards = data.libraryCards || [];
+
+                // Load Staff Lobby System - REBUILT
+                this.lobbyApplicants = data.lobbyApplicants || [];
+
+                // Load VIP Elevator System - will rebuild next
+                this.arrivingVIPs = []; // Still cleared until VIP system rebuilt
+                this.activeElevatorRide = null;
+                this.floorBonuses = data.floorBonuses || {};
 
                 // Migrate old floors to have staff array, upgradeLevel, and trash if missing
                 this.floors.forEach(floor => {

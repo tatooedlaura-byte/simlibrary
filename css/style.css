@@ -654,19 +654,7 @@ body {
 }
 
 .floating-balance {
-    position: fixed;
-    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    right: calc(20px + env(safe-area-inset-right, 0px));
-    display: flex;
-    gap: 12px;
-    font-size: 14px;
-    font-weight: bold;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 8px 14px;
-    border-radius: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-    z-index: 100;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: none; /* Hidden - stats shown in header */
 }
 
 .close-btn {
@@ -2202,4 +2190,119 @@ body {
 @keyframes pulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(225, 190, 231, 0.7); }
     50% { box-shadow: 0 0 0 10px rgba(225, 190, 231, 0); }
+}
+
+/* ========== STAFF LOBBY SYSTEM ========== */
+
+.floor-type-card.dream-match {
+    border: 3px solid gold !important;
+    background: linear-gradient(135deg, #FFF8E1, #FFECB3) !important;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    animation: dream-glow 2s infinite;
+}
+
+@keyframes dream-glow {
+    0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+    50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.8); }
+}
+
+/* Dream match indicator on hired staff */
+.staff-dream-match {
+    color: gold;
+    font-weight: bold;
+}
+
+.staff-dream-match::after {
+    content: ' 💫';
+}
+
+/* VIP escort banner animations */
+#vip-escort-banner {
+    animation: escort-slide 0.3s ease-out;
+}
+
+@keyframes escort-slide {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+/* Dream match badge on staff */
+.dream-match-badge {
+    color: #FFD700;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-shadow: 0 0 4px rgba(255, 215, 0, 0.5);
+    animation: dream-sparkle 1.5s ease-in-out infinite;
+}
+
+@keyframes dream-sparkle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Lobby hint for empty staff slots */
+.lobby-hint {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-style: italic;
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: linear-gradient(135deg, #FFF9C4 0%, #FFECB3 100%);
+    border-radius: 8px;
+}
+
+/* Dream hint for non-matching staff */
+.dream-hint {
+    color: #888;
+    font-size: 0.75rem;
+    font-style: italic;
+}
+
+/* Reassign staff button */
+.reassign-staff-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    background: var(--gradient-lavender);
+    border: none;
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    margin-left: auto;
+}
+
+/* Floor options in reassign modal */
+.floor-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 16px 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.floor-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.floor-option:hover {
+    border-color: var(--lavender);
+    background: #f9f9f9;
+}
+
+.floor-option.dream-floor {
+    border-color: gold;
+    background: linear-gradient(135deg, #FFF9C4 0%, #FFECB3 100%);
+}
+
+.floor-option .dream-indicator {
+    color: #DAA520;
+    font-weight: bold;
 }

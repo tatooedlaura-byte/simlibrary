@@ -73,6 +73,9 @@ class TowerRenderer {
         this.longPressTimer = null;
         this.longPressDuration = 500; // ms to trigger long press
 
+        // VIP Escort mode
+        this.isVIPEscortMode = false;
+
         // Animation frame
         this.animationFrame = null;
 
@@ -753,7 +756,6 @@ class TowerRenderer {
     checkSpritesLoaded() {
         if (this.sprites.bookshelf && this.sprites.books.length > 0) {
             this.spritesLoaded = true;
-            console.log('Sprites loaded successfully!');
         }
     }
 
@@ -1051,6 +1053,341 @@ class TowerRenderer {
 
         // Draw lobby decorations
         this.drawLobbyDecorations(x, y);
+
+        // LOBBY CHARACTERS - REBUILT
+        // Draw all lobby characters (applicants + VIPs) in a single row
+        this.drawAllLobbyCharacters(x, y);
+    }
+
+    /**
+     * Draw all lobby characters (applicants and VIPs) in one place
+     */
+    drawAllLobbyCharacters(x, y) {
+        const applicants = this.game.lobbyApplicants || [];
+        const vips = this.game.arrivingVIPs || [];
+
+        // Combine all characters
+        const allChars = [
+            ...applicants.map(a => ({ type: 'applicant', data: a })),
+            ...vips.map(v => ({ type: 'vip', data: v }))
+        ];
+
+        if (allChars.length === 0) return;
+
+        // Position all characters in center of lobby
+        const spacing = 70;
+        const totalWidth = (allChars.length - 1) * spacing;
+        const startX = x + (this.floorWidth / 2) - (totalWidth / 2);
+        const floorLine = y + this.floorHeight;
+
+        allChars.forEach((char, index) => {
+            const charX = startX + (index * spacing);
+            const baseY = floorLine - 2;
+            const isVIP = char.type === 'vip';
+
+            this.ctx.save();
+
+            // VIPs get golden glow
+            if (isVIP) {
+                this.ctx.shadowColor = '#FFD700';
+                this.ctx.shadowBlur = 12;
+            }
+
+            // Get colors from character data or use defaults
+            const shirtColor = char.data.shirtColor || (isVIP ? '#4A0080' : '#4CAF50');
+            const pantsColor = char.data.pantsColor || (isVIP ? '#2D004D' : '#37474F');
+            const skinColor = char.data.skinColor || '#FFDAB9';
+            const hairColor = char.data.hairColor || '#4A3728';
+
+            // Animation - gentle idle sway
+            const sway = Math.sin(Date.now() / 500 + index) * 1;
+
+            // Character dimensions (same as regular bitizens)
+            const charHeight = 40;
+            const headY = baseY - charHeight + 8 - sway;
+            const bodyY = baseY - charHeight + 16 - sway;
+            const legY = baseY - 6;
+
+            // Shadow
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            this.ctx.beginPath();
+            this.ctx.ellipse(charX, baseY, 8, 3, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Legs
+            this.ctx.fillStyle = pantsColor;
+            this.ctx.fillRect(charX - 5, legY, 4, 8);
+            this.ctx.fillRect(charX + 1, legY, 4, 8);
+
+            // Body/Torso
+            this.ctx.fillStyle = shirtColor;
+            this.ctx.fillRect(charX - 7, bodyY, 14, 20);
+
+            // Arms
+            this.ctx.strokeStyle = skinColor;
+            this.ctx.lineWidth = 3;
+            this.ctx.lineCap = 'round';
+            this.ctx.beginPath();
+            this.ctx.moveTo(charX - 7, bodyY + 2);
+            this.ctx.lineTo(charX - 10, bodyY + 12);
+            this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.moveTo(charX + 7, bodyY + 2);
+            this.ctx.lineTo(charX + 10, bodyY + 12);
+            this.ctx.stroke();
+
+            // Neck
+            this.ctx.fillStyle = skinColor;
+            this.ctx.fillRect(charX - 2, bodyY - 2, 4, 4);
+
+            // Head
+            this.ctx.fillStyle = skinColor;
+            this.ctx.beginPath();
+            this.ctx.arc(charX, headY, 9, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Hair (simple short style)
+            this.ctx.fillStyle = hairColor;
+            this.ctx.beginPath();
+            this.ctx.arc(charX, headY - 2, 9, Math.PI, Math.PI * 2);
+            this.ctx.fill();
+
+            // Eyes
+            this.ctx.fillStyle = '#000';
+            this.ctx.fillRect(charX - 3, headY - 1, 2, 2);
+            this.ctx.fillRect(charX + 1, headY - 1, 2, 2);
+
+            // Turn off glow for text
+            this.ctx.shadowBlur = 0;
+
+            // VIP crown/star above head
+            if (isVIP) {
+                this.ctx.font = '12px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(char.data.emoji || '👑', charX, headY - 14);
+
+                // Bouncing TAP indicator
+                const bounce = Math.sin(Date.now() / 300) * 3;
+                this.ctx.font = 'bold 9px Arial';
+                this.ctx.fillStyle = '#FFD700';
+                this.ctx.fillText('TAP', charX, headY - 28 + bounce);
+
+                // Target floor name below
+                let floorName = 'Any Floor';
+                if (char.data.targetGenres && char.data.targetGenres.length > 0) {
+                    const floorType = this.game.floorTypes.find(ft => ft.id === char.data.targetGenres[0]);
+                    if (floorType) floorName = floorType.name;
+                }
+                const shortName = floorName.length > 8 ? floorName.substring(0, 7) + '..' : floorName;
+                this.ctx.font = 'bold 8px Arial';
+                this.ctx.fillStyle = '#333';
+                this.ctx.fillText(shortName, charX, baseY + 10);
+            } else {
+                // Applicant - show name below
+                this.ctx.font = 'bold 9px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillStyle = '#333';
+                this.ctx.fillText(char.data.name, charX, baseY + 10);
+            }
+
+            // Store bounds for click detection
+            char.data._renderBounds = { x: charX - 15, y: headY - 20, width: 30, height: 55 };
+
+            this.ctx.restore();
+        });
+    }
+
+    /**
+     * OLD - Draw staff applicants waiting in the lobby
+     */
+    drawLobbyApplicants(x, y) {
+        const applicants = this.game.lobbyApplicants || [];
+        if (applicants.length === 0) return;
+
+        const startX = x + 100; // Start position for applicants
+        const spacing = 50;
+        const baseY = y + this.floorHeight - 2; // Feet on floor
+
+        applicants.forEach((applicant, index) => {
+            const posX = startX + (index * spacing);
+            const posY = baseY;
+
+            // Draw character body (simple stick figure style)
+            this.ctx.save();
+
+            // Shadow
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            this.ctx.beginPath();
+            this.ctx.ellipse(posX, posY + 2, 12, 4, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Body (colored by type)
+            this.ctx.fillStyle = applicant.color;
+            this.ctx.beginPath();
+            this.ctx.ellipse(posX, posY - 15, 10, 12, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Head
+            this.ctx.fillStyle = '#FFDAB9'; // Skin tone
+            this.ctx.beginPath();
+            this.ctx.arc(posX, posY - 30, 8, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Type emoji badge
+            this.ctx.font = '14px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(applicant.emoji, posX, posY - 38);
+
+            // Thought bubble with dream genre NAME
+            const bubbleX = posX;
+            const bubbleY = posY - 55;
+            const floorName = applicant.dreamGenreName || 'Any';
+            const shortName = floorName.length > 8 ? floorName.substring(0, 7) + '..' : floorName;
+
+            // Bubble background - sized to fit text
+            this.ctx.fillStyle = 'white';
+            this.ctx.strokeStyle = '#ccc';
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath();
+            this.ctx.roundRect(bubbleX - 25, bubbleY - 10, 50, 18, 5);
+            this.ctx.fill();
+            this.ctx.stroke();
+
+            // Small connector circles
+            this.ctx.beginPath();
+            this.ctx.arc(bubbleX - 5, bubbleY + 10, 3, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.arc(bubbleX - 2, bubbleY + 6, 2, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Dream genre NAME in bubble
+            this.ctx.font = 'bold 8px Arial';
+            this.ctx.fillStyle = '#4A0080';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(shortName, bubbleX, bubbleY + 3);
+
+            this.ctx.restore();
+
+            // Store bounds for click detection
+            applicant._renderBounds = {
+                x: posX - 20,
+                y: posY - 60,
+                width: 40,
+                height: 65
+            };
+        });
+    }
+
+    /**
+     * Draw VIPs waiting in the lobby with golden glow
+     */
+    drawArrivingVIPs(x, y) {
+        const vips = this.game.arrivingVIPs || [];
+        if (vips.length === 0) return;
+
+        // Position VIPs on right side of lobby
+        const startX = x + 320;
+        const spacing = 50;
+        const baseY = y + this.floorHeight - 2;
+
+        vips.forEach((vip, index) => {
+            const posX = startX + (index * spacing);
+            const posY = baseY;
+
+            this.ctx.save();
+
+            // Simple golden glow (no sparkles)
+            this.ctx.shadowColor = 'gold';
+            this.ctx.shadowBlur = 15;
+
+            // Shadow
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.beginPath();
+            this.ctx.ellipse(posX, posY + 2, 14, 5, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Body (fancy outfit)
+            const bodyGradient = this.ctx.createLinearGradient(posX - 12, posY - 30, posX + 12, posY);
+            bodyGradient.addColorStop(0, '#4A0080');
+            bodyGradient.addColorStop(1, '#2D004D');
+            this.ctx.fillStyle = bodyGradient;
+            this.ctx.beginPath();
+            this.ctx.ellipse(posX, posY - 15, 12, 14, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Head
+            this.ctx.fillStyle = '#FFDAB9';
+            this.ctx.beginPath();
+            this.ctx.arc(posX, posY - 32, 9, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // VIP emoji
+            this.ctx.font = '18px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(vip.emoji, posX, posY - 42);
+
+            // Floor name bubble (show what floor they want)
+            if (vip.type === 'author' && vip.targetGenres) {
+                const bubbleX = posX;
+                const bubbleY = posY - 70;
+
+                // Get floor name from target genres
+                const targetGenre = vip.targetGenres[0];
+                const floorType = this.game.floorTypes.find(ft => ft.id === targetGenre);
+                const floorName = floorType ? floorType.name : 'Any';
+                const shortName = floorName.length > 10 ? floorName.substring(0, 9) + '..' : floorName;
+
+                // Bubble background
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                this.ctx.strokeStyle = '#FFD700';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.roundRect(bubbleX - 35, bubbleY - 10, 70, 20, 8);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                // Floor name text
+                this.ctx.font = 'bold 9px Arial';
+                this.ctx.fillStyle = '#4A0080';
+                this.ctx.fillText(shortName, bubbleX, bubbleY + 4);
+            } else {
+                // Non-author VIPs - show "Any Floor"
+                const bubbleX = posX;
+                const bubbleY = posY - 70;
+
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                this.ctx.strokeStyle = '#FFD700';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.roundRect(bubbleX - 30, bubbleY - 10, 60, 20, 8);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                this.ctx.font = 'bold 9px Arial';
+                this.ctx.fillStyle = '#4A0080';
+                this.ctx.fillText('Any Floor', bubbleX, bubbleY + 4);
+            }
+
+            // "TAP" indicator
+            const bounce = Math.sin(Date.now() / 300) * 3;
+            this.ctx.font = 'bold 10px Arial';
+            this.ctx.fillStyle = '#FFD700';
+            this.ctx.strokeStyle = '#000';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeText('TAP', posX, posY - 55 + bounce);
+            this.ctx.fillText('TAP', posX, posY - 55 + bounce);
+
+            this.ctx.restore();
+
+            // Store bounds for click detection - make clickable area larger
+            vip._renderBounds = {
+                x: posX - 40,
+                y: posY - 85,
+                width: 80,
+                height: 100
+            };
+        });
     }
 
     /**
@@ -1385,10 +1722,22 @@ class TowerRenderer {
                 const shelfHeight = 60 * scale;
                 const shelfSpacing = (this.floorWidth - 60 * scale - shelfWidth * 3) / 2;
 
+                // Initialize shelf bounds array
+                floor._shelfBounds = [];
+
                 floor.bookStock.forEach((category, index) => {
                     let shelfX = x + 40 * scale + index * (shelfWidth + shelfSpacing); // Moved right from 30 to 40
 
                     this.drawBookshelf(category, shelfX, shelfY, shelfWidth, shelfHeight, colors, floor.typeId, scale, index);
+
+                    // Store shelf bounds for click detection
+                    floor._shelfBounds.push({
+                        x: shelfX,
+                        y: shelfY,
+                        width: shelfWidth,
+                        height: shelfHeight,
+                        categoryIndex: index
+                    });
                 });
             }
         }
@@ -1513,6 +1862,14 @@ class TowerRenderer {
         const emojiX = x + this.floorWidth - 8;
         const emojiY = y + 18; // Lowered from 8 to avoid hitting ceiling
         this.ctx.fillText(emoji, emojiX, emojiY);
+
+        // Store bounds for click detection (tap to clean)
+        floor._happinessBounds = {
+            x: emojiX - 20,
+            y: emojiY - 5,
+            width: 30,
+            height: 30
+        };
 
         this.ctx.restore();
 
@@ -1979,6 +2336,16 @@ class TowerRenderer {
         // Thought bubble (appears occasionally when reading)
         if (char.state === 'reading' && char.animationFrame % 180 < 120) {
             this.drawThoughtBubble(char.x, headY - 25, reader, char.x);
+        }
+
+        // Store bounds for click detection (tap reader for tips/speed)
+        if (reader && reader.id) {
+            reader._renderBounds = {
+                x: char.x - 15,
+                y: headY - 15,
+                width: 30,
+                height: 50
+            };
         }
     }
 
@@ -2463,7 +2830,6 @@ class TowerRenderer {
             if (currentIndex > 0) {
                 this.reorderTargetIndex = currentIndex - 1;
                 if (navigator.vibrate) navigator.vibrate(30);
-                console.log('Move up to index:', this.reorderTargetIndex);
             }
             return true;
         }
@@ -2473,7 +2839,6 @@ class TowerRenderer {
             if (currentIndex < reorderableFloors.length - 1) {
                 this.reorderTargetIndex = currentIndex + 1;
                 if (navigator.vibrate) navigator.vibrate(30);
-                console.log('Move down to index:', this.reorderTargetIndex);
             }
             return true;
         }
@@ -2498,7 +2863,6 @@ class TowerRenderer {
 
         if (targetIndex !== -1 && targetIndex !== currentIndex) {
             this.game.reorderFloor(this.reorderFloor.id, targetIndex);
-            console.log(`Moved ${this.reorderFloor.name} from index ${currentIndex} to ${targetIndex}`);
         }
 
         // Exit reorder mode
@@ -2537,14 +2901,11 @@ class TowerRenderer {
             return; // Don't process any other clicks while in reorder mode
         }
 
-        console.log('Canvas clicked at:', clickX, clickY);
-
         // Check build slot click first (top of tower)
         if (this._buildSlotBounds) {
             const b = this._buildSlotBounds;
             if (clickX >= b.x && clickX <= b.x + b.width &&
                 clickY >= b.y && clickY <= b.y + b.height) {
-                console.log('Build slot clicked!');
                 if (window.haptic) window.haptic('medium');
                 if (window.openBuildModal) {
                     window.openBuildModal();
@@ -2563,7 +2924,6 @@ class TowerRenderer {
                     const padding = b.width * 0.25;
                     if (clickX >= b.x - padding && clickX <= b.x + b.width + padding &&
                         clickY >= b.y - padding && clickY <= b.y + b.height + padding) {
-                        console.log('Find item clicked:', item.emoji);
                         if (window.haptic) window.haptic('collect');
                         // Mark as found
                         item.found = true;
@@ -2591,7 +2951,6 @@ class TowerRenderer {
             const padding = b.width * 0.25;
             if (clickX >= b.x - padding && clickX <= b.x + b.width + padding &&
                 clickY >= b.y - padding && clickY <= b.y + b.height + padding) {
-                console.log('Mini-quest clicked:', this.game.currentMiniQuest.emoji);
                 if (window.haptic) window.haptic('success');
 
                 // Spawn celebration effect
@@ -2605,25 +2964,153 @@ class TowerRenderer {
             }
         }
 
-        // Check floor clicks (check all floors)
-        const floors = [...this.game.floors].reverse(); // Top to bottom for click priority
-        for (const floor of floors) {
-            if (floor._renderBounds) {
-                const b = floor._renderBounds;
-                if (clickX >= b.x && clickX <= b.x + b.width &&
-                    clickY >= b.y && clickY <= b.y + b.height) {
-                    console.log('Floor clicked:', floor.name);
-                    if (window.haptic) window.haptic('light');
-                    // Floor clicked - trigger detail view
-                    if (window.openFloorDetail) {
-                        window.openFloorDetail(floor.id);
+        // LOBBY CHARACTER CLICKS
+        // Check applicant clicks
+        if (this.game.lobbyApplicants && this.game.lobbyApplicants.length > 0) {
+            for (const applicant of this.game.lobbyApplicants) {
+                if (applicant._renderBounds) {
+                    const b = applicant._renderBounds;
+                    if (clickX >= b.x && clickX <= b.x + b.width &&
+                        clickY >= b.y && clickY <= b.y + b.height) {
+                        // Applicant clicked!
+                        if (window.haptic) window.haptic('light');
+                        if (window.showApplicantModal) {
+                            window.showApplicantModal(applicant);
+                        }
+                        return;
                     }
-                    return; // Stop checking after first match
                 }
             }
         }
 
-        console.log('No floor clicked');
+        // Check VIP clicks
+        if (this.game.arrivingVIPs && this.game.arrivingVIPs.length > 0) {
+            for (const vip of this.game.arrivingVIPs) {
+                if (vip._renderBounds) {
+                    const b = vip._renderBounds;
+                    if (clickX >= b.x && clickX <= b.x + b.width &&
+                        clickY >= b.y && clickY <= b.y + b.height) {
+                        // VIP clicked - pick them up!
+                        if (window.haptic) window.haptic('medium');
+                        const result = this.game.pickUpVIP(vip.id);
+                        if (result.success) {
+                            this.spawnSparkle(clickX, clickY + this.scrollY);
+                            this.spawnTextParticle(clickX, clickY + this.scrollY, `${vip.name} picked up!`, '#FFD700');
+                            // Show escort UI
+                            if (window.showVIPEscortUI) {
+                                window.showVIPEscortUI(result.vip);
+                            }
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+
+        // If escorting a VIP, clicking a floor drops them off
+        if (this.game.activeElevatorRide) {
+            const floors = [...this.game.floors].reverse();
+            for (const floor of floors) {
+                if (floor._renderBounds && floor.status === 'ready') {
+                    const b = floor._renderBounds;
+                    if (clickX >= b.x && clickX <= b.x + b.width &&
+                        clickY >= b.y && clickY <= b.y + b.height) {
+                        if (window.haptic) window.haptic('success');
+                        const result = this.game.dropOffVIP(floor.id);
+                        if (result.success) {
+                            this.spawnConfetti(clickX, clickY + this.scrollY, 30);
+                            this.spawnTextParticle(clickX, clickY + this.scrollY, result.bonusApplied || 'Bonus!', '#FFD700');
+                            if (window.hideVIPEscortUI) {
+                                window.hideVIPEscortUI();
+                            }
+                        }
+                        return;
+                    }
+                }
+            }
+            // Don't open floor detail while escorting
+            return;
+        }
+
+        // Check floor ELEMENT clicks before floor clicks
+        const floors = [...this.game.floors].reverse();
+        for (const floor of floors) {
+            if (!floor._renderBounds) continue;
+            const fb = floor._renderBounds;
+
+            // Only check elements if click is within floor bounds
+            if (clickX >= fb.x && clickX <= fb.x + fb.width &&
+                clickY >= fb.y && clickY <= fb.y + fb.height) {
+
+                // 1. Check happiness emoji click (tap to clean)
+                if (floor._happinessBounds && floor.trash > 0) {
+                    const b = floor._happinessBounds;
+                    if (clickX >= b.x && clickX <= b.x + b.width &&
+                        clickY >= b.y && clickY <= b.y + b.height) {
+                        if (window.haptic) window.haptic('light');
+                        // Clean some trash
+                        const cleaned = Math.min(floor.trash, 20);
+                        floor.trash -= cleaned;
+                        this.spawnTextParticle(clickX, clickY + this.scrollY, `🧹 -${cleaned} trash`, '#4CAF50');
+                        this.game.save();
+                        return;
+                    }
+                }
+
+                // 2. Check bookshelf clicks (tap to quick restock)
+                if (floor._shelfBounds && floor.status === 'ready') {
+                    for (const shelf of floor._shelfBounds) {
+                        if (clickX >= shelf.x && clickX <= shelf.x + shelf.width &&
+                            clickY >= shelf.y && clickY <= shelf.y + shelf.height) {
+                            const category = floor.bookStock[shelf.categoryIndex];
+                            // Check if needs restocking and not already restocking
+                            if (category && category.currentStock < category.maxStock && !category.restocking) {
+                                // Check if player has enough stars
+                                if (this.game.stars >= category.stockCost) {
+                                    if (window.haptic) window.haptic('medium');
+                                    // Quick restock
+                                    const result = this.game.restockCategory(floor.id, shelf.categoryIndex);
+                                    if (result.success) {
+                                        this.spawnTextParticle(clickX, clickY + this.scrollY, `📦 Restocking!`, '#FF9800');
+                                    }
+                                } else {
+                                    this.spawnTextParticle(clickX, clickY + this.scrollY, `Need ${category.stockCost}⭐`, '#F44336');
+                                }
+                                return;
+                            } else if (category && category.restocking) {
+                                this.spawnTextParticle(clickX, clickY + this.scrollY, `Already restocking`, '#888');
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // 3. Check reader clicks (tap for tips)
+                for (const reader of this.game.readers) {
+                    if (reader.floorId === floor.id && reader._renderBounds) {
+                        const b = reader._renderBounds;
+                        if (clickX >= b.x && clickX <= b.x + b.width &&
+                            clickY >= b.y && clickY <= b.y + b.height) {
+                            if (window.haptic) window.haptic('light');
+                            // Give a small tip
+                            const tip = Math.floor(1 + Math.random() * 3);
+                            this.game.stars += tip;
+                            this.spawnTextParticle(clickX, clickY + this.scrollY, `+${tip}⭐ tip!`, '#FFD700');
+                            this.spawnSparkle(clickX, clickY + this.scrollY);
+                            this.game.save();
+                            return;
+                        }
+                    }
+                }
+
+                // If no element clicked, open floor detail
+                if (window.haptic) window.haptic('light');
+                if (window.openFloorDetail) {
+                    window.openFloorDetail(floor.id);
+                }
+                return;
+            }
+        }
     }
 
     /**
@@ -3074,7 +3561,6 @@ class TowerRenderer {
                     // Flag that we just activated - first mouse up should not exit
                     this._reorderJustActivated = true;
                     this.canvas.style.cursor = 'move';
-                    console.log('Reorder mode activated for:', this.reorderFloor.name);
                 }
             }, this.longPressDuration);
         }
@@ -3210,7 +3696,6 @@ class TowerRenderer {
                         if (navigator.vibrate) {
                             navigator.vibrate(50);
                         }
-                        console.log('Reorder mode activated for:', this.reorderFloor.name);
                     }
                 }, this.longPressDuration);
             }
@@ -3241,15 +3726,19 @@ class TowerRenderer {
         // Handle reorder mode dragging
         if (this.isReorderMode && this.reorderFloor) {
             e.preventDefault();
-            this._touchMoved = true;
 
-            // Update current drag position
-            const rect = this._touchStartRect || this.canvas.getBoundingClientRect();
-            const scaleY = this.height / rect.height;
-            this._reorderCurrentY = ((e.touches[0].clientY - rect.top) * scaleY) - this.scrollY;
+            // Only mark as moved if actually dragged a significant amount
+            if (deltaX > 15 || deltaY > 15) {
+                this._touchMoved = true;
 
-            // Calculate target index based on Y position
-            this.reorderTargetIndex = this.calculateReorderTargetIndex(this._reorderCurrentY);
+                // Update current drag position
+                const rect = this._touchStartRect || this.canvas.getBoundingClientRect();
+                const scaleY = this.height / rect.height;
+                this._reorderCurrentY = ((e.touches[0].clientY - rect.top) * scaleY) - this.scrollY;
+
+                // Calculate target index based on Y position
+                this.reorderTargetIndex = this.calculateReorderTargetIndex(this._reorderCurrentY);
+            }
 
             return;
         }
@@ -3367,14 +3856,11 @@ class TowerRenderer {
             // Item bounds are stored in scrolled space, so we need to account for scroll
             const clickY = ((this.dragStartY - rect.top) * scaleY) - this.scrollY;
 
-            console.log('Touch tap at:', clickX, clickY, 'scrollY:', this.scrollY);
-
             // Check build slot click first
             if (this._buildSlotBounds) {
                 const b = this._buildSlotBounds;
                 if (clickX >= b.x && clickX <= b.x + b.width &&
                     clickY >= b.y && clickY <= b.y + b.height) {
-                    console.log('Build slot tapped!');
                     if (window.openBuildModal) {
                         window.openBuildModal();
                     }
@@ -3391,10 +3877,8 @@ class TowerRenderer {
                         const b = item._renderBounds;
                         // Expand hit area significantly for easier tapping on mobile
                         const padding = Math.max(b.width * 0.75, 20); // At least 20px padding
-                        console.log('Checking item bounds:', b, 'click:', clickX, clickY, 'padding:', padding);
                         if (clickX >= b.x - padding && clickX <= b.x + b.width + padding &&
                             clickY >= b.y - padding && clickY <= b.y + b.height + padding) {
-                            console.log('Find item tapped:', item.emoji);
                             // Mark as found
                             item.found = true;
                             this.game.currentFindMission.found++;
@@ -3421,8 +3905,6 @@ class TowerRenderer {
                 const padding = b.width * 0.25;
                 if (clickX >= b.x - padding && clickX <= b.x + b.width + padding &&
                     clickY >= b.y - padding && clickY <= b.y + b.height + padding) {
-                    console.log('Mini-quest tapped:', this.game.currentMiniQuest.emoji);
-
                     // Spawn celebration effect
                     this.spawnConfetti(clickX, clickY + this.scrollY, 20);
                     this.spawnTextParticle(clickX, clickY + this.scrollY, `+${this.game.currentMiniQuest.reward} ⭐`, '#FFD700');
@@ -3435,14 +3917,81 @@ class TowerRenderer {
                 }
             }
 
-            // Check floor clicks
+            // LOBBY CHARACTER CLICKS
+            // Check applicant clicks
+            if (this.game.lobbyApplicants && this.game.lobbyApplicants.length > 0) {
+                for (const applicant of this.game.lobbyApplicants) {
+                    if (applicant._renderBounds) {
+                        const b = applicant._renderBounds;
+                        if (clickX >= b.x && clickX <= b.x + b.width &&
+                            clickY >= b.y && clickY <= b.y + b.height) {
+                            if (window.haptic) window.haptic('light');
+                            if (window.showApplicantModal) {
+                                window.showApplicantModal(applicant);
+                            }
+                            this.isDragging = false;
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Check VIP clicks
+            if (this.game.arrivingVIPs && this.game.arrivingVIPs.length > 0) {
+                for (const vip of this.game.arrivingVIPs) {
+                    if (vip._renderBounds) {
+                        const b = vip._renderBounds;
+                        if (clickX >= b.x && clickX <= b.x + b.width &&
+                            clickY >= b.y && clickY <= b.y + b.height) {
+                            if (window.haptic) window.haptic('medium');
+                            const result = this.game.pickUpVIP(vip.id);
+                            if (result.success) {
+                                this.spawnSparkle(clickX, clickY + this.scrollY);
+                                this.spawnTextParticle(clickX, clickY + this.scrollY, `${vip.name} picked up!`, '#FFD700');
+                                if (window.showVIPEscortUI) {
+                                    window.showVIPEscortUI(result.vip);
+                                }
+                            }
+                            this.isDragging = false;
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // If escorting a VIP, tapping a floor drops them off (before regular floor click)
+            if (this.game.activeElevatorRide) {
+                const floors = [...this.game.floors].reverse();
+                for (const floor of floors) {
+                    if (floor._renderBounds && floor.status === 'ready') {
+                        const b = floor._renderBounds;
+                        if (clickX >= b.x && clickX <= b.x + b.width &&
+                            clickY >= b.y && clickY <= b.y + b.height) {
+                            if (window.haptic) window.haptic('success');
+                            const result = this.game.dropOffVIP(floor.id);
+                            if (result.success) {
+                                this.spawnConfetti(clickX, clickY + this.scrollY, 30);
+                                this.spawnTextParticle(clickX, clickY + this.scrollY, result.bonusApplied || 'Bonus!', '#FFD700');
+                                if (window.hideVIPEscortUI) {
+                                    window.hideVIPEscortUI();
+                                }
+                            }
+                            this.isDragging = false;
+                            return;
+                        }
+                    }
+                }
+                this.isDragging = false;
+                return; // Don't open floor detail while escorting
+            }
+
+            // Check floor clicks (normal mode)
             const floors = [...this.game.floors].reverse();
             for (const floor of floors) {
                 if (floor._renderBounds) {
                     const b = floor._renderBounds;
                     if (clickX >= b.x && clickX <= b.x + b.width &&
                         clickY >= b.y && clickY <= b.y + b.height) {
-                        console.log('Floor tapped:', floor.name);
                         if (window.openFloorDetail) {
                             window.openFloorDetail(floor.id);
                         }
