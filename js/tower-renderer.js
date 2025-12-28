@@ -2414,6 +2414,181 @@ class TowerRenderer {
     }
 
     /**
+     * Draw a cute library cat
+     */
+    drawLibraryCat(x, y, scale = 1) {
+        const ctx = this.ctx;
+        const time = Date.now();
+
+        // Gentle bobbing animation
+        const bob = Math.sin(time / 400) * 2;
+        // Tail swish
+        const tailSwish = Math.sin(time / 300) * 15;
+
+        const catY = y + bob;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.beginPath();
+        ctx.ellipse(x, y + 2, 12 * scale, 4 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Tail (behind body)
+        ctx.strokeStyle = '#F5A623';
+        ctx.lineWidth = 4 * scale;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x + 10 * scale, catY - 8 * scale);
+        ctx.quadraticCurveTo(
+            x + 20 * scale + tailSwish * 0.3, catY - 15 * scale,
+            x + 18 * scale + tailSwish * 0.5, catY - 25 * scale
+        );
+        ctx.stroke();
+
+        // Body (oval)
+        ctx.fillStyle = '#F5A623'; // Orange tabby
+        ctx.beginPath();
+        ctx.ellipse(x, catY - 8 * scale, 12 * scale, 8 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Stripes on body
+        ctx.strokeStyle = '#D4860B';
+        ctx.lineWidth = 2 * scale;
+        ctx.beginPath();
+        ctx.moveTo(x - 4 * scale, catY - 14 * scale);
+        ctx.lineTo(x - 2 * scale, catY - 2 * scale);
+        ctx.moveTo(x + 2 * scale, catY - 14 * scale);
+        ctx.lineTo(x + 4 * scale, catY - 2 * scale);
+        ctx.stroke();
+
+        // Front paws
+        ctx.fillStyle = '#FFE4C4'; // Light paw color
+        ctx.beginPath();
+        ctx.ellipse(x - 6 * scale, catY, 3 * scale, 2 * scale, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 6 * scale, catY, 3 * scale, 2 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Head
+        ctx.fillStyle = '#F5A623';
+        ctx.beginPath();
+        ctx.arc(x, catY - 20 * scale, 10 * scale, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ears
+        ctx.beginPath();
+        ctx.moveTo(x - 8 * scale, catY - 26 * scale);
+        ctx.lineTo(x - 12 * scale, catY - 36 * scale);
+        ctx.lineTo(x - 3 * scale, catY - 28 * scale);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x + 8 * scale, catY - 26 * scale);
+        ctx.lineTo(x + 12 * scale, catY - 36 * scale);
+        ctx.lineTo(x + 3 * scale, catY - 28 * scale);
+        ctx.closePath();
+        ctx.fill();
+
+        // Inner ears
+        ctx.fillStyle = '#FFB6C1';
+        ctx.beginPath();
+        ctx.moveTo(x - 7 * scale, catY - 27 * scale);
+        ctx.lineTo(x - 10 * scale, catY - 33 * scale);
+        ctx.lineTo(x - 4 * scale, catY - 28 * scale);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x + 7 * scale, catY - 27 * scale);
+        ctx.lineTo(x + 10 * scale, catY - 33 * scale);
+        ctx.lineTo(x + 4 * scale, catY - 28 * scale);
+        ctx.closePath();
+        ctx.fill();
+
+        // Face markings - white muzzle area
+        ctx.fillStyle = '#FFF8F0';
+        ctx.beginPath();
+        ctx.ellipse(x, catY - 16 * scale, 5 * scale, 4 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eyes (blinking occasionally)
+        const blink = (time % 4000) < 150;
+        ctx.fillStyle = '#2E7D32'; // Green eyes
+        if (blink) {
+            // Closed eyes
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1.5 * scale;
+            ctx.beginPath();
+            ctx.moveTo(x - 6 * scale, catY - 20 * scale);
+            ctx.lineTo(x - 2 * scale, catY - 20 * scale);
+            ctx.moveTo(x + 2 * scale, catY - 20 * scale);
+            ctx.lineTo(x + 6 * scale, catY - 20 * scale);
+            ctx.stroke();
+        } else {
+            // Open eyes
+            ctx.beginPath();
+            ctx.ellipse(x - 4 * scale, catY - 20 * scale, 2.5 * scale, 3 * scale, 0, 0, Math.PI * 2);
+            ctx.ellipse(x + 4 * scale, catY - 20 * scale, 2.5 * scale, 3 * scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pupils
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.ellipse(x - 4 * scale, catY - 20 * scale, 1 * scale, 2 * scale, 0, 0, Math.PI * 2);
+            ctx.ellipse(x + 4 * scale, catY - 20 * scale, 1 * scale, 2 * scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eye shine
+            ctx.fillStyle = '#FFF';
+            ctx.beginPath();
+            ctx.arc(x - 3 * scale, catY - 21 * scale, 1 * scale, 0, Math.PI * 2);
+            ctx.arc(x + 5 * scale, catY - 21 * scale, 1 * scale, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Nose
+        ctx.fillStyle = '#FFB6C1';
+        ctx.beginPath();
+        ctx.moveTo(x, catY - 15 * scale);
+        ctx.lineTo(x - 2 * scale, catY - 13 * scale);
+        ctx.lineTo(x + 2 * scale, catY - 13 * scale);
+        ctx.closePath();
+        ctx.fill();
+
+        // Mouth
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1 * scale;
+        ctx.beginPath();
+        ctx.moveTo(x, catY - 13 * scale);
+        ctx.lineTo(x, catY - 11 * scale);
+        ctx.moveTo(x - 3 * scale, catY - 11 * scale);
+        ctx.quadraticCurveTo(x, catY - 9 * scale, x + 3 * scale, catY - 11 * scale);
+        ctx.stroke();
+
+        // Whiskers
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 0.5 * scale;
+        // Left whiskers
+        ctx.beginPath();
+        ctx.moveTo(x - 5 * scale, catY - 14 * scale);
+        ctx.lineTo(x - 15 * scale, catY - 16 * scale);
+        ctx.moveTo(x - 5 * scale, catY - 13 * scale);
+        ctx.lineTo(x - 15 * scale, catY - 13 * scale);
+        ctx.moveTo(x - 5 * scale, catY - 12 * scale);
+        ctx.lineTo(x - 15 * scale, catY - 10 * scale);
+        ctx.stroke();
+        // Right whiskers
+        ctx.beginPath();
+        ctx.moveTo(x + 5 * scale, catY - 14 * scale);
+        ctx.lineTo(x + 15 * scale, catY - 16 * scale);
+        ctx.moveTo(x + 5 * scale, catY - 13 * scale);
+        ctx.lineTo(x + 15 * scale, catY - 13 * scale);
+        ctx.moveTo(x + 5 * scale, catY - 12 * scale);
+        ctx.lineTo(x + 15 * scale, catY - 10 * scale);
+        ctx.stroke();
+    }
+
+    /**
      * Draw special wandering visitors
      */
     drawSpecialVisitors() {
@@ -2441,11 +2616,16 @@ class TowerRenderer {
             this.ctx.fillStyle = gradient;
             this.ctx.fillRect(x - glowSize, y - 15 - glowSize, glowSize * 2, glowSize * 2);
 
-            // Draw large emoji
-            this.ctx.font = `${this.getEmojiFontSize(20 * scale)}px Arial`;
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'bottom';
-            this.ctx.fillText(visitor.emoji, x, y);
+            // Check if this is the library cat - draw custom cat instead of emoji
+            if (visitor.id === 'cat') {
+                this.drawLibraryCat(x, y, scale);
+            } else {
+                // Draw large emoji for other visitors
+                this.ctx.font = `${this.getEmojiFontSize(20 * scale)}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'bottom';
+                this.ctx.fillText(visitor.emoji, x, y);
+            }
 
             // Draw name label
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -2990,16 +3170,10 @@ class TowerRenderer {
                     const b = vip._renderBounds;
                     if (clickX >= b.x && clickX <= b.x + b.width &&
                         clickY >= b.y && clickY <= b.y + b.height) {
-                        // VIP clicked - pick them up!
+                        // VIP clicked - show info modal instead of immediately picking up
                         if (window.haptic) window.haptic('medium');
-                        const result = this.game.pickUpVIP(vip.id);
-                        if (result.success) {
-                            this.spawnSparkle(clickX, clickY + this.scrollY);
-                            this.spawnTextParticle(clickX, clickY + this.scrollY, `${vip.name} picked up!`, '#FFD700');
-                            // Show escort UI
-                            if (window.showVIPEscortUI) {
-                                window.showVIPEscortUI(result.vip);
-                            }
+                        if (window.showVIPInfoModal) {
+                            window.showVIPInfoModal(vip);
                         }
                         return;
                     }
@@ -3943,14 +4117,10 @@ class TowerRenderer {
                         const b = vip._renderBounds;
                         if (clickX >= b.x && clickX <= b.x + b.width &&
                             clickY >= b.y && clickY <= b.y + b.height) {
+                            // VIP clicked - show info modal instead of immediately picking up
                             if (window.haptic) window.haptic('medium');
-                            const result = this.game.pickUpVIP(vip.id);
-                            if (result.success) {
-                                this.spawnSparkle(clickX, clickY + this.scrollY);
-                                this.spawnTextParticle(clickX, clickY + this.scrollY, `${vip.name} picked up!`, '#FFD700');
-                                if (window.showVIPEscortUI) {
-                                    window.showVIPEscortUI(result.vip);
-                                }
+                            if (window.showVIPInfoModal) {
+                                window.showVIPInfoModal(vip);
                             }
                             this.isDragging = false;
                             return;

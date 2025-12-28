@@ -2325,6 +2325,13 @@ body {
     font-style: italic;
 }
 
+/* Staff action buttons container */
+.staff-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
 /* Reassign staff button */
 .reassign-staff-btn {
     padding: 6px 12px;
@@ -2334,7 +2341,21 @@ body {
     border-radius: 8px;
     color: var(--text-primary);
     cursor: pointer;
-    margin-left: auto;
+}
+
+/* Fire staff button */
+.fire-staff-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    background: var(--gradient-red);
+    border: none;
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.fire-staff-btn:hover {
+    opacity: 0.9;
 }
 
 /* Floor options in reassign modal */

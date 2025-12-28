@@ -712,6 +712,78 @@ class GameState {
             }
         ];
 
+        // Utility staff types (for bathroom and basement)
+        this.utilityStaffTypes = [
+            // Bathroom staff
+            {
+                id: 'attendant',
+                name: 'Attendant',
+                emoji: '🧑‍💼',
+                color: '#42A5F5',
+                hireCost: 100,
+                floorType: 'bathroom',
+                slotIndex: 0,
+                description: 'Keeps supplies stocked',
+                effect: 'Keeps supplies stocked'
+            },
+            {
+                id: 'cleaner',
+                name: 'Cleaner',
+                emoji: '🧼',
+                color: '#26A69A',
+                hireCost: 150,
+                floorType: 'bathroom',
+                slotIndex: 1,
+                description: 'Maintains cleanliness',
+                effect: 'Maintains cleanliness'
+            },
+            {
+                id: 'maintenance',
+                name: 'Maintenance',
+                emoji: '🔧',
+                color: '#78909C',
+                hireCost: 200,
+                floorType: 'bathroom',
+                slotIndex: 2,
+                description: 'Fixes issues quickly',
+                effect: 'Fixes issues'
+            },
+            // Basement staff
+            {
+                id: 'custodian',
+                name: 'Custodian',
+                emoji: '🧹',
+                color: '#8D6E63',
+                hireCost: 100,
+                floorType: 'basement',
+                slotIndex: 0,
+                description: 'Cleans trash from floors',
+                effect: 'Cleans 30 trash per night cycle'
+            },
+            {
+                id: 'plumber',
+                name: 'Plumber',
+                emoji: '🔧',
+                color: '#5C6BC0',
+                hireCost: 200,
+                floorType: 'basement',
+                slotIndex: 1,
+                description: 'Prevents and fixes floods',
+                effect: 'Keeps bathrooms running smoothly'
+            },
+            {
+                id: 'electrician',
+                name: 'Electrician',
+                emoji: '⚡',
+                color: '#FFA000',
+                hireCost: 300,
+                floorType: 'basement',
+                slotIndex: 2,
+                description: 'Prevents and fixes power outages',
+                effect: 'Maintains lighting and power'
+            }
+        ];
+
         // ========== STAFF LOBBY SYSTEM ==========
         // Staff applicants waiting in lobby to be hired
         this.lobbyApplicants = [];
@@ -1634,6 +1706,17 @@ class GameState {
             return null;
         }
 
+        // Check if player has utility floors that need staff
+        const utilityFloorsNeedingStaff = this.getUtilityFloorsNeedingStaff();
+        const hasUtilityNeed = utilityFloorsNeedingStaff.length > 0;
+
+        // 30% chance to spawn utility staff if there's a need
+        const spawnUtilityStaff = hasUtilityNeed && Math.random() < 0.3;
+
+        if (spawnUtilityStaff) {
+            return this.spawnUtilityApplicant(utilityFloorsNeedingStaff);
+        }
+
         // Pick random staff type (weighted by player level)
         const typeWeights = [
             { type: 'page', weight: 50 },
@@ -1680,9 +1763,97 @@ class GameState {
             type: selectedType,
             typeName: staffType.name,
             color: staffType.color,
+            isUtilityStaff: false,
             dreamGenre: dreamGenre.id,
             dreamGenreName: dreamGenre.name,
             dreamGenreEmoji: dreamGenre.emoji,
+            skill: skill,
+            hireCost: hireCost,
+            spawnTime: Date.now(),
+            expiresAt: Date.now() + this.applicantExpiryTime,
+            // Appearance
+            shirtColor: shirtColors[Math.floor(Math.random() * shirtColors.length)],
+            pantsColor: pantsColors[Math.floor(Math.random() * pantsColors.length)],
+            skinColor: skinColors[Math.floor(Math.random() * skinColors.length)],
+            hairColor: hairColors[Math.floor(Math.random() * hairColors.length)]
+        };
+
+        this.lobbyApplicants.push(applicant);
+        this.save();
+
+        return applicant;
+    }
+
+    /**
+     * Get utility floors that have empty staff slots
+     */
+    getUtilityFloorsNeedingStaff() {
+        const needs = [];
+
+        this.floors.forEach(floor => {
+            if (floor.status !== 'ready') return;
+
+            const floorType = this.floorTypes.find(ft => ft.id === floor.typeId);
+            if (!floorType || !floorType.staffSlots) return;
+
+            // Check each slot
+            for (let i = 0; i < 3; i++) {
+                const staff = floor.staff[i];
+                if (!staff) {
+                    // Find which utility staff type goes in this slot
+                    const utilityType = this.utilityStaffTypes.find(
+                        ut => ut.floorType === floor.typeId && ut.slotIndex === i
+                    );
+                    if (utilityType) {
+                        needs.push({
+                            floor: floor,
+                            floorType: floorType,
+                            slotIndex: i,
+                            utilityType: utilityType
+                        });
+                    }
+                }
+            }
+        });
+
+        return needs;
+    }
+
+    /**
+     * Spawn a utility staff applicant
+     */
+    spawnUtilityApplicant(utilityNeeds) {
+        // Pick a random need
+        const need = utilityNeeds[Math.floor(Math.random() * utilityNeeds.length)];
+        const utilityType = need.utilityType;
+
+        // Generate random name
+        const name = this.staffFirstNames[Math.floor(Math.random() * this.staffFirstNames.length)];
+
+        // Random skill level 1-5
+        const skill = Math.floor(Math.random() * 5) + 1;
+
+        // Cost based on type and skill
+        const baseCost = utilityType.hireCost;
+        const hireCost = Math.floor(baseCost * (0.8 + skill * 0.2));
+
+        // Random appearance
+        const shirtColors = ['#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#795548', '#607D8B', '#E91E63', '#00BCD4', '#FF9800', '#8BC34A'];
+        const pantsColors = ['#37474F', '#1A237E', '#4E342E', '#263238', '#3E2723', '#212121'];
+        const skinColors = ['#FFDAB9', '#E8BEAC', '#D4A574', '#C68642', '#8D5524', '#F5DEB3'];
+        const hairColors = ['#4A3728', '#1C1C1C', '#8B4513', '#D4A574', '#A0522D', '#2F1B0C', '#696969'];
+
+        const applicant = {
+            id: this.generateId(),
+            name: name,
+            emoji: utilityType.emoji,
+            type: utilityType.id,
+            typeName: utilityType.name,
+            color: utilityType.color,
+            isUtilityStaff: true,
+            utilityFloorType: utilityType.floorType,
+            utilitySlotIndex: utilityType.slotIndex,
+            effect: utilityType.effect,
             skill: skill,
             hireCost: hireCost,
             spawnTime: Date.now(),
@@ -1714,6 +1885,17 @@ class GameState {
 
         if (!floor || floor.status !== 'ready') {
             return { success: false, error: 'Floor not ready' };
+        }
+
+        // Handle utility staff differently
+        if (applicant.isUtilityStaff) {
+            return this.hireUtilityApplicant(applicant, applicantIndex, floor);
+        }
+
+        // Check if this is a utility floor - regular staff can't be hired here
+        const floorType = this.floorTypes.find(ft => ft.id === floor.typeId);
+        if (floorType && floorType.staffSlots) {
+            return { success: false, error: 'This floor requires specialized staff' };
         }
 
         // Check if floor already has 3 staff (count non-null slots)
@@ -1773,6 +1955,66 @@ class GameState {
     }
 
     /**
+     * Hire a utility staff applicant to a utility floor
+     */
+    hireUtilityApplicant(applicant, applicantIndex, floor) {
+        // Check floor type matches
+        if (floor.typeId !== applicant.utilityFloorType) {
+            const floorTypeName = applicant.utilityFloorType === 'bathroom' ? 'Restroom' : 'Basement';
+            return { success: false, error: `This staff works in the ${floorTypeName}` };
+        }
+
+        // Check if the specific slot is already filled
+        const slotIndex = applicant.utilitySlotIndex;
+        if (floor.staff[slotIndex]) {
+            return { success: false, error: 'This position is already filled' };
+        }
+
+        // Check cost
+        if (this.stars < applicant.hireCost) {
+            return { success: false, error: 'Not enough stars' };
+        }
+
+        // Deduct cost
+        this.stars -= applicant.hireCost;
+
+        // Create staff member
+        const newStaff = {
+            id: applicant.id,
+            typeId: applicant.type,
+            name: applicant.name,
+            typeName: applicant.typeName,
+            emoji: applicant.emoji,
+            color: applicant.color,
+            skill: applicant.skill,
+            effect: applicant.effect,
+            isUtilityStaff: true,
+            hiredAt: Date.now()
+        };
+
+        // Place in correct slot
+        // Ensure staff array has enough slots
+        while (floor.staff.length <= slotIndex) {
+            floor.staff.push(null);
+        }
+        floor.staff[slotIndex] = newStaff;
+
+        // Remove from lobby
+        this.lobbyApplicants.splice(applicantIndex, 1);
+
+        // Update stats
+        this.stats.totalStaffHired += 1;
+
+        this.save();
+
+        return {
+            success: true,
+            staff: newStaff,
+            slotIndex: slotIndex
+        };
+    }
+
+    /**
      * Dismiss an applicant from the lobby
      */
     dismissApplicant(applicantId) {
@@ -1826,6 +2068,35 @@ class GameState {
         return {
             success: true,
             isDreamMatch: staff.dreamGenre === toFloor.typeId,
+            staff: staff
+        };
+    }
+
+    /**
+     * Fire a staff member from a floor
+     */
+    fireStaff(staffId, floorId) {
+        const floor = this.getFloor(floorId);
+
+        if (!floor) {
+            return { success: false, error: 'Floor not found' };
+        }
+
+        // Find staff on this floor
+        const staffIndex = floor.staff.findIndex(s => s && s.id === staffId);
+        if (staffIndex === -1) {
+            return { success: false, error: 'Staff not found on this floor' };
+        }
+
+        const staff = floor.staff[staffIndex];
+
+        // Remove staff from floor
+        floor.staff[staffIndex] = null;
+
+        this.save();
+
+        return {
+            success: true,
             staff: staff
         };
     }
@@ -3394,7 +3665,10 @@ class GameState {
 
         let power = 0;
         basement.staff.forEach(staffMember => {
-            if (staffMember === 'Custodian') power += 30; // Each custodian adds cleaning power
+            // Support both old string format and new object format
+            const isCustodian = staffMember === 'Custodian' ||
+                (staffMember && staffMember.typeId === 'custodian');
+            if (isCustodian) power += 30; // Each custodian adds cleaning power
         });
         return power > 0 ? power : 0;
     }
@@ -3412,8 +3686,10 @@ class GameState {
         const basement = this.floors.find(f => f.typeId === 'basement' && f.status === 'ready');
         if (!basement) return;
 
-        // Count custodians
-        const custodianCount = basement.staff.filter(s => s === 'Custodian').length;
+        // Count custodians (support both old string format and new object format)
+        const custodianCount = basement.staff.filter(s =>
+            s === 'Custodian' || (s && s.typeId === 'custodian')
+        ).length;
         if (custodianCount === 0) return;
 
         // Find dirty floors (trash > 0), sorted by most dirty first
@@ -3438,11 +3714,17 @@ class GameState {
      * Check for random incidents and fix them with appropriate staff
      */
     checkIncidents() {
-        // Find basement staff
+        // Find basement staff (support both old string format and new object format)
         const basement = this.floors.find(f => f.typeId === 'basement' && f.status === 'ready');
-        const hasElectrician = basement && basement.staff.includes('Electrician');
-        const hasPlumber = basement && basement.staff.includes('Plumber');
-        const hasCustodian = basement && basement.staff.includes('Custodian');
+        const hasElectrician = basement && basement.staff.some(s =>
+            s === 'Electrician' || (s && s.typeId === 'electrician')
+        );
+        const hasPlumber = basement && basement.staff.some(s =>
+            s === 'Plumber' || (s && s.typeId === 'plumber')
+        );
+        const hasCustodian = basement && basement.staff.some(s =>
+            s === 'Custodian' || (s && s.typeId === 'custodian')
+        );
 
         // Check if there's already an active incident - only allow one at a time
         const hasActiveIncident = this.floors.some(floor =>
