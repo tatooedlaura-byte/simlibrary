@@ -5409,4 +5409,86 @@ class GameState {
         localStorage.removeItem('simlibrary_save_v2');
         this.initializeNewGame();
     }
+
+    /**
+     * Setup game state for App Store screenshots
+     */
+    setupForScreenshots() {
+        // Reset first
+        this.reset();
+
+        // Give lots of resources
+        this.stars = 50000;
+        this.towerBucks = 100;
+        this.level = 15;
+        this.totalStarsEarned = 250000;
+        this.totalBooksCheckedOut = 5000;
+        this.totalReadersServed = 1200;
+
+        // Build several diverse floors
+        const floorTypes = ['fiction', 'mystery', 'romance', 'fantasy', 'childrens', 'teen'];
+        floorTypes.forEach(type => {
+            const result = this.buildFloor(type);
+            if (result.success) {
+                const floor = this.floors.find(f => f.typeId === type);
+                if (floor) {
+                    floor.status = 'ready';
+                    floor.buildEndTime = Date.now();
+                    floor.upgradeLevel = 2;
+                    // Stock books
+                    floor.bookStock.forEach(cat => {
+                        cat.currentStock = Math.floor(cat.maxStock * 0.7);
+                    });
+                }
+            }
+        });
+
+        // Add staff to some floors with dream matches
+        this.floors.forEach((floor, index) => {
+            if (floor.typeId !== 'lobby' && index < 4) {
+                const staffTypes = ['page', 'clerk', 'librarian'];
+                const names = ['Emma', 'Liam', 'Olivia', 'Noah', 'Ava', 'Mason'];
+                const emojis = ['👩‍💼', '👨‍💼', '👩‍🏫', '👨‍🏫', '📚', '🎓'];
+
+                for (let i = 0; i < 2; i++) {
+                    floor.staff.push({
+                        id: this.generateId(),
+                        typeId: staffTypes[i % 3],
+                        name: names[(index * 2 + i) % names.length],
+                        typeName: staffTypes[i % 3].charAt(0).toUpperCase() + staffTypes[i % 3].slice(1),
+                        emoji: emojis[(index * 2 + i) % emojis.length],
+                        color: '#4A90D9',
+                        skill: 3 + (i % 3),
+                        dreamGenre: floor.typeId,
+                        isDreamMatch: true,
+                        hiredAt: Date.now()
+                    });
+                }
+            }
+        });
+
+        // Spawn some readers on floors
+        this.floors.forEach(floor => {
+            if (floor.status === 'ready' && floor.typeId !== 'lobby') {
+                for (let i = 0; i < 3; i++) {
+                    this.spawnReaderOnFloor(floor);
+                }
+            }
+        });
+
+        // Add applicants to lobby
+        for (let i = 0; i < 2; i++) {
+            this.spawnApplicant();
+        }
+
+        // Add a VIP to lobby
+        this.spawnVIP();
+
+        // Set a nice time of day
+        this.lastTickTime = Date.now();
+
+        this.save();
+
+        return { success: true, message: 'Screenshot state ready! Reload the app.' };
+    }
 }

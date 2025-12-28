@@ -145,6 +145,7 @@ function closeConfirmModal(result) {
  */
 function init() {
     game = new GameState();
+    window.game = game; // Expose for console debugging
 
     // Initialize sound system
     SoundManager.init();
