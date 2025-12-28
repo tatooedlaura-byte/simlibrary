@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#FFD4B2"/>
+
+  <!-- Library building -->
+  <rect x="120" y="200" width="272" height="200" rx="8" fill="#FFF8F0"/>
+
+  <!-- Roof -->
+  <polygon points="256,120 100,200 412,200" fill="#E8D4C4"/>
+
+  <!-- Columns -->
+  <rect x="150" y="220" width="20" height="160" fill="#D4C4B4"/>
+  <rect x="200" y="220" width="20" height="160" fill="#D4C4B4"/>
+  <rect x="292" y="220" width="20" height="160" fill="#D4C4B4"/>
+  <rect x="342" y="220" width="20" height="160" fill="#D4C4B4"/>
+
+  <!-- Door -->
+  <rect x="236" y="300" width="40" height="80" rx="4" fill="#8B7355"/>
+
+  <!-- Books on shelves -->
+  <rect x="160" y="240" width="8" height="30" fill="#FF6B6B"/>
+  <rect x="170" y="245" width="8" height="25" fill="#4ECDC4"/>
+  <rect x="180" y="240" width="8" height="30" fill="#45B7D1"/>
+
+  <rect x="324" y="240" width="8" height="30" fill="#96CEB4"/>
+  <rect x="334" y="245" width="8" height="25" fill="#FFEAA7"/>
+  <rect x="344" y="240" width="8" height="30" fill="#DDA0DD"/>
+
+  <!-- Star decoration -->
+  <polygon points="256,140 262,155 278,158 266,169 269,185 256,177 243,185 246,169 234,158 250,155" fill="#FFD700"/>
+</svg>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SimLibrary - Build Your Dream Library</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Build your dream library tower! A cozy idle game.">
+    <meta name="theme-color" content="#FFD4B2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SimLibrary">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#FFD4B2">
+    <meta name="msapplication-tap-highlight" content="no">
+
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="icons/icon-152.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-192.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-72.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-72.png">
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Main App Container -->
+    <div id="app">
+
+        <!-- Library Tower Screen (Main View) -->
+        <div id="tower-screen" class="screen active">
+            <header class="app-header">
+                <div class="header-row">
+                    <h1>📚 SimLibrary</h1>
+                    <span class="day-counter" id="day-counter">Day 1</span>
+                </div>
+                <div class="stats-bar">
+                    <div class="stats-row">
+                        <div class="stat compact">
+                            <span class="stat-icon">⭐</span>
+                            <span class="stat-value" id="total-stars">0</span>
+                        </div>
+                        <div class="stat compact bucks-stat">
+                            <span class="stat-icon">💎</span>
+                            <span class="stat-value" id="total-bucks">0</span>
+                        </div>
+                        <div class="stat compact">
+                            <span class="stat-icon">📊</span>
+                            <span class="stat-label">Lvl</span>
+                            <span class="stat-value" id="player-level">1</span>
+                        </div>
+                        <div class="stat mood-stat">
+                            <span class="stat-icon" id="mood-emoji">😊</span>
+                            <span class="stat-value" id="mood-value">50</span>
+                        </div>
+                        <div class="stat compact weather-stat">
+                            <span class="stat-icon" id="weather-emoji">☀️</span>
+                        </div>
+                    </div>
+                    <div class="stats-row">
+                        <button class="stats-btn" id="open-stats-btn" title="View Statistics">📈</button>
+                        <button class="stats-btn" id="open-achievements-btn" title="View Achievements">🏆</button>
+                        <button class="stats-btn" id="open-collection-btn" title="Reader Collection">📖</button>
+                        <button class="stats-btn" id="toggle-sound-btn" title="Toggle Sound">🔔</button>
+                        <button class="stats-btn" id="restock-all-btn" title="Restock All (💎)">📦</button>
+                        <button class="stats-btn" id="open-help-btn" title="Help & Tutorial">❓</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Mission Banner -->
+            <div id="mission-banner" class="mission-banner" style="display: none;">
+                <!-- Mission content will be inserted here -->
+            </div>
+
+            <div class="tower-container">
+                <!-- Visual Tower Canvas -->
+                <div class="canvas-container">
+                    <canvas id="tower-canvas"></canvas>
+                </div>
+
+                <!-- Original list view (hidden by default, can toggle) -->
+                <div id="floors-list" class="floors-list" style="display: none;">
+                    <!-- Floors will be dynamically inserted here -->
+                </div>
+
+                <button class="add-floor-btn" id="add-floor-btn" style="display: none;">
+                    <span class="btn-icon">➕</span>
+                    Build New Floor
+                </button>
+            </div>
+        </div>
+
+        <!-- Floating Balance Indicator -->
+        <div id="floating-balance" class="floating-balance">
+            <span>⭐ <span id="floating-stars">0</span></span>
+            <span>💎 <span id="floating-bucks">0</span></span>
+        </div>
+
+        <!-- Floor Detail Modal -->
+        <div id="detail-modal" class="modal">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <div class="floor-hero-inline">
+                        <span class="floor-emoji-large" id="detail-emoji">📖</span>
+                        <div>
+                            <h3 id="detail-name">Floor Name</h3>
+                            <div class="floor-status" id="detail-status">Ready</div>
+                            <div class="floor-bonus" id="detail-bonus" style="font-size: 12px; color: #666; margin-top: 4px;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-balance">
+                        <span>⭐ <span id="modal-stars">0</span></span>
+                        <span>💎 <span id="modal-bucks">0</span></span>
+                    </div>
+                    <button class="close-btn" id="close-detail-modal">✕</button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- Floor Preview Section -->
+                    <div class="floor-preview-section" id="floor-preview-section" style="margin-bottom: 15px; border-radius: 8px; overflow: hidden; display: none;">
+                        <img id="floor-preview-img" style="width: 100%; height: auto; display: block;" alt="Floor preview">
+                    </div>
+
+                    <!-- Upgrade Section -->
+                    <div class="upgrade-section" id="upgrade-section">
+                        <!-- Upgrade button will be inserted here -->
+                    </div>
+
+                    <!-- Staff Section -->
+                    <div class="staff-section">
+                        <h4>Staff</h4>
+                        <div id="staff-slots" class="staff-slots">
+                            <!-- Staff slots will be inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Book Stock Section -->
+                    <div class="book-stock-section">
+                        <h4>Book Categories</h4>
+                        <div id="book-categories" class="book-categories">
+                            <!-- Book category cards will be inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Active Readers Section -->
+                    <div class="readers-section">
+                        <h4>Active Readers</h4>
+                        <div id="active-readers" class="active-readers">
+                            <p class="empty-state">No readers currently visiting</p>
+                        </div>
+                    </div>
+
+                    <!-- Delete Floor Section -->
+                    <div class="delete-section" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
+                        <button id="delete-floor-btn" class="delete-floor-btn" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%;">
+                            🗑️ Delete Floor (50% refund)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Build Floor Modal -->
+        <div id="build-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Build New Floor</h3>
+                    <div class="modal-balance">
+                        <span>⭐ <span id="build-modal-stars">0</span></span>
+                        <span>💎 <span id="build-modal-bucks">0</span></span>
+                    </div>
+                    <button class="close-btn" id="close-build-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div id="floor-types-list" class="floor-types-list">
+                        <!-- Floor type options will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Modal -->
+        <div id="stats-modal" class="modal">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h3>📊 Library Statistics</h3>
+                    <button class="close-btn" id="close-stats-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon-large">📚</div>
+                            <div class="stat-number" id="stat-books">0</div>
+                            <div class="stat-name">Books Checked Out</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-large">⭐</div>
+                            <div class="stat-number" id="stat-stars">0</div>
+                            <div class="stat-name">Total Stars Earned</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-large">👥</div>
+                            <div class="stat-number" id="stat-readers">0</div>
+                            <div class="stat-name">Readers Served</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-large">✨</div>
+                            <div class="stat-number" id="stat-vips">0</div>
+                            <div class="stat-name">VIP Readers Served</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-large">📝</div>
+                            <div class="stat-number" id="stat-missions">0</div>
+                            <div class="stat-name">Missions Completed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-large">💎</div>
+                            <div class="stat-number" id="stat-bucks-earned">0</div>
+                            <div class="stat-name">Tower Bucks Earned</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-large">🏢</div>
+                            <div class="stat-number" id="stat-floors">0</div>
+                            <div class="stat-name">Floors Built</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-large">👔</div>
+                            <div class="stat-number" id="stat-staff">0</div>
+                            <div class="stat-name">Staff Hired</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-large">⏱️</div>
+                            <div class="stat-number" id="stat-time">0h 0m</div>
+                            <div class="stat-name">Time Played</div>
+                        </div>
+                    </div>
+                    <div class="reset-section">
+                        <button class="action-btn" id="export-game-btn">💾 Export Save</button>
+                        <button class="action-btn" id="import-game-btn">📥 Import Save</button>
+                        <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                        <button class="reset-btn" id="reset-game-btn">🔄 Restart Tower</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements Modal -->
+        <div id="achievements-modal" class="modal">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h3>🏆 Achievements</h3>
+                    <button class="close-btn" id="close-achievements-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="achievements-summary">
+                        <span id="achievements-unlocked-count">0</span> / <span id="achievements-total-count">0</span> Unlocked
+                    </div>
+                    <div id="achievements-list" class="achievements-list">
+                        <!-- Achievement cards will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirm-modal" class="modal">
+            <div class="modal-content small">
+                <div class="modal-header">
+                    <h3 id="confirm-title">Confirm</h3>
+                    <button class="close-btn" id="close-confirm-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirm-message">Are you sure?</p>
+                    <div class="confirm-buttons">
+                        <button class="btn-cancel" id="confirm-cancel">Cancel</button>
+                        <button class="btn-confirm" id="confirm-ok">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reader Collection Modal -->
+        <div id="collection-modal" class="modal">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h3>📖 Reader Collection</h3>
+                    <button class="close-btn" id="close-collection-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="collection-summary">
+                        <span id="collection-seen-count">0</span> / <span id="collection-total-count">0</span> Discovered
+                    </div>
+                    <div class="collection-sections">
+                        <div class="collection-section">
+                            <h4>Regular Readers</h4>
+                            <div id="regular-readers-list" class="collection-list">
+                                <!-- Regular reader cards will be inserted here -->
+                            </div>
+                        </div>
+                        <div class="collection-section">
+                            <h4>VIP Readers</h4>
+                            <div id="vip-readers-list" class="collection-list">
+                                <!-- VIP reader cards will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onboarding Overlay -->
+        <div id="onboarding-overlay" class="onboarding-overlay">
+            <div class="onboarding-spotlight"></div>
+            <div class="onboarding-tooltip">
+                <div class="onboarding-step-indicator"></div>
+                <div class="onboarding-content">
+                    <h4 class="onboarding-title"></h4>
+                    <p class="onboarding-text"></p>
+                </div>
+                <div class="onboarding-buttons">
+                    <button class="onboarding-skip">Skip Tutorial</button>
+                    <button class="onboarding-next">Next</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help/Tutorial Modal -->
+        <div id="help-modal" class="modal">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h3>❓ How to Play</h3>
+                    <button class="close-btn" id="close-help-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="help-content">
+                        <div class="help-section">
+                            <h4>🏗️ Building Your Library</h4>
+                            <p>Tap floors to view details and upgrade them. Build new floors to attract more readers and earn more stars.</p>
+                        </div>
+                        <div class="help-section">
+                            <h4>⭐ Earning Stars</h4>
+                            <p>Readers visit your floors and check out books. Each checkout earns you stars. VIP readers (with ✨) give bonus stars!</p>
+                        </div>
+                        <div class="help-section">
+                            <h4>👔 Hiring Staff</h4>
+                            <p>Upgrade floors to unlock staff slots. Staff help serve readers faster. Basement staff (Electrician, Plumber, Custodian) fix incidents.</p>
+                        </div>
+                        <div class="help-section">
+                            <h4>📋 Missions</h4>
+                            <p>Complete missions shown in the banner for bonus stars and Tower Bucks. Tap items to find hidden objects!</p>
+                        </div>
+                        <div class="help-section">
+                            <h4>🌧️ Weather</h4>
+                            <p>Rainy weather brings more visitors (people want to stay indoors!). Tap the weather icon to see the forecast.</p>
+                        </div>
+                        <div class="help-section">
+                            <h4>😊 Mood</h4>
+                            <p>Keep your library happy! Tap the mood indicator to see problems like dirty floors or incidents that need fixing. Incidents take different amounts of time to fix - spills are quick (20-40s), while fire alarms take longer (60-120s).</p>
+                        </div>
+                        <div class="help-section">
+                            <h4>💎 Tower Bucks</h4>
+                            <p>Premium currency earned from missions and achievements. Use them to rush construction or trade for stars in the Perks tab.</p>
+                        </div>
+                        <div class="help-section">
+                            <h4>↕️ Moving Floors</h4>
+                            <p>Long-press (hold) on a floor to pick it up, then drag it to a new position. Release to drop it in place. Reorder your tower however you like!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upgrades Modal -->
+        <div id="upgrades-modal" class="modal">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h3>🏛️ Library Upgrades</h3>
+                    <button class="close-btn" id="close-upgrades-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Prestige Banner -->
+                    <div id="prestige-banner" class="prestige-banner">
+                        <!-- Prestige info will be inserted here -->
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="upgrades-tabs">
+                        <button class="tab-btn active" data-tab="decorations">🪴 Decorations</button>
+                        <button class="tab-btn" data-tab="perks">🎁 Perks</button>
+                        <button class="tab-btn" data-tab="staff">👔 Staff</button>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div id="upgrades-content" class="upgrades-content">
+                        <!-- Content will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/gamestate.js?v=20251227"></script>
+    <script src="js/tower-renderer.js?v=20251227"></script>
+    <script src="js/app.js?v=20251227"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
