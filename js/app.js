@@ -2809,56 +2809,70 @@ const onboardingSteps = [
         id: 'welcome',
         title: '📚 Welcome to SimLibrary!',
         text: 'Build your dream library floor by floor, attract readers, and earn stars! Let me show you around.',
-        target: null, // No specific target, center of screen
+        target: null,
         position: 'center'
     },
     {
         id: 'stars',
         title: '⭐ Stars',
-        text: 'This is your currency. Use stars to build new floors and upgrade your library.',
+        text: 'This is your currency. Use stars to build new floors, hire staff, and restock books.',
         target: '.stats-bar',
         position: 'bottom'
     },
     {
         id: 'tower',
         title: '🏛️ Your Library Tower',
-        text: 'This is your library! Tap on any floor to see details, hire staff, and upgrade it.',
+        text: 'This is your library! Tap on any floor to see details, manage staff, and restock books.',
         target: '#tower-canvas',
         position: 'top'
     },
     {
+        id: 'lobby',
+        title: '🚪 The Lobby',
+        text: 'The ground floor is your lobby. Staff applicants and VIP visitors will appear here - tap them to interact!',
+        target: null,
+        position: 'center'
+    },
+    {
+        id: 'applicants',
+        title: '👔 Hiring Staff',
+        text: 'When applicants appear in the lobby, tap them to see their info. Each has a "dream floor" - place them there for 2x restock speed!',
+        target: null,
+        position: 'center'
+    },
+    {
+        id: 'vips',
+        title: '⭐ VIP Visitors',
+        text: 'Famous visitors arrive in the lobby too! Tap to pick them up, then tap a floor to drop them off for special bonuses.',
+        target: null,
+        position: 'center'
+    },
+    {
         id: 'build',
         title: '🏗️ Build New Floors',
-        text: 'Tap here to add new floors to your library. Each floor type attracts different readers!',
-        target: '#tower-canvas', // We'll position near the build slot
+        text: 'Tap the empty slot at the top to add new floors. Each floor type attracts different readers!',
+        target: '#tower-canvas',
         position: 'top',
         customTarget: 'buildSlot'
     },
     {
         id: 'readers',
         title: '👥 Readers',
-        text: 'Readers will visit your floors and check out books. The longer they browse, the more books they take!',
+        text: 'Readers visit your floors and check out books. Keep books stocked to maximize earnings!',
         target: null,
         position: 'center'
     },
     {
         id: 'missions',
         title: '📋 Missions',
-        text: 'Complete missions to earn bonus stars and Tower Bucks. Watch for the mission banner at the top of the screen!',
+        text: 'Complete missions to earn bonus stars and Tower Bucks. Watch for the banner at the top!',
         target: null,
         position: 'center'
     },
     {
-        id: 'stats',
-        title: '📊 Library Stats',
-        text: 'Tap here to see your collection, achievements, and detailed statistics.',
-        target: '#open-stats-btn',
-        position: 'bottom'
-    },
-    {
         id: 'ready',
         title: '🎉 You\'re Ready!',
-        text: 'Start building your library empire! Tap floors to manage them, and have fun!',
+        text: 'Build floors, hire staff from the lobby, escort VIPs, and grow your library empire!',
         target: null,
         position: 'center'
     }
