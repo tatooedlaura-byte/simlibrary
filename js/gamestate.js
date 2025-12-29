@@ -787,7 +787,7 @@ class GameState {
         // ========== STAFF LOBBY SYSTEM ==========
         // Staff applicants waiting in lobby to be hired
         this.lobbyApplicants = [];
-        this.maxLobbyApplicants = 2; // Max applicants (shared lobby limit of 3 total)
+        this.maxLobbyApplicants = 3; // Max applicants in lobby
         this.applicantExpiryTime = 5 * 60 * 1000; // 5 minutes
 
         // Staff first names for random generation

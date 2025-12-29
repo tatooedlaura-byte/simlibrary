@@ -3062,6 +3062,10 @@ class TowerRenderer {
      * Handle canvas clicks
      */
     handleClick(e) {
+        // Block clicks that happen right after a touch tap (prevents duplicate processing)
+        if (this._lastTouchTapTime && Date.now() - this._lastTouchTapTime < 500) {
+            return;
+        }
         // Block clicks that happen right after exiting reorder mode (prevents floor modal opening)
         if (this._reorderExitTime && Date.now() - this._reorderExitTime < 300) {
             return;
@@ -4019,6 +4023,8 @@ class TowerRenderer {
 
         // If we didn't move much, treat it as a tap/click
         if (!this._touchMoved) {
+            // Mark that touch handled this tap (prevents duplicate click event processing)
+            this._lastTouchTapTime = Date.now();
             // Use the rect stored at touch start to avoid page scroll mismatch
             const rect = this._touchStartRect || this.canvas.getBoundingClientRect();
 
