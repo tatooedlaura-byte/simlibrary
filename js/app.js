@@ -854,12 +854,7 @@ function updateGlobalStats() {
     // Update day counter with clock
     document.getElementById('day-counter').textContent = `Day ${game.getGameDay()} • ${game.getGameClock()}`;
 
-    // Update weather indicator
-    const currentWeather = game.getCurrentWeather();
-    if (currentWeather) {
-        document.getElementById('weather-emoji').textContent = currentWeather.emoji;
-        document.getElementById('weather-emoji').title = `${currentWeather.name} - Mood: ${currentWeather.moodEffect >= 0 ? '+' : ''}${currentWeather.moodEffect}, Visitors: ${Math.round(currentWeather.spawnEffect * 100)}%`;
-    }
+    // Weather indicator was removed - save button is in its place now
 
     // Check for special visitor notifications
     if (game._newSpecialVisitor) {
