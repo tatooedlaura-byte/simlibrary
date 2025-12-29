@@ -123,6 +123,9 @@ function showConfirm(title, message) {
         // Reset button text (may have been changed by other modals)
         document.getElementById('confirm-ok').textContent = 'Confirm';
         document.getElementById('confirm-cancel').textContent = 'Cancel';
+        // Clear any old onclick handlers from other modals (e.g., applicant modal)
+        document.getElementById('confirm-ok').onclick = null;
+        document.getElementById('confirm-cancel').onclick = null;
         document.getElementById('confirm-modal').classList.add('active');
 
         confirmCallback = resolve;
@@ -576,10 +579,62 @@ function setupEventListeners() {
         }
     });
 
-    // Weather forecast click
-    document.getElementById('weather-emoji').addEventListener('click', () => {
+    // Save modal button
+    document.getElementById('open-save-btn').addEventListener('click', () => {
+        haptic('medium');
+        document.getElementById('save-modal').classList.add('active');
+    });
+
+    // Save modal close
+    document.getElementById('close-save-modal').addEventListener('click', () => {
         haptic('light');
-        showWeatherForecast();
+        document.getElementById('save-modal').classList.remove('active');
+    });
+
+    // Save modal - close on background click
+    document.getElementById('save-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'save-modal') {
+            document.getElementById('save-modal').classList.remove('active');
+        }
+    });
+
+    // Save modal - Export
+    document.getElementById('save-export-btn').addEventListener('click', () => {
+        haptic('medium');
+        exportGameSave();
+        document.getElementById('save-modal').classList.remove('active');
+    });
+
+    // Save modal - Import
+    document.getElementById('save-import-btn').addEventListener('click', () => {
+        haptic('medium');
+        document.getElementById('save-import-file').click();
+    });
+
+    // Save modal - Import file handler
+    document.getElementById('save-import-file').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            importGameSave(file);
+            document.getElementById('save-modal').classList.remove('active');
+        }
+        e.target.value = '';
+    });
+
+    // Save modal - Restart
+    document.getElementById('save-restart-btn').addEventListener('click', async () => {
+        document.getElementById('save-modal').classList.remove('active');
+        const confirmed = await showConfirm(
+            'Restart Tower',
+            'This will delete ALL your progress and start fresh. Are you sure?'
+        );
+
+        if (confirmed) {
+            game.reset();
+            renderTowerScreen();
+            updateGlobalStats();
+            window.location.reload();
+        }
     });
 
     // Mood breakdown click
