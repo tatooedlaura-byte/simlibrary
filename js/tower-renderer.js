@@ -2649,15 +2649,17 @@ class TowerRenderer {
                 this.drawThoughtBubbleAt(x, y - 55 * scale, thought);
             }
 
-            // Time remaining indicator
-            const timeLeft = visitor.endTime - Date.now();
-            const progress = timeLeft / (visitor.endTime - visitor.startTime);
+            // Time remaining indicator (skip for cat - already has cute cat drawing)
+            if (visitor.id !== 'cat') {
+                const timeLeft = visitor.endTime - Date.now();
+                const progress = timeLeft / (visitor.endTime - visitor.startTime);
 
-            this.ctx.strokeStyle = '#FFD700';
-            this.ctx.lineWidth = 2;
-            this.ctx.beginPath();
-            this.ctx.arc(x, y - 25 * scale, 12 * scale, -Math.PI / 2, -Math.PI / 2 + (progress * Math.PI * 2));
-            this.ctx.stroke();
+                this.ctx.strokeStyle = '#FFD700';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.arc(x, y - 25 * scale, 12 * scale, -Math.PI / 2, -Math.PI / 2 + (progress * Math.PI * 2));
+                this.ctx.stroke();
+            }
         });
     }
 
