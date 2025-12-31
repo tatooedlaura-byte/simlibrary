@@ -2437,16 +2437,15 @@ body {
     cursor: pointer;
 }
 
-/* Fire staff button - smaller to avoid accidental taps */
+/* Fire staff button */
 .fire-staff-btn {
-    padding: 4px 8px;
-    font-size: 0.7rem;
-    background: #ddd;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    background: var(--gradient-red);
     border: none;
-    border-radius: 6px;
-    color: #999;
+    border-radius: 8px;
+    color: var(--text-primary);
     cursor: pointer;
-    margin-left: 8px;
 }
 
 .fire-staff-btn:hover {

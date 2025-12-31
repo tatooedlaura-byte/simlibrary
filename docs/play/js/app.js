@@ -1604,21 +1604,15 @@ function renderStaffSlots(floor) {
         btn.addEventListener('touchend', handleReassign);
     });
 
-    // Add event listeners for fire buttons
+    // Add event listeners for fire buttons (click only - no touchend to avoid accidental triggers while scrolling)
     container.querySelectorAll('.fire-staff-btn').forEach(btn => {
-        let handled = false;
-        const handleFire = (e) => {
-            if (handled) return;
-            handled = true;
+        btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             const floorId = btn.dataset.floorId;
             const staffId = btn.dataset.staffId;
             handleFireStaff(floorId, staffId);
-            setTimeout(() => { handled = false; }, 500);
-        };
-        btn.addEventListener('click', handleFire);
-        btn.addEventListener('touchend', handleFire);
+        });
     });
 }
 
