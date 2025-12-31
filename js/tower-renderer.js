@@ -1837,20 +1837,28 @@ class TowerRenderer {
      */
     drawFloorHappiness(floor, x, y) {
         // Get happiness based on trash (100 - trash = happiness)
-        const happiness = floor.trash !== undefined ? 100 - floor.trash : 100;
+        // Check if all 3 staff are working their dream job
+        const dreamMatchCount = this.game.getFloorDreamMatchBonus(floor);
+        const allDreamJobs = floor.staff && floor.staff.length === 3 && dreamMatchCount === 3;
 
-        // Choose emoji based on happiness level
         let emoji;
-        if (happiness >= 80) {
-            emoji = '😄'; // Very happy - clean
-        } else if (happiness >= 60) {
-            emoji = '😊'; // Happy - slight trash
-        } else if (happiness >= 40) {
-            emoji = '😐'; // Neutral - moderate trash
-        } else if (happiness >= 20) {
-            emoji = '😟'; // Unhappy - dirty
+        if (allDreamJobs) {
+            emoji = '⭐'; // All dream jobs filled!
         } else {
-            emoji = '🤢'; // Very unhappy - filthy
+            const happiness = floor.trash !== undefined ? 100 - floor.trash : 100;
+
+            // Choose emoji based on happiness level
+            if (happiness >= 80) {
+                emoji = '😄'; // Very happy - clean
+            } else if (happiness >= 60) {
+                emoji = '😊'; // Happy - slight trash
+            } else if (happiness >= 40) {
+                emoji = '😐'; // Neutral - moderate trash
+            } else if (happiness >= 20) {
+                emoji = '😟'; // Unhappy - dirty
+            } else {
+                emoji = '🤢'; // Very unhappy - filthy
+            }
         }
 
         this.ctx.save();
