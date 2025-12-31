@@ -5021,6 +5021,12 @@ class GameState {
                     const synergyBonus = this.getSynergyBonus(floor.type);
                     finalEarnings = Math.floor(finalEarnings * synergyBonus);
 
+                    // Apply all-dream-jobs bonus (2x when all 3 staff have dream job)
+                    const dreamMatchCount = this.getFloorDreamMatchBonus(floor);
+                    if (floor.staff && floor.staff.length === 3 && dreamMatchCount === 3) {
+                        finalEarnings = Math.floor(finalEarnings * 2);
+                    }
+
                     // Apply VIP floor bonus (from dropping VIPs at floors)
                     const floorBonus = this.getFloorBonus(floor.id);
                     if (floorBonus && floorBonus.type === 'readers') {
