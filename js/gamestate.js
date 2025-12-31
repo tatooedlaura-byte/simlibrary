@@ -246,10 +246,15 @@ class GameState {
             { id: 'red_book', emoji: '📕', name: 'Red Book', color: '#FF6B6B' },
             { id: 'blue_book', emoji: '📘', name: 'Blue Book', color: '#4ECDC4' },
             { id: 'green_book', emoji: '📗', name: 'Green Book', color: '#95E1A3' },
-            { id: 'coin', emoji: '🪙', name: 'Coin', color: '#FFD700' },
-            { id: 'star', emoji: '⭐', name: 'Star', color: '#FFD700' },
-            { id: 'heart', emoji: '❤️', name: 'Heart', color: '#FF69B4' },
             { id: 'diamond', emoji: '💎', name: 'Diamond', color: '#00CED1' },
+            { id: 'glasses', emoji: '👓', name: 'Glasses', color: '#8B4513' },
+            { id: 'plant', emoji: '🪴', name: 'Plant', color: '#228B22' },
+            { id: 'teacup', emoji: '🍵', name: 'Teacup', color: '#98D8C8' },
+            { id: 'bookmark', emoji: '🔖', name: 'Bookmark', color: '#DC143C' },
+            { id: 'pencil', emoji: '✏️', name: 'Pencil', color: '#FFD700' },
+            { id: 'notebook', emoji: '📓', name: 'Notebook', color: '#DDA0DD' },
+            { id: 'lamp', emoji: '🪔', name: 'Lamp', color: '#FFA500' },
+            { id: 'coffee', emoji: '☕', name: 'Coffee', color: '#8B4513' },
             { id: 'key', emoji: '🔑', name: 'Key', color: '#DAA520' }
         ];
 
