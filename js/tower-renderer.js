@@ -1979,32 +1979,20 @@ class TowerRenderer {
             const x = floorX + item.x * this.floorWidth;
             const y = floorY + item.y * this.floorHeight;
             const scale = this.getScale();
-            const size = 32 * scale; // Larger size
+            const size = 28 * scale;
 
-            // Pulsing animation
-            const pulse = 1 + Math.sin(time / 300) * 0.1;
+            // Subtle shimmer animation
+            const shimmer = 0.3 + Math.sin(time / 400) * 0.15;
 
-            // Draw outer glow ring (pulsing)
-            this.ctx.strokeStyle = item.color;
-            this.ctx.lineWidth = 3 * scale;
+            // Draw gold shimmer glow
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${shimmer})`;
             this.ctx.beginPath();
-            this.ctx.arc(x, y, size * pulse, 0, Math.PI * 2);
-            this.ctx.stroke();
-
-            // Draw solid white background circle
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, size * 0.8, 0, Math.PI * 2);
+            this.ctx.arc(x, y, size * 1.1, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Draw colored border
-            this.ctx.strokeStyle = item.color;
-            this.ctx.lineWidth = 2 * scale;
-            this.ctx.stroke();
-
-            // Draw item emoji LARGE and clear
+            // Draw item emoji - larger and clearer
             this.ctx.fillStyle = '#000000';
-            this.ctx.font = `${this.getEmojiFontSize(Math.round(size * 1.2))}px Arial`;
+            this.ctx.font = `${this.getEmojiFontSize(Math.round(size))}px Arial`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText(item.emoji, x, y);
