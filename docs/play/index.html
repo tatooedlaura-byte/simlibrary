@@ -60,14 +60,13 @@
                             <span class="stat-icon" id="mood-emoji">😊</span>
                             <span class="stat-value" id="mood-value">50</span>
                         </div>
-                        <div class="stat compact weather-stat">
-                            <span class="stat-icon" id="weather-emoji">☀️</span>
-                        </div>
+                        <button class="stats-btn" id="open-save-btn" title="Save/Load">💾</button>
                     </div>
                     <div class="stats-row">
                         <button class="stats-btn" id="open-stats-btn" title="View Statistics">📈</button>
                         <button class="stats-btn" id="open-achievements-btn" title="View Achievements">🏆</button>
                         <button class="stats-btn" id="open-collection-btn" title="Reader Collection">📖</button>
+                        <button class="stats-btn" id="open-staff-btn" title="Staff Directory">👔</button>
                         <button class="stats-btn" id="toggle-sound-btn" title="Toggle Sound">🔔</button>
                         <button class="stats-btn" id="restock-all-btn" title="Restock All (💎)">📦</button>
                         <button class="stats-btn" id="open-help-btn" title="Help & Tutorial">❓</button>
@@ -316,6 +315,24 @@
             </div>
         </div>
 
+        <!-- Staff Directory Modal -->
+        <div id="staff-modal" class="modal">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h3>👔 Staff Directory</h3>
+                    <button class="close-btn" id="close-staff-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="staff-summary">
+                        <span id="staff-employed-count">0</span> staff employed
+                    </div>
+                    <div id="staff-directory-list" class="staff-directory-list">
+                        <!-- Staff cards will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Onboarding Overlay -->
         <div id="onboarding-overlay" class="onboarding-overlay">
             <div class="onboarding-spotlight"></div>
@@ -406,22 +423,36 @@
             </div>
         </div>
 
+        <!-- Save/Load Modal -->
+        <div id="save-modal" class="modal">
+            <div class="modal-content small">
+                <div class="modal-header">
+                    <h3>💾 Save & Load</h3>
+                    <button class="close-btn" id="close-save-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <button class="btn-large btn-primary" id="save-export-btn">
+                            <span class="btn-icon">📤</span> Export Save
+                        </button>
+                        <button class="btn-large btn-secondary" id="save-import-btn">
+                            <span class="btn-icon">📥</span> Import Save
+                        </button>
+                        <input type="file" id="save-import-file" accept=".json" style="display: none;">
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 8px 0;">
+                        <button class="btn-large" id="save-restart-btn" style="background: #ff6b6b; color: white;">
+                            <span class="btn-icon">🔄</span> Restart Tower
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Scripts -->
-    <script src="js/gamestate.js?v=20251227"></script>
-    <script src="js/tower-renderer.js?v=20251227"></script>
-    <script src="js/app.js?v=20251227"></script>
-
-    <!-- Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW registered:', reg.scope))
-                    .catch(err => console.log('SW registration failed:', err));
-            });
-        }
-    </script>
+    <script src="js/gamestate.js"></script>
+    <script src="js/tower-renderer.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

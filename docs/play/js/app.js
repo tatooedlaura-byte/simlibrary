@@ -123,6 +123,9 @@ function showConfirm(title, message) {
         // Reset button text (may have been changed by other modals)
         document.getElementById('confirm-ok').textContent = 'Confirm';
         document.getElementById('confirm-cancel').textContent = 'Cancel';
+        // Clear any old onclick handlers from other modals (e.g., applicant modal)
+        document.getElementById('confirm-ok').onclick = null;
+        document.getElementById('confirm-cancel').onclick = null;
         document.getElementById('confirm-modal').classList.add('active');
 
         confirmCallback = resolve;
@@ -240,6 +243,17 @@ function init() {
         if (game._rushHourNotification) {
             alert(`🎉 ${game._rushHourNotification.message}\n\nReaders will arrive 4x faster for the next 3 minutes!`);
             game._rushHourNotification = null;
+        }
+
+        // Show book sale notification
+        if (game._bookSaleNotification) {
+            alert(`🎉 ${game._bookSaleNotification.message}\n\n5x more visitors and 3x star earnings for 2 minutes!`);
+            game._bookSaleNotification = null;
+        }
+
+        // Show book sale end notification
+        if (game._bookSaleEndNotification) {
+            game._bookSaleEndNotification = null;
         }
 
         // Check for new achievements
@@ -413,6 +427,25 @@ function setupEventListeners() {
         }
     });
 
+    // Staff directory button - opens staff modal
+    document.getElementById('open-staff-btn').addEventListener('click', () => {
+        haptic('medium');
+        openStaffModal();
+    });
+
+    // Staff modal close button
+    document.getElementById('close-staff-modal').addEventListener('click', () => {
+        haptic('light');
+        closeStaffModal();
+    });
+
+    // Close staff modal when clicking outside
+    document.getElementById('staff-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'staff-modal') {
+            closeStaffModal();
+        }
+    });
+
     // Upgrades button - opens upgrades modal (if button exists)
     const upgradesBtn = document.getElementById('open-upgrades-btn');
     if (upgradesBtn) {
@@ -576,10 +609,62 @@ function setupEventListeners() {
         }
     });
 
-    // Weather forecast click
-    document.getElementById('weather-emoji').addEventListener('click', () => {
+    // Save modal button
+    document.getElementById('open-save-btn').addEventListener('click', () => {
+        haptic('medium');
+        document.getElementById('save-modal').classList.add('active');
+    });
+
+    // Save modal close
+    document.getElementById('close-save-modal').addEventListener('click', () => {
         haptic('light');
-        showWeatherForecast();
+        document.getElementById('save-modal').classList.remove('active');
+    });
+
+    // Save modal - close on background click
+    document.getElementById('save-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'save-modal') {
+            document.getElementById('save-modal').classList.remove('active');
+        }
+    });
+
+    // Save modal - Export
+    document.getElementById('save-export-btn').addEventListener('click', () => {
+        haptic('medium');
+        exportGameSave();
+        document.getElementById('save-modal').classList.remove('active');
+    });
+
+    // Save modal - Import
+    document.getElementById('save-import-btn').addEventListener('click', () => {
+        haptic('medium');
+        document.getElementById('save-import-file').click();
+    });
+
+    // Save modal - Import file handler
+    document.getElementById('save-import-file').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            importGameSave(file);
+            document.getElementById('save-modal').classList.remove('active');
+        }
+        e.target.value = '';
+    });
+
+    // Save modal - Restart
+    document.getElementById('save-restart-btn').addEventListener('click', async () => {
+        document.getElementById('save-modal').classList.remove('active');
+        const confirmed = await showConfirm(
+            'Restart Tower',
+            'This will delete ALL your progress and start fresh. Are you sure?'
+        );
+
+        if (confirmed) {
+            game.reset();
+            renderTowerScreen();
+            updateGlobalStats();
+            window.location.reload();
+        }
     });
 
     // Mood breakdown click
@@ -799,12 +884,7 @@ function updateGlobalStats() {
     // Update day counter with clock
     document.getElementById('day-counter').textContent = `Day ${game.getGameDay()} • ${game.getGameClock()}`;
 
-    // Update weather indicator
-    const currentWeather = game.getCurrentWeather();
-    if (currentWeather) {
-        document.getElementById('weather-emoji').textContent = currentWeather.emoji;
-        document.getElementById('weather-emoji').title = `${currentWeather.name} - Mood: ${currentWeather.moodEffect >= 0 ? '+' : ''}${currentWeather.moodEffect}, Visitors: ${Math.round(currentWeather.spawnEffect * 100)}%`;
-    }
+    // Weather indicator was removed - save button is in its place now
 
     // Check for special visitor notifications
     if (game._newSpecialVisitor) {
@@ -1414,12 +1494,27 @@ function renderStaffSlots(floor) {
         slot.className = 'staff-slot';
 
         if (hasCustomStaff) {
-            // Custom staff for utility rooms (basement)
+            // Utility staff for bathroom/basement - now hired from lobby
             const customStaff = floorType.staffSlots[i];
-            const isHired = floor.staff.includes(customStaff.name);
+            const hiredStaff = floor.staff[i];
+            // Support both old string format and new object format
+            const isHired = hiredStaff === customStaff.name ||
+                (hiredStaff && typeof hiredStaff === 'object' && hiredStaff.typeId);
 
-            if (isHired) {
-                // Filled slot
+            if (isHired && typeof hiredStaff === 'object') {
+                // New format: staff object with details
+                slot.innerHTML = `
+                    <div class="staff-icon" style="background-color: ${hiredStaff.color}">${hiredStaff.emoji}</div>
+                    <div class="staff-info">
+                        <div class="staff-name">${hiredStaff.name} (${hiredStaff.typeName})</div>
+                        <div class="staff-unlock">✅ ${hiredStaff.effect || customStaff.effect}</div>
+                    </div>
+                    <button class="fire-staff-btn" data-floor-id="${floor.id}" data-staff-id="${hiredStaff.id}">
+                        Fire
+                    </button>
+                `;
+            } else if (isHired) {
+                // Old format: just the name string (backwards compatibility)
                 slot.innerHTML = `
                     <div class="staff-icon" style="background-color: ${customStaff.color}">${customStaff.emoji}</div>
                     <div class="staff-info">
@@ -1428,20 +1523,17 @@ function renderStaffSlots(floor) {
                     </div>
                 `;
             } else {
-                // Empty slot with hire button
-                const canAfford = game.stars >= customStaff.cost;
+                // Empty slot - prompt to check lobby for utility applicants
+                const utilityApplicants = game.lobbyApplicants ?
+                    game.lobbyApplicants.filter(a => a.isUtilityStaff && a.utilityFloorType === floor.typeId && a.utilitySlotIndex === i) : [];
+                const hasApplicant = utilityApplicants.length > 0;
                 slot.innerHTML = `
                     <div class="staff-icon empty">?</div>
                     <div class="staff-info">
-                        <div class="staff-name">${customStaff.name}</div>
+                        <div class="staff-name">${customStaff.name} Needed</div>
                         <div class="staff-description">${customStaff.effect}</div>
+                        <div class="lobby-hint">${hasApplicant ? `${utilityApplicants[0].name} is waiting in lobby!` : 'Check lobby for applicants'}</div>
                     </div>
-                    <button class="hire-staff-btn ${!canAfford ? 'disabled' : ''}"
-                            data-floor-id="${floor.id}"
-                            data-staff-index="${i}"
-                            ${!canAfford ? 'disabled' : ''}>
-                        Hire (${customStaff.cost} ⭐)
-                    </button>
                 `;
             }
         } else {
@@ -1460,9 +1552,14 @@ function renderStaffSlots(floor) {
                         <div class="staff-unlock">✅ "${categoryName}" unlocked</div>
                         ${isDreamMatch ? '<div class="dream-match-badge">💫 Dream Job!</div>' : `<div class="dream-hint">Dreams of: ${dreamFloorName}</div>`}
                     </div>
-                    <button class="reassign-staff-btn" data-floor-id="${floor.id}" data-staff-id="${staff.id}">
-                        Move
-                    </button>
+                    <div class="staff-actions">
+                        <button class="reassign-staff-btn" data-floor-id="${floor.id}" data-staff-id="${staff.id}">
+                            Move
+                        </button>
+                        <button class="fire-staff-btn" data-floor-id="${floor.id}" data-staff-id="${staff.id}">
+                            Fire
+                        </button>
+                    </div>
                 `;
             } else {
                 // Empty slot - prompt to visit lobby
@@ -1505,6 +1602,23 @@ function renderStaffSlots(floor) {
         };
         btn.addEventListener('click', handleReassign);
         btn.addEventListener('touchend', handleReassign);
+    });
+
+    // Add event listeners for fire buttons
+    container.querySelectorAll('.fire-staff-btn').forEach(btn => {
+        let handled = false;
+        const handleFire = (e) => {
+            if (handled) return;
+            handled = true;
+            e.preventDefault();
+            e.stopPropagation();
+            const floorId = btn.dataset.floorId;
+            const staffId = btn.dataset.staffId;
+            handleFireStaff(floorId, staffId);
+            setTimeout(() => { handled = false; }, 500);
+        };
+        btn.addEventListener('click', handleFire);
+        btn.addEventListener('touchend', handleFire);
     });
 }
 
@@ -1550,6 +1664,37 @@ async function handleHireStaff(floorId, staffIndex) {
         haptic('error');
         SoundManager.error();
         alert(result.error || 'Cannot hire staff');
+    }
+}
+
+/**
+ * Handle firing staff from a floor
+ */
+async function handleFireStaff(floorId, staffId) {
+    const floor = game.getFloor(floorId);
+    if (!floor) return;
+
+    const staff = floor.staff.find(s => s && s.id === staffId);
+    if (!staff) return;
+
+    const confirmed = await showConfirm(
+        'Fire Staff',
+        `Are you sure you want to fire ${staff.name}? This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    const result = game.fireStaff(staffId, floorId);
+    if (result.success) {
+        haptic('medium');
+        SoundManager.purchase();
+        renderStaffSlots(floor);
+        renderBookCategories(floor);
+        updateGlobalStats();
+    } else {
+        haptic('error');
+        SoundManager.error();
+        alert(result.error || 'Cannot fire staff');
     }
 }
 
@@ -2126,6 +2271,90 @@ function openCollectionModal() {
  */
 function closeCollectionModal() {
     document.getElementById('collection-modal').classList.remove('active');
+}
+
+/**
+ * Open staff directory modal
+ */
+function openStaffModal() {
+    renderStaffDirectory();
+    document.getElementById('staff-modal').classList.add('active');
+}
+
+/**
+ * Close staff directory modal
+ */
+function closeStaffModal() {
+    document.getElementById('staff-modal').classList.remove('active');
+}
+
+/**
+ * Render staff directory list
+ */
+function renderStaffDirectory() {
+    const listEl = document.getElementById('staff-directory-list');
+    const countEl = document.getElementById('staff-employed-count');
+
+    // Collect all staff from all floors
+    const allStaff = [];
+    game.floors.forEach(floor => {
+        if (floor.staff && floor.staff.length > 0) {
+            floor.staff.forEach(staff => {
+                if (staff && typeof staff === 'object') {
+                    const floorType = game.floorTypes.find(ft => ft.id === floor.typeId);
+                    const dreamFloorType = game.floorTypes.find(ft => ft.id === staff.dreamGenre);
+                    const isDreamMatch = staff.dreamGenre === floor.typeId;
+
+                    allStaff.push({
+                        staff: staff,
+                        floor: floor,
+                        floorName: floorType ? floorType.name : 'Unknown',
+                        floorNumber: floor.floorNumber,
+                        dreamFloorName: dreamFloorType ? dreamFloorType.name : 'Unknown',
+                        isDreamMatch: isDreamMatch
+                    });
+                }
+            });
+        }
+    });
+
+    // Update count
+    countEl.textContent = allStaff.length;
+
+    // Render staff cards
+    if (allStaff.length === 0) {
+        listEl.innerHTML = `
+            <div class="no-staff-message">
+                <p>No staff employed yet!</p>
+                <p>Tap on a floor and visit the lobby to hire applicants.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Sort: dream matches first, then by floor number
+    allStaff.sort((a, b) => {
+        if (a.isDreamMatch !== b.isDreamMatch) {
+            return b.isDreamMatch ? 1 : -1;
+        }
+        return a.floorNumber - b.floorNumber;
+    });
+
+    listEl.innerHTML = allStaff.map(item => `
+        <div class="staff-directory-card ${item.isDreamMatch ? 'dream-match' : ''}">
+            <div class="staff-directory-icon" style="background-color: ${item.staff.color || '#ccc'}">
+                ${item.staff.emoji || '👤'}
+            </div>
+            <div class="staff-directory-info">
+                <div class="staff-directory-name">${item.staff.name}</div>
+                <div class="staff-directory-floor">Floor ${item.floorNumber}: ${item.floorName}</div>
+                <div class="staff-directory-dream ${item.isDreamMatch ? 'matched' : ''}">
+                    ${item.isDreamMatch ? '✓ Working dream job!' : `Dreams of: ${item.dreamFloorName}`}
+                </div>
+            </div>
+            ${item.isDreamMatch ? '<div class="staff-directory-badge">⭐</div>' : ''}
+        </div>
+    `).join('');
 }
 
 /**
@@ -3036,26 +3265,52 @@ function showApplicantModal(applicantOrId) {
     const skillStars = '⭐'.repeat(applicant.skill) + '☆'.repeat(5 - applicant.skill);
 
     title.textContent = `${applicant.name}`;
-    message.innerHTML = `
-        <div style="text-align: center; margin-bottom: 15px;">
-            <div style="font-size: 48px; margin-bottom: 10px;">${applicant.emoji}</div>
-            <div style="font-size: 18px; font-weight: bold; color: ${applicant.color};">${applicant.typeName}</div>
-        </div>
-        <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-            <div style="margin-bottom: 8px;">
-                <strong>Dream Floor:</strong> <span style="color: #4A0080; font-weight: bold;">${applicant.dreamGenreName}</span>
+
+    // Different display for utility staff
+    if (applicant.isUtilityStaff) {
+        const floorTypeName = applicant.utilityFloorType === 'bathroom' ? 'Restroom' : 'Basement';
+        message.innerHTML = `
+            <div style="text-align: center; margin-bottom: 15px;">
+                <div style="font-size: 48px; margin-bottom: 10px;">${applicant.emoji}</div>
+                <div style="font-size: 18px; font-weight: bold; color: ${applicant.color};">${applicant.typeName}</div>
             </div>
-            <div style="margin-bottom: 8px;">
-                <strong>Skill:</strong> ${skillStars}
+            <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="margin-bottom: 8px;">
+                    <strong>Works in:</strong> <span style="color: #4A0080; font-weight: bold;">${floorTypeName}</span>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <strong>Effect:</strong> ${applicant.effect}
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <strong>Skill:</strong> ${skillStars}
+                </div>
+                <div>
+                    <strong>Hire Cost:</strong> ${applicant.hireCost} stars
+                </div>
             </div>
-            <div>
-                <strong>Hire Cost:</strong> ${applicant.hireCost} stars
+        `;
+    } else {
+        message.innerHTML = `
+            <div style="text-align: center; margin-bottom: 15px;">
+                <div style="font-size: 48px; margin-bottom: 10px;">${applicant.emoji}</div>
+                <div style="font-size: 18px; font-weight: bold; color: ${applicant.color};">${applicant.typeName}</div>
             </div>
-        </div>
-        <div style="font-size: 12px; color: #666; text-align: center;">
-            <em>Place on ${applicant.dreamGenreName} floor for 2x restock speed!</em>
-        </div>
-    `;
+            <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="margin-bottom: 8px;">
+                    <strong>Dream Floor:</strong> <span style="color: #4A0080; font-weight: bold;">${applicant.dreamGenreName}</span>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <strong>Skill:</strong> ${skillStars}
+                </div>
+                <div>
+                    <strong>Hire Cost:</strong> ${applicant.hireCost} stars
+                </div>
+            </div>
+            <div style="font-size: 12px; color: #666; text-align: center;">
+                <em>Place on ${applicant.dreamGenreName} floor for 2x restock speed!</em>
+            </div>
+        `;
+    }
 
     confirmBtn.textContent = `Hire (${applicant.hireCost} ⭐)`;
     cancelBtn.textContent = 'Dismiss';
@@ -3083,24 +3338,146 @@ function showApplicantModal(applicantOrId) {
 }
 
 /**
+ * Show VIP info modal - allows user to see VIP details before deciding to escort or dismiss
+ */
+function showVIPInfoModal(vip) {
+    if (!vip) return;
+
+    const modal = document.getElementById('confirm-modal');
+    const title = document.getElementById('confirm-title');
+    const message = document.getElementById('confirm-message');
+    const confirmBtn = document.getElementById('confirm-ok');
+    const cancelBtn = document.getElementById('confirm-cancel');
+
+    // Calculate time remaining
+    const timeRemaining = Math.max(0, Math.ceil((vip.expiresAt - Date.now()) / 1000));
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+    const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    // Determine target floor info
+    let targetFloorText = '';
+    if (vip.targetGenres && vip.targetGenres.length > 0) {
+        const genreNames = vip.targetGenres.map(g => {
+            const floorType = game.floorTypes.find(ft => ft.id === g);
+            return floorType ? floorType.name : g;
+        }).join(' or ');
+
+        // Check if player has a matching floor
+        const hasMatchingFloor = game.floors.some(f =>
+            f.status === 'ready' && vip.targetGenres.includes(f.typeId)
+        );
+
+        targetFloorText = `
+            <div style="margin-bottom: 8px;">
+                <strong>Wants to visit:</strong> <span style="color: #4A0080; font-weight: bold;">${genreNames}</span>
+            </div>
+            <div style="margin-bottom: 8px; color: ${hasMatchingFloor ? 'green' : 'orange'};">
+                ${hasMatchingFloor ? '✅ You have this floor!' : '⚠️ You don\'t have this floor yet'}
+            </div>
+        `;
+    } else {
+        targetFloorText = `
+            <div style="margin-bottom: 8px;">
+                <strong>Wants to visit:</strong> <span style="color: #4A0080; font-weight: bold;">Any floor</span>
+            </div>
+        `;
+    }
+
+    title.textContent = `${vip.emoji} ${vip.name}`;
+    message.innerHTML = `
+        <div style="text-align: center; margin-bottom: 15px;">
+            <div style="font-size: 48px; margin-bottom: 10px;">${vip.emoji}</div>
+            <div style="font-size: 14px; font-style: italic; color: #666;">"${vip.quote}"</div>
+        </div>
+        <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+            ${targetFloorText}
+            <div style="margin-bottom: 8px;">
+                <strong>Bonus:</strong> ${vip.bonus.description}
+            </div>
+            <div style="color: #888;">
+                ⏱️ Time remaining: ${timeText}
+            </div>
+        </div>
+    `;
+
+    confirmBtn.textContent = 'Escort';
+    cancelBtn.textContent = 'Dismiss';
+
+    // Store VIP ID for handlers
+    modal.dataset.vipId = vip.id;
+
+    // Set up handlers
+    confirmBtn.onclick = () => {
+        haptic('medium');
+        modal.classList.remove('active');
+
+        // Pick up the VIP
+        const result = game.pickUpVIP(vip.id);
+        if (result.success) {
+            if (window.showVIPEscortUI) {
+                window.showVIPEscortUI(result.vip);
+            }
+        }
+    };
+
+    cancelBtn.onclick = () => {
+        haptic('light');
+        // Dismiss the VIP
+        game.arrivingVIPs = game.arrivingVIPs.filter(v => v.id !== vip.id);
+        game.save();
+        modal.classList.remove('active');
+    };
+
+    // Close button - just closes modal without any action
+    document.getElementById('close-confirm-modal').onclick = () => {
+        modal.classList.remove('active');
+    };
+
+    modal.classList.add('active');
+}
+
+// Expose showVIPInfoModal globally for tower-renderer
+window.showVIPInfoModal = showVIPInfoModal;
+
+/**
  * Show floor picker to assign applicant
  */
 function showFloorPickerForApplicant(applicantId) {
     const applicant = game.lobbyApplicants.find(a => a.id === applicantId);
     if (!applicant) return;
 
-    // Get floors that can accept staff (count non-null slots, not array length)
-    const availableFloors = game.floors.filter(f => {
-        if (f.status !== 'ready') return false;
-        const floorType = game.floorTypes.find(ft => ft.id === f.typeId);
-        if (floorType?.staffSlots) return false; // Skip utility rooms
-        const filledSlots = f.staff.filter(s => s !== null && s !== undefined).length;
-        return filledSlots < 3;
-    });
+    let availableFloors;
 
-    if (availableFloors.length === 0) {
-        alert('No floors available to hire staff! Build more floors or make room on existing ones.');
-        return;
+    // Handle utility staff differently - they can only go to their designated floor type
+    if (applicant.isUtilityStaff) {
+        availableFloors = game.floors.filter(f => {
+            if (f.status !== 'ready') return false;
+            if (f.typeId !== applicant.utilityFloorType) return false;
+            // Check if the specific slot for this utility staff is empty
+            const slotIndex = applicant.utilitySlotIndex;
+            return !f.staff[slotIndex];
+        });
+
+        if (availableFloors.length === 0) {
+            const floorTypeName = applicant.utilityFloorType === 'bathroom' ? 'Restroom' : 'Basement';
+            alert(`No ${floorTypeName} available or the position is already filled!`);
+            return;
+        }
+    } else {
+        // Regular staff - get floors that can accept staff (count non-null slots, not array length)
+        availableFloors = game.floors.filter(f => {
+            if (f.status !== 'ready') return false;
+            const floorType = game.floorTypes.find(ft => ft.id === f.typeId);
+            if (floorType?.staffSlots) return false; // Skip utility rooms
+            const filledSlots = f.staff.filter(s => s !== null && s !== undefined).length;
+            return filledSlots < 3;
+        });
+
+        if (availableFloors.length === 0) {
+            alert('No floors available to hire staff! Build more floors or make room on existing ones.');
+            return;
+        }
     }
 
     // Use build modal for floor selection
@@ -3109,20 +3486,32 @@ function showFloorPickerForApplicant(applicantId) {
 
     availableFloors.forEach(floor => {
         const floorType = game.floorTypes.find(ft => ft.id === floor.typeId);
-        const isDreamMatch = floor.typeId === applicant.dreamGenre;
+        const isDreamMatch = !applicant.isUtilityStaff && floor.typeId === applicant.dreamGenre;
         const staffCount = floor.staff.filter(s => s !== null && s !== undefined).length;
 
         const card = document.createElement('div');
         card.className = `floor-type-card ${floorType.color} ${isDreamMatch ? 'dream-match' : ''}`;
         card.style.cursor = 'pointer';
-        card.innerHTML = `
-            <div class="floor-type-icon">${floorType.emoji}</div>
-            <div class="floor-type-info">
-                <h5>${floorType.name} ${isDreamMatch ? '💫 DREAM JOB!' : ''}</h5>
-                <p>Staff: ${staffCount}/3</p>
-                ${isDreamMatch ? '<p style="color: green; font-weight: bold;">2x Speed Bonus!</p>' : ''}
-            </div>
-        `;
+
+        if (applicant.isUtilityStaff) {
+            card.innerHTML = `
+                <div class="floor-type-icon">${floorType.emoji}</div>
+                <div class="floor-type-info">
+                    <h5>${floorType.name}</h5>
+                    <p>Position: ${applicant.typeName}</p>
+                    <p style="color: #666;">${applicant.effect}</p>
+                </div>
+            `;
+        } else {
+            card.innerHTML = `
+                <div class="floor-type-icon">${floorType.emoji}</div>
+                <div class="floor-type-info">
+                    <h5>${floorType.name} ${isDreamMatch ? '💫 DREAM JOB!' : ''}</h5>
+                    <p>Staff: ${staffCount}/3</p>
+                    ${isDreamMatch ? '<p style="color: green; font-weight: bold;">2x Speed Bonus!</p>' : ''}
+                </div>
+            `;
+        }
 
         card.addEventListener('click', () => {
             haptic('medium');
@@ -3146,7 +3535,10 @@ function handleHireApplicant(applicantId, floorId) {
         haptic('success');
         SoundManager.purchase();
 
-        if (result.isDreamMatch) {
+        if (result.staff.isUtilityStaff) {
+            // Utility staff hired
+            alert(`${result.staff.name} has been hired as ${result.staff.typeName}!`);
+        } else if (result.isDreamMatch) {
             alert(`🎉 Perfect match! ${result.staff.name} is thrilled to work on their dream floor! 2x speed bonus activated!`);
         } else {
             alert(`${result.staff.name} has been hired! They unlock book category ${result.categoryUnlocked + 1}.`);

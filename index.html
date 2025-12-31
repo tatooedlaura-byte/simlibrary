@@ -66,6 +66,7 @@
                         <button class="stats-btn" id="open-stats-btn" title="View Statistics">📈</button>
                         <button class="stats-btn" id="open-achievements-btn" title="View Achievements">🏆</button>
                         <button class="stats-btn" id="open-collection-btn" title="Reader Collection">📖</button>
+                        <button class="stats-btn" id="open-staff-btn" title="Staff Directory">👔</button>
                         <button class="stats-btn" id="toggle-sound-btn" title="Toggle Sound">🔔</button>
                         <button class="stats-btn" id="restock-all-btn" title="Restock All (💎)">📦</button>
                         <button class="stats-btn" id="open-help-btn" title="Help & Tutorial">❓</button>
@@ -309,6 +310,24 @@
                                 <!-- VIP reader cards will be inserted here -->
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff Directory Modal -->
+        <div id="staff-modal" class="modal">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h3>👔 Staff Directory</h3>
+                    <button class="close-btn" id="close-staff-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="staff-summary">
+                        <span id="staff-employed-count">0</span> staff employed
+                    </div>
+                    <div id="staff-directory-list" class="staff-directory-list">
+                        <!-- Staff cards will be inserted here -->
                     </div>
                 </div>
             </div>

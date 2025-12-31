@@ -31,6 +31,17 @@ class GameState {
             transitTypes: ['🚇 Subway', '🚌 Bus', '🚊 Tram']
         };
 
+        // Book Sale event (quarterly big sale)
+        this.bookSale = {
+            isActive: false,
+            lastSale: 0,
+            nextSale: this.calculateNextBookSale(),
+            duration: 2 * 60 * 1000, // 2 minutes of book sale madness
+            interval: 7 * 60 * 1000, // Every 7 game days (roughly 7 minutes)
+            spawnMultiplier: 5, // 5x more visitors
+            starMultiplier: 3   // 3x star earnings
+        };
+
         // Cleaning system
         this.lastCleanedDay = 0; // Track last day cleaning occurred
 
@@ -2965,6 +2976,62 @@ class GameState {
     }
 
     /**
+     * Calculate next book sale time
+     */
+    calculateNextBookSale() {
+        // First book sale happens after 5 minutes, then every 7 minutes
+        const initialDelay = 5 * 60 * 1000;
+        return Date.now() + initialDelay;
+    }
+
+    /**
+     * Check and trigger book sale event
+     */
+    checkBookSale() {
+        const now = Date.now();
+
+        // Check if book sale should start
+        if (!this.bookSale.isActive && now >= this.bookSale.nextSale) {
+            this.startBookSale();
+        }
+
+        // Check if book sale should end
+        if (this.bookSale.isActive &&
+            now >= this.bookSale.lastSale + this.bookSale.duration) {
+            this.endBookSale();
+        }
+    }
+
+    /**
+     * Start a library book sale - massive visitor influx!
+     */
+    startBookSale() {
+        this.bookSale.isActive = true;
+        this.bookSale.lastSale = Date.now();
+
+        // Notification
+        this._bookSaleNotification = {
+            message: '📚 BOOK SALE! Visitors are flooding in! 3x Stars!',
+            timestamp: Date.now()
+        };
+    }
+
+    /**
+     * End book sale
+     */
+    endBookSale() {
+        this.bookSale.isActive = false;
+        // Schedule next book sale
+        this.bookSale.nextSale = Date.now() + this.bookSale.interval;
+
+        // End notification
+        this._bookSaleEndNotification = {
+            message: 'Book sale ended! Great turnout!',
+            timestamp: Date.now()
+        };
+    }
+
+    /**
      * Generate a new random mission
      */
     generateMission() {
@@ -5076,6 +5143,11 @@ class GameState {
                     const holidayBonus = this.getHolidayStarBonus();
                     finalEarnings = Math.floor(finalEarnings * holidayBonus);
 
+                    // Apply book sale bonus (3x stars during book sale!)
+                    if (this.bookSale && this.bookSale.isActive) {
+                        finalEarnings = Math.floor(finalEarnings * this.bookSale.starMultiplier);
+                    }
+
                     // Apply library card bonus
                     if (reader.hasLibraryCard) {
                         const cardBonus = this.getLibraryCardBonus(reader.name);
@@ -5191,10 +5263,18 @@ class GameState {
         // Check rush hour status
         this.checkRushHour();
 
+        // Check book sale status
+        this.checkBookSale();
+
         // Spawn new readers with increased rate during rush hour and events
         let spawnChance = 0.10; // Base 10% chance
         if (this.transitSchedule.isRushHour) {
             spawnChance = 0.40; // 40% during rush hour = 4x more readers!
+        }
+
+        // Book sale brings in massive crowds!
+        if (this.bookSale && this.bookSale.isActive) {
+            spawnChance *= this.bookSale.spawnMultiplier;
         }
 
         // Apply event spawn rate multiplier

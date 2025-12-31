@@ -245,6 +245,17 @@ function init() {
             game._rushHourNotification = null;
         }
 
+        // Show book sale notification
+        if (game._bookSaleNotification) {
+            alert(`🎉 ${game._bookSaleNotification.message}\n\n5x more visitors and 3x star earnings for 2 minutes!`);
+            game._bookSaleNotification = null;
+        }
+
+        // Show book sale end notification
+        if (game._bookSaleEndNotification) {
+            game._bookSaleEndNotification = null;
+        }
+
         // Check for new achievements
         if (game._newAchievements && game._newAchievements.length > 0) {
             SoundManager.success();
@@ -413,6 +424,25 @@ function setupEventListeners() {
     document.getElementById('collection-modal').addEventListener('click', (e) => {
         if (e.target.id === 'collection-modal') {
             closeCollectionModal();
+        }
+    });
+
+    // Staff directory button - opens staff modal
+    document.getElementById('open-staff-btn').addEventListener('click', () => {
+        haptic('medium');
+        openStaffModal();
+    });
+
+    // Staff modal close button
+    document.getElementById('close-staff-modal').addEventListener('click', () => {
+        haptic('light');
+        closeStaffModal();
+    });
+
+    // Close staff modal when clicking outside
+    document.getElementById('staff-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'staff-modal') {
+            closeStaffModal();
         }
     });
 
@@ -2241,6 +2271,90 @@ function openCollectionModal() {
  */
 function closeCollectionModal() {
     document.getElementById('collection-modal').classList.remove('active');
+}
+
+/**
+ * Open staff directory modal
+ */
+function openStaffModal() {
+    renderStaffDirectory();
+    document.getElementById('staff-modal').classList.add('active');
+}
+
+/**
+ * Close staff directory modal
+ */
+function closeStaffModal() {
+    document.getElementById('staff-modal').classList.remove('active');
+}
+
+/**
+ * Render staff directory list
+ */
+function renderStaffDirectory() {
+    const listEl = document.getElementById('staff-directory-list');
+    const countEl = document.getElementById('staff-employed-count');
+
+    // Collect all staff from all floors
+    const allStaff = [];
+    game.floors.forEach(floor => {
+        if (floor.staff && floor.staff.length > 0) {
+            floor.staff.forEach(staff => {
+                if (staff && typeof staff === 'object') {
+                    const floorType = game.floorTypes.find(ft => ft.id === floor.typeId);
+                    const dreamFloorType = game.floorTypes.find(ft => ft.id === staff.dreamGenre);
+                    const isDreamMatch = staff.dreamGenre === floor.typeId;
+
+                    allStaff.push({
+                        staff: staff,
+                        floor: floor,
+                        floorName: floorType ? floorType.name : 'Unknown',
+                        floorNumber: floor.floorNumber,
+                        dreamFloorName: dreamFloorType ? dreamFloorType.name : 'Unknown',
+                        isDreamMatch: isDreamMatch
+                    });
+                }
+            });
+        }
+    });
+
+    // Update count
+    countEl.textContent = allStaff.length;
+
+    // Render staff cards
+    if (allStaff.length === 0) {
+        listEl.innerHTML = `
+            <div class="no-staff-message">
+                <p>No staff employed yet!</p>
+                <p>Tap on a floor and visit the lobby to hire applicants.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Sort: dream matches first, then by floor number
+    allStaff.sort((a, b) => {
+        if (a.isDreamMatch !== b.isDreamMatch) {
+            return b.isDreamMatch ? 1 : -1;
+        }
+        return a.floorNumber - b.floorNumber;
+    });
+
+    listEl.innerHTML = allStaff.map(item => `
+        <div class="staff-directory-card ${item.isDreamMatch ? 'dream-match' : ''}">
+            <div class="staff-directory-icon" style="background-color: ${item.staff.color || '#ccc'}">
+                ${item.staff.emoji || '👤'}
+            </div>
+            <div class="staff-directory-info">
+                <div class="staff-directory-name">${item.staff.name}</div>
+                <div class="staff-directory-floor">Floor ${item.floorNumber}: ${item.floorName}</div>
+                <div class="staff-directory-dream ${item.isDreamMatch ? 'matched' : ''}">
+                    ${item.isDreamMatch ? '✓ Working dream job!' : `Dreams of: ${item.dreamFloorName}`}
+                </div>
+            </div>
+            ${item.isDreamMatch ? '<div class="staff-directory-badge">⭐</div>' : ''}
+        </div>
+    `).join('');
 }
 
 /**
