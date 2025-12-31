@@ -2471,7 +2471,17 @@ class GameState {
         // Apply event browse time multiplier
         browseTime = Math.floor(browseTime * this.getEventEffect('browse_time'));
 
+        // Rush hour bonus: readers browse 2x faster
+        if (this.transitSchedule && this.transitSchedule.isRushHour) {
+            browseTime = Math.floor(browseTime / 2);
+        }
+
         let earningAmount = Math.max(1, Math.floor(cat.earningRate * 0.3)); // 30% of category earning rate
+
+        // Rush hour bonus: 2x star earnings
+        if (this.transitSchedule && this.transitSchedule.isRushHour) {
+            earningAmount *= 2;
+        }
 
         if (vipType) {
             switch (vipType.ability) {
@@ -2508,6 +2518,11 @@ class GameState {
         // Determine how many books to check out based on browse time
         // Base: 1 book per 1.5 seconds of browsing, minimum 1 book
         let booksToCheckout = Math.max(1, Math.floor(browseTime / 1500));
+
+        // Rush hour bonus: readers check out 2x more books
+        if (this.transitSchedule && this.transitSchedule.isRushHour) {
+            booksToCheckout *= 2;
+        }
 
         // VIPs get a bonus book
         if (isVIP) {
