@@ -3216,12 +3216,19 @@ class TowerRenderer {
                             if (window.hideVIPEscortUI) {
                                 window.hideVIPEscortUI();
                             }
+                            // Block floor opening for a moment after VIP drop-off
+                            this._vipDropTime = Date.now();
                         }
                         return;
                     }
                 }
             }
             // Don't open floor detail while escorting
+            return;
+        }
+
+        // Block floor opening right after VIP drop-off
+        if (this._vipDropTime && Date.now() - this._vipDropTime < 500) {
             return;
         }
 
@@ -4166,6 +4173,8 @@ class TowerRenderer {
                                 if (window.hideVIPEscortUI) {
                                     window.hideVIPEscortUI();
                                 }
+                                // Block floor opening for a moment after VIP drop-off
+                                this._vipDropTime = Date.now();
                             }
                             this.isDragging = false;
                             return;
@@ -4174,6 +4183,12 @@ class TowerRenderer {
                 }
                 this.isDragging = false;
                 return; // Don't open floor detail while escorting
+            }
+
+            // Block floor opening right after VIP drop-off
+            if (this._vipDropTime && Date.now() - this._vipDropTime < 500) {
+                this.isDragging = false;
+                return;
             }
 
             // Check floor clicks (normal mode)
