@@ -3160,6 +3160,18 @@ class GameState {
                     item.found = true;
                     this.currentFindMission.found++;
 
+                    // Bonus for finding specific items - you keep what you find!
+                    if (this.currentFindMission.itemType.id === 'diamond') {
+                        this.towerBucks += 1;
+                        this.stats.totalTowerBucksEarned += 1;
+                    } else if (this.currentFindMission.itemType.id === 'coin') {
+                        this.stars += 10;
+                        this.stats.totalStarsEarned += 10;
+                    } else if (this.currentFindMission.itemType.id === 'star') {
+                        this.stars += 15;
+                        this.stats.totalStarsEarned += 15;
+                    }
+
                     // Check if mission complete
                     if (this.currentFindMission.found >= this.currentFindMission.total) {
                         this.completeFindMission();
