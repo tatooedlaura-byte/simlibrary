@@ -1587,21 +1587,15 @@ function renderStaffSlots(floor) {
         });
     });
 
-    // Add event listeners for reassign buttons
+    // Add event listeners for reassign buttons (click only - no touchend to avoid accidental triggers while scrolling)
     container.querySelectorAll('.reassign-staff-btn').forEach(btn => {
-        let handled = false;
-        const handleReassign = (e) => {
-            if (handled) return;
-            handled = true;
+        btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             const floorId = btn.dataset.floorId;
             const staffId = btn.dataset.staffId;
             showReassignStaffModal(floorId, staffId);
-            setTimeout(() => { handled = false; }, 500);
-        };
-        btn.addEventListener('click', handleReassign);
-        btn.addEventListener('touchend', handleReassign);
+        });
     });
 
     // Add event listeners for fire buttons (click only - no touchend to avoid accidental triggers while scrolling)
