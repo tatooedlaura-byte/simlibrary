@@ -2654,16 +2654,21 @@ class TowerRenderer {
                 this.drawThoughtBubbleAt(x, y - 55 * scale, thought);
             }
 
-            // Time remaining indicator (skip for cat - already has cute cat drawing)
+            // Small progress bar under name (skip for cat)
             if (visitor.id !== 'cat') {
                 const timeLeft = visitor.endTime - Date.now();
                 const progress = timeLeft / (visitor.endTime - visitor.startTime);
+                const barWidth = 50 * scale;
+                const barHeight = 3 * scale;
+                const barY = y - 30 * scale;
 
-                this.ctx.strokeStyle = '#FFD700';
-                this.ctx.lineWidth = 2;
-                this.ctx.beginPath();
-                this.ctx.arc(x, y - 25 * scale, 12 * scale, -Math.PI / 2, -Math.PI / 2 + (progress * Math.PI * 2));
-                this.ctx.stroke();
+                // Background bar
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                this.ctx.fillRect(x - barWidth/2, barY, barWidth, barHeight);
+
+                // Progress bar
+                this.ctx.fillStyle = progress > 0.3 ? '#4CAF50' : '#FF5722';
+                this.ctx.fillRect(x - barWidth/2, barY, barWidth * Math.max(0, progress), barHeight);
             }
         });
     }
